@@ -14,7 +14,7 @@ Built as an installable PWA. One admin hosts a single live webinar. Guests join 
 - **Routing:** React Router v6
 - **Realtime + DB + Auth + Storage:** Supabase *(wires up in Phase 2)*
 - **Video/audio:** LiveKit Cloud *(wires up in Phase 4)*
-- **Hosting:** Vercel free tier
+- **Hosting:** GitHub Pages (deploys to <https://webinar.unisim.co.uk>)
 
 ## Current status: Phase 2 — Supabase, admin auth, webinar CRUD, pre-registration
 
@@ -55,13 +55,15 @@ npm run preview     # serve the production build locally
 
 ## Deploy
 
-The fastest path is Vercel:
+Pushes to `main` auto-deploy to GitHub Pages via [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml). The hosted PRO instance lives at <https://webinar.unisim.co.uk> (custom domain pinned via [`public/CNAME`](public/CNAME)).
 
-1. Push to GitHub (this repo).
-2. Go to <https://vercel.com/new>, import the repo, accept defaults.
-3. Click **Deploy**. Custom domain can be added later under *Project Settings → Domains*.
+To wire up GitHub Pages on a fork:
 
-Static `dist/` output is portable — it can also be hosted on any static host (Netlify, Cloudflare Pages, the user's shared hosting via FTP, etc.).
+1. *Settings → Pages → Build and deployment → Source* = **GitHub Actions**.
+2. *Settings → Secrets and variables → Actions* — add `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_PLATFORM_SUPABASE_URL`, `VITE_PLATFORM_SUPABASE_ANON_KEY`.
+3. Push to `main`. The workflow builds, copies `index.html` → `404.html` for SPA routing, and publishes.
+
+Static `dist/` output is portable — it can also be hosted on any static host (Vercel, Netlify, Cloudflare Pages, the user's shared hosting via FTP, etc.).
 
 ## Roadmap
 
@@ -112,6 +114,7 @@ supabase/
   migrations/
     0001_init.sql       Tables, RLS, realtime publication
 public/
+  CNAME                 GitHub Pages custom domain (webinar.unisim.co.uk)
   favicon.svg
   apple-touch-icon.png
   icons/                PWA icons (192, 512, maskable)
