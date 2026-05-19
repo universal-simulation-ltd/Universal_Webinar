@@ -6,9 +6,16 @@ import App from './App'
 import { AuthProvider } from './lib/auth'
 import './index.css'
 
+// Fall back to a dummy URL/key when the platform Supabase env vars aren't set.
+// Without this, createClient() inside <UniversalProvider> throws
+// "supabaseUrl is required." synchronously during render and the whole app
+// renders as a white page. The fallback keeps the tree mounted; the
+// suite-wide UniversalBar features just stay inert until the secrets are set.
 const universalConfig = {
-  supabaseUrl: import.meta.env.VITE_PLATFORM_SUPABASE_URL,
-  supabaseAnonKey: import.meta.env.VITE_PLATFORM_SUPABASE_ANON_KEY,
+  supabaseUrl:
+    import.meta.env.VITE_PLATFORM_SUPABASE_URL || 'http://localhost:54321',
+  supabaseAnonKey:
+    import.meta.env.VITE_PLATFORM_SUPABASE_ANON_KEY || 'public-anon-key',
   product: 'webinar' as const,
   cookieDomain: import.meta.env.PROD ? '.unisim.co.uk' : undefined,
 }
