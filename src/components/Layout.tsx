@@ -23,6 +23,7 @@ export function PublicLayout() {
       <UniversalAppsNavBar
         product="webinar"
         productLogo={<ProductLogo to="/" />}
+        suiteSwitcherIconSrc="/unisim-icon.png"
         fileMenu={
           <div className="flex items-center gap-1">
             <CompanyMenu />
@@ -62,6 +63,7 @@ export function AdminLayout() {
       <UniversalAppsNavBar
         product="webinar"
         productLogo={<ProductLogo to="/admin" />}
+        suiteSwitcherIconSrc="/unisim-icon.png"
         fileMenu={
           <nav className="hidden md:flex items-center gap-1">
             {navItems.map((item) => {
