@@ -127,7 +127,7 @@ function Footer() {
           </p>
         </div>
         <p className="font-medium text-slate-600">
-          Open source — self-host free or PRO hosted by{' '}
+          100% Open source and free. Hosted by{' '}
           <a
             href="https://www.unisim.co.uk"
             target="_blank"
