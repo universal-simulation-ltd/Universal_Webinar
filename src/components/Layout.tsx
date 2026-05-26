@@ -1,40 +1,40 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { LogOut } from 'lucide-react'
-import { UniversalBar } from '@unisim/sdk'
+import { UniversalAppsNavBar } from '@unisim/sdk'
 import { CompanyMenu } from './CompanyMenu'
 import { HeaderBrandMark } from './HeaderBrandMark'
 import { Logo } from './Logo'
-import { VersionChip } from './VersionChip'
-import unisimIcon from '@/assets/unisim-icon.png'
-
-function UnisimMark() {
-  return (
-    <a
-      href="https://www.unisim.co.uk"
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label="Built by UNI SIM"
-      title="Built by UNI SIM"
-      className="ml-2 inline-flex items-center group"
-    >
-      <img
-        src={unisimIcon}
-        alt=""
-        aria-hidden
-        className="h-7 w-auto opacity-30 group-hover:opacity-90 transition-opacity select-none"
-        draggable={false}
-      />
-    </a>
-  )
-}
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/auth'
+
+// Wordmark trigger inside the suite-switcher. Clicking the inner <a>
+// navigates to home; hover opens the apps switcher dropdown.
+function ProductLogo({ to = '/' }: { to?: string }) {
+  return (
+    <Link to={to} className="inline-flex items-center text-slate-900 no-underline">
+      <Logo />
+    </Link>
+  )
+}
 
 export function PublicLayout() {
   return (
     <div className="flex min-h-full flex-col bg-slate-50">
-      <UniversalBar />
-      <TopBar />
+      <UniversalAppsNavBar
+        product="webinar"
+        productLogo={<ProductLogo to="/" />}
+        fileMenu={
+          <div className="flex items-center gap-1">
+            <CompanyMenu />
+            <Link
+              to="/admin/login"
+              className="rounded-md px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+            >
+              Admin
+            </Link>
+          </div>
+        }
+      />
       <main className="flex-1">
         <Outlet />
       </main>
@@ -59,86 +59,58 @@ export function AdminLayout() {
 
   return (
     <div className="flex min-h-full flex-col bg-slate-50">
-      <UniversalBar />
-      <header className="relative overflow-hidden border-b border-slate-200 bg-white">
-        <div className="container flex h-16 items-center justify-between">
-          <div className="relative z-10 flex items-center gap-8">
-            <Link to="/admin" className="flex items-center">
-              <Logo />
-            </Link>
-            <nav className="hidden md:flex items-center gap-1">
-              {navItems.map((item) => {
-                const active =
-                  pathname === item.to ||
-                  (item.to !== '/admin' && pathname.startsWith(item.to))
-                return (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    className={cn(
-                      'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-                      active
-                        ? 'bg-brand-50 text-brand-700'
-                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
-                    )}
-                  >
-                    {item.label}
-                  </Link>
-                )
-              })}
-            </nav>
-          </div>
-          <div className="relative flex items-center gap-2 text-sm">
-            <VersionChip />
-            <HeaderBrandMark variant="compact" />
-            {user?.email && (
-              <span className="relative z-10 hidden sm:inline truncate max-w-[200px] text-slate-500">
-                {user.email}
-              </span>
-            )}
-            <button
-              type="button"
-              onClick={handleSignOut}
-              className="relative z-10 inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-              title="Sign out"
-            >
-              <LogOut className="h-4 w-4" />
-              <span className="sr-only sm:not-sr-only">Sign out</span>
-            </button>
-            <UnisimMark />
-          </div>
+      <UniversalAppsNavBar
+        product="webinar"
+        productLogo={<ProductLogo to="/admin" />}
+        fileMenu={
+          <nav className="hidden md:flex items-center gap-1">
+            {navItems.map((item) => {
+              const active =
+                pathname === item.to ||
+                (item.to !== '/admin' && pathname.startsWith(item.to))
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className={cn(
+                    'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                    active
+                      ? 'bg-brand-50 text-brand-700'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
+                  )}
+                >
+                  {item.label}
+                </Link>
+              )
+            })}
+          </nav>
+        }
+      />
+      {/* Secondary admin strip — user identity + sign-out. Lives below the
+          unified navbar so the admin-only chrome stays separate from the
+          suite-wide top-of-page surface. */}
+      <div className="border-b border-slate-200 bg-white">
+        <div className="container flex h-10 items-center justify-end gap-2 text-sm">
+          {user?.email && (
+            <span className="hidden sm:inline truncate max-w-[260px] text-slate-500">
+              {user.email}
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+            title="Sign out"
+          >
+            <LogOut className="h-4 w-4" />
+            <span className="sr-only sm:not-sr-only">Sign out</span>
+          </button>
         </div>
-      </header>
+      </div>
       <main className="flex-1">
         <Outlet />
       </main>
     </div>
-  )
-}
-
-function TopBar() {
-  return (
-    <header className="relative overflow-hidden border-b border-slate-200 bg-white/70 backdrop-blur">
-      <div className="container flex h-16 items-center justify-between">
-        <Link to="/" className="relative z-10 flex items-center">
-          <Logo />
-        </Link>
-        <nav className="relative flex items-center gap-1 text-sm">
-          <VersionChip />
-          <HeaderBrandMark variant="compact" />
-          <span className="relative z-10">
-            <CompanyMenu />
-          </span>
-          <Link
-            to="/admin/login"
-            className="relative z-10 rounded-md px-3 py-1.5 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-          >
-            Admin
-          </Link>
-          <UnisimMark />
-        </nav>
-      </div>
-    </header>
   )
 }
 
