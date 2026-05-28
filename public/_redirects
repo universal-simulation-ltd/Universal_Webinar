@@ -1,0 +1,26 @@
+# Cloudflare Pages rewrites — Universal Webinar is served under /webinar/ but the
+# built files in dist/ are flat (Vite's `base` only rewrites URLs INSIDE the
+# HTML; it does not place files in dist/webinar/).
+#
+# 200 status = transparent rewrite (URL bar unchanged). Specific rules first,
+# broad SPA fallback last.
+
+# Service-worker + PWA artefacts.
+/webinar/sw.js                /sw.js                200
+/webinar/registerSW.js        /registerSW.js        200
+/webinar/manifest.webmanifest /manifest.webmanifest 200
+/webinar/workbox-*            /workbox-:splat       200
+
+# Hashed asset bundles.
+/webinar/assets/*             /assets/:splat        200
+
+# Static files (PWA icons live in public/icons/, plus top-level public files).
+/webinar/icons/*              /icons/:splat         200
+/webinar/favicon.svg          /favicon.svg          200
+/webinar/apple-touch-icon.png /apple-touch-icon.png 200
+/webinar/unisim-icon.png      /unisim-icon.png      200
+/webinar/unisim-mark.png      /unisim-mark.png      200
+
+# SPA fallback — everything else under /webinar/ serves the shell, which React
+# Router routes client-side via its basename.
+/webinar/*                    /index.html           200
