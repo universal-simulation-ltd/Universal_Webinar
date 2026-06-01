@@ -16,7 +16,7 @@
     "@radix-ui/react-label": "^2.1.1",
     "@radix-ui/react-slot": "^1.1.1",
     "@supabase/supabase-js": "^2.47.10",
-    "@unisim/sdk": "^0.16.0",
+    "@unisim/sdk": "^0.18.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.469.0",
