@@ -7,13 +7,14 @@ import { Logo } from './Logo'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/auth'
 
-// Wordmark trigger inside the suite-switcher. Clicking the inner <a>
-// navigates to home; hover opens the apps switcher dropdown.
-function ProductLogo({ to = '/' }: { to?: string }) {
+// Icon-only product mark. The SDK's UniversalAppsNavBar renders the product
+// name from its catalogue beside this slot, and the productHomeHref prop wraps
+// logo+name in a single home-link.
+function ProductLogo() {
   return (
-    <Link to={to} className="inline-flex items-center text-slate-900 no-underline">
+    <span className="inline-flex items-center" aria-hidden="true">
       <Logo />
-    </Link>
+    </span>
   )
 }
 
@@ -22,7 +23,8 @@ export function PublicLayout() {
     <div className="flex min-h-full flex-col bg-slate-50">
       <UniversalAppsNavBar
         product="webinar"
-        productLogo={<ProductLogo to="/" />}
+        productLogo={<ProductLogo />}
+        productHomeHref="/"
         suiteSwitcherIconSrc="/unisim-icon.png"
         fileMenu={
           <div className="flex items-center gap-1">
@@ -62,7 +64,8 @@ export function AdminLayout() {
     <div className="flex min-h-full flex-col bg-slate-50">
       <UniversalAppsNavBar
         product="webinar"
-        productLogo={<ProductLogo to="/admin" />}
+        productLogo={<ProductLogo />}
+        productHomeHref="/admin"
         suiteSwitcherIconSrc="/unisim-icon.png"
         fileMenu={
           <nav className="hidden md:flex items-center gap-1">
