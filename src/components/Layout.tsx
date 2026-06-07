@@ -1,11 +1,9 @@
-import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { LogOut } from 'lucide-react'
-import { UniversalAppsNavBar } from '@unisim/sdk'
+import { Link, Outlet, useLocation } from 'react-router-dom'
+import { UniversalAppsNavBar, UniversalNavBar } from '@unisim/sdk'
 import { CompanyMenu } from './CompanyMenu'
 import { HeaderBrandMark } from './HeaderBrandMark'
 import { Logo } from './Logo'
 import { cn } from '@/lib/utils'
-import { useAuth } from '@/lib/auth'
 
 // Icon-only product mark. The SDK's UniversalAppsNavBar renders the product
 // name from its catalogue beside this slot, and the productHomeHref prop wraps
@@ -48,27 +46,22 @@ export function PublicLayout() {
 
 export function AdminLayout() {
   const { pathname } = useLocation()
-  const navigate = useNavigate()
-  const { user, signOut } = useAuth()
   const navItems = [
     { to: '/admin', label: 'Dashboard' },
     { to: '/admin/settings', label: 'Settings' },
   ]
 
-  async function handleSignOut() {
-    await signOut()
-    navigate('/admin/login', { replace: true })
-  }
-
   return (
     <div className="flex min-h-full flex-col bg-slate-50">
-      <UniversalAppsNavBar
+      <UniversalNavBar
         product="webinar"
         productLogo={<ProductLogo />}
-        productHomeHref="/admin"
+        newAssessmentHref={null}
         suiteSwitcherIconSrc="/unisim-icon.png"
-        fileMenu={
-          <nav className="hidden md:flex items-center gap-1">
+      />
+      <div className="border-b border-slate-200 bg-white">
+        <div className="container flex h-10 items-center gap-1">
+          <nav className="flex items-center gap-1">
             {navItems.map((item) => {
               const active =
                 pathname === item.to ||
@@ -89,27 +82,6 @@ export function AdminLayout() {
               )
             })}
           </nav>
-        }
-      />
-      {/* Secondary admin strip — user identity + sign-out. Lives below the
-          unified navbar so the admin-only chrome stays separate from the
-          suite-wide top-of-page surface. */}
-      <div className="border-b border-slate-200 bg-white">
-        <div className="container flex h-10 items-center justify-end gap-2 text-sm">
-          {user?.email && (
-            <span className="hidden sm:inline truncate max-w-[260px] text-slate-500">
-              {user.email}
-            </span>
-          )}
-          <button
-            type="button"
-            onClick={handleSignOut}
-            className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-            title="Sign out"
-          >
-            <LogOut className="h-4 w-4" />
-            <span className="sr-only sm:not-sr-only">Sign out</span>
-          </button>
         </div>
       </div>
       <main className="flex-1">
@@ -130,7 +102,7 @@ function Footer() {
           </p>
         </div>
         <p className="font-medium text-slate-600">
-          100% Open source and free. Hosted by{' '}
+          100% Open source. Hosted by{' '}
           <a
             href="https://www.unisim.co.uk"
             target="_blank"

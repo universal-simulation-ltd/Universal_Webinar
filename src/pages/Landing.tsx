@@ -54,7 +54,7 @@ export function Landing() {
                 className="mt-6 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-medium text-slate-700 shadow-soft transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
               >
                 <Github className="h-3.5 w-3.5" />
-                Open source — self-host free or PRO hosted by UNI SIM
+                Open source — self-host or PRO hosted by UNI SIM
                 <ArrowRight className="h-3 w-3 opacity-60" />
               </a>
             </div>
@@ -64,7 +64,7 @@ export function Landing() {
               <div className="mb-4 text-center lg:text-left">
                 <span className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700">
                   <Sparkles className="h-3.5 w-3.5" />
-                  Free · no signup yet · OTP at go-live
+                  Open source · no signup yet · OTP at go-live
                 </span>
                 <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
                   Set up your webinar

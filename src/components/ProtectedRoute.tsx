@@ -1,14 +1,13 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
-import { useAuth } from '@/lib/auth'
+import { useUniversal } from '@unisim/sdk'
+
+const UNIVERSAL_ID_LOGIN = 'https://app.unisim.co.uk/login'
 
 export function ProtectedRoute() {
-  const { user, loading, configured } = useAuth()
+  const { session, loading } = useUniversal()
   const location = useLocation()
 
-  if (!configured) {
-    return <SupabaseNotConfigured />
-  }
   if (loading) {
     return (
       <div className="flex h-full min-h-[60vh] items-center justify-center text-slate-500">
@@ -16,12 +15,12 @@ export function ProtectedRoute() {
       </div>
     )
   }
-  if (!user) {
+  if (!session) {
+    const returnUrl = `${window.location.origin}${location.pathname}${location.search}`
     return (
       <Navigate
-        to="/admin/login"
+        to={`/admin/login?return_to=${encodeURIComponent(returnUrl)}`}
         replace
-        state={{ from: location.pathname + location.search }}
       />
     )
   }
