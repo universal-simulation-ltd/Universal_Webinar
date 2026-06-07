@@ -3,10 +3,11 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import path from 'node:path'
 
-// Universal Webinar has its own dedicated Cloudflare Pages project so it is
-// always served at root `/` (both locally and in production).
-export default defineConfig(({ mode: _mode }) => {
-  const BASE_PATH = '/'
+// Universal Webinar is served under /webinar/ via the opensource-portal worker
+// (opensource.unisim.co.uk/webinar). Local dev stays at root so hot-reload
+// works without the prefix.
+export default defineConfig(({ mode }) => {
+  const BASE_PATH = mode === 'production' ? '/webinar/' : '/'
   return {
     base: BASE_PATH,
     plugins: [
