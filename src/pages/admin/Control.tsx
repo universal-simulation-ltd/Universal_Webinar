@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import {
+  LiveKitRoom,
+  VideoConference,
+} from '@livekit/components-react'
+import {
   Camera,
   Check,
   Copy,
@@ -10,10 +14,13 @@ import {
   Loader2,
   Lock,
   MessageSquare,
+  MicOff,
   MonitorUp,
   Power,
   Settings2,
   Users,
+  VolumeX,
+  X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -28,21 +35,30 @@ import { cn } from '@/lib/utils'
 import {
   countRegistrations,
   getWebinarBySlug,
+  kickAttendee,
+  listAttendees,
   listMessages,
   listReactionsForWebinar,
   listRegistrations,
+  listSpeakRequests,
+  muteAttendee,
+  resolveSpeakRequest,
+  setAttendeeRole,
   softDeleteMessage,
   updateWebinar,
 } from '@/lib/db'
 import { getErrorMessage } from '@/lib/errors'
+import { getLiveKitToken, isLiveKitConfigured } from '@/lib/livekit'
 import {
   joinWebinarChannel,
   leaveChannel,
 } from '@/lib/realtime'
 import type {
+  AttendeeRow,
   MessageRow,
   ReactionRow,
   RegistrationRow,
+  SpeakRequestRow,
   WebinarRow,
 } from '@/lib/database.types'
 
@@ -53,11 +69,19 @@ export function AdminControl() {
   const [registrationCount, setRegistrationCount] = useState(0)
   const [messages, setMessages] = useState<MessageRow[]>([])
   const [reactions, setReactions] = useState<ReactionRow[]>([])
+  const [attendees, setAttendees] = useState<AttendeeRow[]>([])
+  const [speakRequests, setSpeakRequests] = useState<SpeakRequestRow[]>([])
   const [viewerCount, setViewerCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+
+  // LiveKit host
+  const [lkToken, setLkToken] = useState<string | null>(null)
+  const [lkUrl, setLkUrl] = useState<string>('')
+  const [lkFetching, setLkFetching] = useState(false)
+
   const knownMessageIds = useRef<Set<string>>(new Set())
 
   useEffect(() => {
@@ -72,17 +96,21 @@ export function AdminControl() {
           return
         }
         setWebinar(w)
-        const [count, regs, msgs, rxns] = await Promise.all([
+        const [count, regs, msgs, rxns, atts, reqs] = await Promise.all([
           countRegistrations(w.id),
           listRegistrations(w.id),
           listMessages(w.id),
           listReactionsForWebinar(w.id),
+          listAttendees(w.id),
+          listSpeakRequests(w.id),
         ])
         if (!active) return
         setRegistrationCount(count)
         setRegistrations(regs)
         setMessages(msgs)
         setReactions(rxns)
+        setAttendees(atts)
+        setSpeakRequests(reqs)
         knownMessageIds.current = new Set(msgs.map((m) => m.id))
       } catch (err) {
         if (active) setError(getErrorMessage(err, 'Load failed.'))
@@ -95,7 +123,7 @@ export function AdminControl() {
     }
   }, [slug])
 
-  // Realtime: subscribe to messages, reactions, and presence for this webinar
+  // Realtime
   useEffect(() => {
     if (!webinar) return
     const channel = joinWebinarChannel(webinar.id, null, {
@@ -114,11 +142,46 @@ export function AdminControl() {
       onReactionDelete: (id) =>
         setReactions((prev) => prev.filter((r) => r.id !== id)),
       onPresence: setViewerCount,
+      onAttendeeUpdate: (row) => {
+        setAttendees((prev) => {
+          const exists = prev.some((a) => a.id === row.id)
+          if (row.left_at) return prev.filter((a) => a.id !== row.id)
+          return exists
+            ? prev.map((a) => (a.id === row.id ? row : a))
+            : [...prev, row]
+        })
+      },
+      onSpeakRequestInsert: (row) => {
+        setSpeakRequests((prev) =>
+          prev.some((r) => r.id === row.id) ? prev : [...prev, row],
+        )
+      },
+      onSpeakRequestUpdate: (row) => {
+        setSpeakRequests((prev) =>
+          row.status === 'pending'
+            ? prev.map((r) => (r.id === row.id ? row : r))
+            : prev.filter((r) => r.id !== row.id),
+        )
+      },
     })
     return () => {
       void leaveChannel(channel)
     }
   }, [webinar])
+
+  // LiveKit host token (when going live)
+  useEffect(() => {
+    if (!webinar || webinar.status !== 'live' || lkToken) return
+    if (!isLiveKitConfigured()) return
+    setLkFetching(true)
+    getLiveKitToken(webinar.id, null, 'host')
+      .then(({ token, url }) => {
+        setLkToken(token)
+        setLkUrl(url)
+      })
+      .catch(() => {})
+      .finally(() => setLkFetching(false))
+  }, [webinar, lkToken])
 
   const handleDeleteMessage = useCallback(async (messageId: string) => {
     try {
@@ -127,6 +190,64 @@ export function AdminControl() {
       setError(getErrorMessage(err, 'Could not delete message.'))
     }
   }, [])
+
+  const handleMute = useCallback(
+    async (attendeeId: string, muted: boolean) => {
+      try {
+        await muteAttendee(attendeeId, muted)
+        setAttendees((prev) =>
+          prev.map((a) =>
+            a.id === attendeeId ? { ...a, muted_by_admin: muted } : a,
+          ),
+        )
+      } catch (err) {
+        setError(getErrorMessage(err, 'Could not update attendee.'))
+      }
+    },
+    [],
+  )
+
+  const handleKick = useCallback(async (attendeeId: string) => {
+    try {
+      await kickAttendee(attendeeId)
+      setAttendees((prev) => prev.filter((a) => a.id !== attendeeId))
+    } catch (err) {
+      setError(getErrorMessage(err, 'Could not kick attendee.'))
+    }
+  }, [])
+
+  const handleBan = useCallback(async (attendeeId: string) => {
+    try {
+      await setAttendeeRole(attendeeId, 'banned')
+      setAttendees((prev) => prev.filter((a) => a.id !== attendeeId))
+    } catch (err) {
+      setError(getErrorMessage(err, 'Could not ban attendee.'))
+    }
+  }, [])
+
+  const handleApproveSpeaker = useCallback(
+    async (requestId: string) => {
+      try {
+        await resolveSpeakRequest(requestId, 'approved')
+        setSpeakRequests((prev) => prev.filter((r) => r.id !== requestId))
+      } catch (err) {
+        setError(getErrorMessage(err, 'Could not approve request.'))
+      }
+    },
+    [],
+  )
+
+  const handleDenySpeaker = useCallback(
+    async (requestId: string) => {
+      try {
+        await resolveSpeakRequest(requestId, 'denied')
+        setSpeakRequests((prev) => prev.filter((r) => r.id !== requestId))
+      } catch (err) {
+        setError(getErrorMessage(err, 'Could not deny request.'))
+      }
+    },
+    [],
+  )
 
   async function patchWebinar(patch: Partial<WebinarRow>, label: string) {
     if (!webinar) return
@@ -155,6 +276,8 @@ export function AdminControl() {
       },
       'status',
     )
+    // Clear LK token so it's re-fetched with the new status.
+    if (!goingLive) setLkToken(null)
   }
 
   async function copyShareLink() {
@@ -187,6 +310,8 @@ export function AdminControl() {
       </div>
     )
   }
+
+  const lkReady = lkToken && lkUrl && isLiveKitConfigured()
 
   return (
     <div className="container py-8">
@@ -225,11 +350,7 @@ export function AdminControl() {
 
       <div className="mb-6 flex flex-wrap items-center gap-2">
         <Button variant="outline" size="sm" onClick={copyShareLink}>
-          {copied ? (
-            <Check className="h-4 w-4" />
-          ) : (
-            <Copy className="h-4 w-4" />
-          )}
+          {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
           {copied ? 'Copied!' : 'Copy registration link'}
         </Button>
         <Button asChild variant="ghost" size="sm">
@@ -247,52 +368,123 @@ export function AdminControl() {
 
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <div className="space-y-4">
+          {/* Host stage */}
           <Card>
             <CardHeader>
               <CardTitle>Your stage</CardTitle>
               <CardDescription>
-                Camera preview and broadcast controls. Wires up in Phase 4 with
-                LiveKit.
+                {isLiveKitConfigured()
+                  ? webinar.status === 'live'
+                    ? 'You are live — guests can see and hear you.'
+                    : 'Click "Go live" to start broadcasting.'
+                  : 'LiveKit is not configured — add VITE_LIVEKIT_URL to enable video.'}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="aspect-video rounded-xl bg-slate-900 grid place-items-center text-slate-300 text-sm">
-                <div className="text-center">
-                  <Camera className="mx-auto h-10 w-10 text-slate-500" />
-                  <p className="mt-2">Camera preview</p>
+              <div className="aspect-video overflow-hidden rounded-xl bg-slate-900">
+                {lkReady ? (
+                  <LiveKitRoom
+                    serverUrl={lkUrl}
+                    token={lkToken!}
+                    connect
+                    audio
+                    video
+                    style={{ height: '100%', width: '100%' }}
+                  >
+                    <VideoConference />
+                  </LiveKitRoom>
+                ) : (
+                  <div className="flex h-full items-center justify-center text-slate-300">
+                    <div className="text-center">
+                      {lkFetching ? (
+                        <Loader2 className="mx-auto h-8 w-8 animate-spin text-slate-500" />
+                      ) : (
+                        <>
+                          <Camera className="mx-auto h-10 w-10 text-slate-500" />
+                          <p className="mt-2 text-sm">
+                            {isLiveKitConfigured()
+                              ? 'Camera preview starts when you go live.'
+                              : 'Configure VITE_LIVEKIT_URL to enable video.'}
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+              {!lkReady && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Button variant="outline" disabled={!lkReady}>
+                    <Camera className="h-4 w-4" />
+                    Test camera
+                  </Button>
+                  <Button variant="outline" disabled={!lkReady}>
+                    <MonitorUp className="h-4 w-4" />
+                    Share screen
+                  </Button>
                 </div>
-              </div>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Button variant="outline" disabled>
-                  <Camera className="h-4 w-4" />
-                  Test camera
-                </Button>
-                <Button variant="outline" disabled>
-                  <MonitorUp className="h-4 w-4" />
-                  Share screen
-                </Button>
-              </div>
+              )}
             </CardContent>
           </Card>
 
+          {/* Speaker queue */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Hand className="h-4 w-4 text-slate-500" />
                 Speaker queue
+                {speakRequests.length > 0 && (
+                  <span className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-brand-600 text-[10px] font-bold text-white">
+                    {speakRequests.length}
+                  </span>
+                )}
               </CardTitle>
               <CardDescription>
                 Approve guests to share their camera and mic.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-slate-500">
-                No pending requests. The queue appears here when guests raise
-                their hand. (Phase 5.)
-              </p>
+              {speakRequests.length === 0 ? (
+                <p className="text-sm text-slate-500">
+                  No pending requests. Raise-hand requests appear here in
+                  realtime.
+                </p>
+              ) : (
+                <ul className="divide-y divide-slate-100">
+                  {speakRequests.map((req) => {
+                    const att = attendees.find((a) => a.id === req.attendee_id)
+                    return (
+                      <li
+                        key={req.id}
+                        className="flex items-center justify-between gap-3 py-2.5"
+                      >
+                        <span className="text-sm font-medium text-slate-900">
+                          {att?.name ?? 'Guest'}
+                        </span>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handleApproveSpeaker(req.id)}
+                          >
+                            Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleDenySpeaker(req.id)}
+                          >
+                            Deny
+                          </Button>
+                        </div>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
             </CardContent>
           </Card>
 
+          {/* Live chat */}
           <Card className="flex h-[480px] flex-col">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -300,8 +492,7 @@ export function AdminControl() {
                 Live chat
               </CardTitle>
               <CardDescription>
-                Hover any message to delete it. Posting from the host seat
-                arrives in Phase 4.
+                Hover any message to delete it.
               </CardDescription>
             </CardHeader>
             <div className="flex-1 min-h-0 border-t border-slate-100">
@@ -318,6 +509,7 @@ export function AdminControl() {
         </div>
 
         <aside className="space-y-4">
+          {/* Room settings */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -358,7 +550,7 @@ export function AdminControl() {
               <ToggleRow
                 icon={<Lock className="h-4 w-4" />}
                 label="PIN-lock the webinar"
-                hint="Lands in Phase 6."
+                hint="Coming soon."
                 checked={false}
                 disabled
                 onChange={() => {}}
@@ -366,6 +558,42 @@ export function AdminControl() {
             </CardContent>
           </Card>
 
+          {/* Live attendees */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-slate-500" />
+                In the room
+              </CardTitle>
+              <CardDescription>
+                {attendees.length} live
+                {attendees.length !== viewerCount
+                  ? ` · ${viewerCount} presence`
+                  : ''}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {attendees.length === 0 ? (
+                <p className="text-sm text-slate-500">
+                  Nobody's joined yet. Share the registration link.
+                </p>
+              ) : (
+                <ul className="divide-y divide-slate-100 text-sm">
+                  {attendees.map((att) => (
+                    <AttendeeRow
+                      key={att.id}
+                      attendee={att}
+                      onMute={handleMute}
+                      onKick={handleKick}
+                      onBan={handleBan}
+                    />
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Registrations */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -374,15 +602,12 @@ export function AdminControl() {
               </CardTitle>
               <CardDescription>
                 {registrationCount} pre-registered
-                {registrations.length > 0 && registrations.length !== registrationCount
-                  ? ` (showing ${registrations.length})`
-                  : ''}
               </CardDescription>
             </CardHeader>
             <CardContent>
               {registrations.length === 0 ? (
                 <p className="text-sm text-slate-500">
-                  No one has registered yet. Share the registration link above.
+                  No one has registered yet.
                 </p>
               ) : (
                 <ul className="divide-y divide-slate-100 text-sm">
@@ -404,6 +629,73 @@ export function AdminControl() {
   )
 }
 
+// ── Attendee row with moderation controls ─────────────────────────────────────
+function AttendeeRow({
+  attendee,
+  onMute,
+  onKick,
+  onBan,
+}: {
+  attendee: AttendeeRow
+  onMute: (id: string, muted: boolean) => void
+  onKick: (id: string) => void
+  onBan: (id: string) => void
+}) {
+  return (
+    <li className="flex items-center justify-between gap-2 py-2">
+      <div className="min-w-0">
+        <p className="truncate text-sm font-medium text-slate-900">
+          {attendee.name}
+          {attendee.role === 'speaker' && (
+            <span className="ml-1.5 rounded-full bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700">
+              speaker
+            </span>
+          )}
+        </p>
+        {attendee.muted_by_admin && (
+          <p className="text-[11px] text-amber-600">muted</p>
+        )}
+      </div>
+      <div className="flex shrink-0 gap-1">
+        <button
+          type="button"
+          title={attendee.muted_by_admin ? 'Unmute' : 'Mute'}
+          onClick={() => onMute(attendee.id, !attendee.muted_by_admin)}
+          className={cn(
+            'rounded p-1 transition hover:bg-slate-100',
+            attendee.muted_by_admin
+              ? 'text-amber-600'
+              : 'text-slate-400 hover:text-slate-700',
+          )}
+        >
+          {attendee.muted_by_admin ? (
+            <MicOff className="h-3.5 w-3.5" />
+          ) : (
+            <VolumeX className="h-3.5 w-3.5" />
+          )}
+        </button>
+        <button
+          type="button"
+          title="Kick (remove for this session)"
+          onClick={() => onKick(attendee.id)}
+          className="rounded p-1 text-slate-400 transition hover:bg-slate-100 hover:text-red-600"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          title="Ban permanently"
+          onClick={() => onBan(attendee.id)}
+          className="rounded p-1 text-slate-400 transition hover:bg-red-50 hover:text-red-700"
+        >
+          <Lock className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    </li>
+  )
+}
+
+// ── Toggle row helper ─────────────────────────────────────────────────────────
 function ToggleRow({
   icon,
   label,

@@ -122,6 +122,22 @@ export interface ReactionRow {
   created_at: string
 }
 
+export type SpeakRequestStatus = 'pending' | 'approved' | 'denied' | 'revoked'
+
+export interface SpeakRequestRow {
+  id: string
+  webinar_id: string
+  attendee_id: string
+  status: SpeakRequestStatus
+  created_at: string
+  resolved_at: string | null
+}
+
+export interface SpeakRequestInsert {
+  webinar_id: string
+  attendee_id: string
+}
+
 export interface Database {
   public: {
     Tables: {

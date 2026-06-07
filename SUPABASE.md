@@ -158,3 +158,57 @@ If all five steps work, Phase 2 is complete. 🎉
 
 **Realtime not working** (relevant in Phase 3+)
 > Confirm under **Database → Replication** that `webinars`, `messages`, `reactions`, `speak_requests`, `attendees` are in the `supabase_realtime` publication. The migration adds them, but you can re-toggle from the UI if anything looks off.
+
+---
+
+## Phase 4 — LiveKit video setup
+
+Phase 4 adds live video and audio for the host, approved speakers, and all viewers.
+
+### 1. Create a LiveKit Cloud project
+
+1. Sign up at <https://livekit.io/cloud> (free tier is generous — plenty for webinars).
+2. Create a new project; choose the region closest to your users.
+3. Under **Settings → Keys**, generate an API key + secret. Copy both values.
+
+### 2. Add LiveKit env vars
+
+**Local** — add to `.env.local`:
+```
+VITE_LIVEKIT_URL=wss://YOUR-PROJECT.livekit.cloud
+```
+
+**Supabase Edge Function secrets** — under **Project Settings → Edge Functions → Secrets**, add:
+```
+LIVEKIT_API_KEY      = your-key
+LIVEKIT_API_SECRET   = your-secret
+LIVEKIT_URL          = wss://YOUR-PROJECT.livekit.cloud
+```
+
+**Cloudflare Pages** (production) — add `VITE_LIVEKIT_URL` to your Pages project's environment variables under **Settings → Environment variables**.
+
+### 3. Deploy the Edge Function
+
+```
+cd /Users/jamesmarkey/Github/UNISIM/Universal_Apps/Universal_Webinar
+npx supabase login
+npx supabase link --project-ref YOUR_PROJECT_ID
+npx supabase functions deploy livekit-token --no-verify-jwt
+```
+
+The `--no-verify-jwt` flag lets the function verify the caller's JWT itself (which it does — it calls `auth.getUser()`). If you prefer to let the Supabase gateway verify it first, drop the flag.
+
+### 4. Run migration 0004
+
+In **SQL Editor**, run `supabase/migrations/0004_phase4_livekit.sql`. This adds:
+- Guest RLS policies on `speak_requests` (insert + read own)
+- `resolve_speak_request(request_id, status)` RPC — atomically updates request status and attendee role
+
+### 5. Verify end-to-end
+
+1. Admin: click **Go live** → your camera preview should appear in the control room stage.
+2. Guest: open `/w/:slug/live` → see the host's video stream (may take ~2s to appear).
+3. Guest: click **Request to speak** → admin sees the request in the speaker queue.
+4. Admin: click **Approve** → guest's view switches to the `VideoConference` stage where they can publish their camera.
+5. Admin: click a **mute** icon → guest's chat input disappears and a "muted by host" banner appears.
+6. Admin: click the **✕** icon → guest is kicked and redirected to the join page.
