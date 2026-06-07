@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils'
 function ProductLogo() {
   return (
     <span className="inline-flex items-center" aria-hidden="true">
-      <Logo />
+      <Logo showWordmark={false} />
     </span>
   )
 }

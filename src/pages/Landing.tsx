@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom'
 import {
   ArrowRight,
   Github,
@@ -7,7 +6,6 @@ import {
   Sparkles,
   Video,
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { HostNewForm } from '@/components/HostNewForm'
 import { WebinarPreview } from '@/components/WebinarPreview'
 
@@ -42,27 +40,10 @@ export function Landing() {
               </div>
             </div>
 
-            {/* Right column — OSS pill, form, CTAs */}
+            {/* Right column — form, CTAs */}
             <div className="order-2 lg:order-2 text-center lg:text-left">
-              <span className="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-white/80 px-3 py-1 text-xs font-medium text-brand-700 shadow-soft backdrop-blur">
-                <Sparkles className="h-3.5 w-3.5" />
-                Live, warm, in your pocket
-              </span>
               <div className="mt-6">
-                <div className="mb-3 text-center lg:text-left">
-                  <span className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700">
-                    <Sparkles className="h-3.5 w-3.5" />
-                    Open source · no signup yet · OTP at go-live
-                  </span>
-                </div>
                 <HostNewForm />
-              </div>
-              <div className="mt-4 flex flex-col items-center gap-3 sm:flex-row lg:justify-start">
-                <Button asChild variant="outline" size="sm">
-                  <Link to="/w/demo">
-                    Join the demo room <ArrowRight className="h-3.5 w-3.5" />
-                  </Link>
-                </Button>
               </div>
               <a
                 href="https://github.com/universal-simulation-ltd/Universal_Webinar"
