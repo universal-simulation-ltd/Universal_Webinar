@@ -3,12 +3,10 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import path from 'node:path'
 
-// Universal Webinar is served at opensource.unisim.co.uk/webinar in production.
-// `base` (and the PWA scope + manifest icon paths) derive from Vite's `mode`;
-// local dev stays `/`. Manifest icon `src` values are RELATIVE so they resolve
-// against the manifest's own URL (/webinar/manifest.webmanifest) under the base.
-export default defineConfig(({ mode }) => {
-  const BASE_PATH = mode === 'production' ? '/webinar/' : '/'
+// Universal Webinar has its own dedicated Cloudflare Pages project so it is
+// always served at root `/` (both locally and in production).
+export default defineConfig(({ mode: _mode }) => {
+  const BASE_PATH = '/'
   return {
     base: BASE_PATH,
     plugins: [
