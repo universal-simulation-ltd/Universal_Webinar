@@ -1,6 +1,6 @@
 import type { RealtimeChannel, RealtimeChannelSendResponse } from '@supabase/supabase-js'
 import { supabase } from './supabase'
-import type { MessageRow, ReactionRow } from './database.types'
+import type { AttendeeRow, MessageRow, ReactionRow, SpeakRequestRow } from './database.types'
 
 export interface FloatingReactionPayload {
   emoji: string
@@ -14,6 +14,9 @@ export interface WebinarChannelHandlers {
   onReactionDelete?: (id: string) => void
   onFloatingReaction?: (payload: FloatingReactionPayload) => void
   onPresence?: (count: number) => void
+  onAttendeeUpdate?: (row: AttendeeRow) => void
+  onSpeakRequestInsert?: (row: SpeakRequestRow) => void
+  onSpeakRequestUpdate?: (row: SpeakRequestRow) => void
 }
 
 export interface PresenceTrack {
@@ -82,6 +85,46 @@ export function joinWebinarChannel(
     channel.on('broadcast', { event: 'floating' }, ({ payload }) => {
       handlers.onFloatingReaction?.(payload as FloatingReactionPayload)
     })
+  }
+
+  if (handlers.onAttendeeUpdate) {
+    channel.on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'attendees',
+        filter: `webinar_id=eq.${webinarId}`,
+      },
+      (payload) => handlers.onAttendeeUpdate?.(payload.new as AttendeeRow),
+    )
+  }
+
+  if (handlers.onSpeakRequestInsert || handlers.onSpeakRequestUpdate) {
+    if (handlers.onSpeakRequestInsert) {
+      channel.on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'speak_requests',
+          filter: `webinar_id=eq.${webinarId}`,
+        },
+        (payload) => handlers.onSpeakRequestInsert?.(payload.new as SpeakRequestRow),
+      )
+    }
+    if (handlers.onSpeakRequestUpdate) {
+      channel.on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'speak_requests',
+          filter: `webinar_id=eq.${webinarId}`,
+        },
+        (payload) => handlers.onSpeakRequestUpdate?.(payload.new as SpeakRequestRow),
+      )
+    }
   }
 
   if (handlers.onPresence) {

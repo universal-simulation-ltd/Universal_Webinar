@@ -1,10 +1,14 @@
 import { supabase } from './supabase'
 import type {
   AttendeeInsert,
+  AttendeeRole,
   AttendeeRow,
   MessageRow,
   ReactionRow,
   RegistrationRow,
+  SpeakRequestInsert,
+  SpeakRequestRow,
+  SpeakRequestStatus,
   WebinarInsert,
   WebinarRow,
   WebinarUpdate,
@@ -214,5 +218,90 @@ export async function removeReaction(
     .eq('message_id', messageId)
     .eq('attendee_id', attendeeId)
     .eq('emoji', emoji)
+  if (error) throw error
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Attendee moderation (admin only)
+// ──────────────────────────────────────────────────────────────────────────────
+
+export async function listAttendees(webinarId: string): Promise<AttendeeRow[]> {
+  const { data, error } = await supabase
+    .from('attendees')
+    .select('*')
+    .eq('webinar_id', webinarId)
+    .is('left_at', null)
+    .order('joined_at', { ascending: true })
+  if (error) throw error
+  return (data ?? []) as AttendeeRow[]
+}
+
+export async function muteAttendee(
+  attendeeId: string,
+  muted: boolean,
+): Promise<void> {
+  const { error } = await supabase
+    .from('attendees')
+    .update({ muted_by_admin: muted })
+    .eq('id', attendeeId)
+  if (error) throw error
+}
+
+export async function setAttendeeRole(
+  attendeeId: string,
+  role: AttendeeRole,
+): Promise<void> {
+  const { error } = await supabase
+    .from('attendees')
+    .update({ role })
+    .eq('id', attendeeId)
+  if (error) throw error
+}
+
+export async function kickAttendee(attendeeId: string): Promise<void> {
+  const { error } = await supabase
+    .from('attendees')
+    .update({ left_at: new Date().toISOString() })
+    .eq('id', attendeeId)
+  if (error) throw error
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Speak requests
+// ──────────────────────────────────────────────────────────────────────────────
+
+export async function listSpeakRequests(
+  webinarId: string,
+): Promise<SpeakRequestRow[]> {
+  const { data, error } = await supabase
+    .from('speak_requests')
+    .select('*')
+    .eq('webinar_id', webinarId)
+    .eq('status', 'pending')
+    .order('created_at', { ascending: true })
+  if (error) throw error
+  return (data ?? []) as SpeakRequestRow[]
+}
+
+export async function raiseSpeakRequest(
+  insert: SpeakRequestInsert,
+): Promise<SpeakRequestRow> {
+  const { data, error } = await supabase
+    .from('speak_requests')
+    .insert(insert)
+    .select('*')
+    .single()
+  if (error) throw error
+  return data as SpeakRequestRow
+}
+
+export async function resolveSpeakRequest(
+  requestId: string,
+  status: SpeakRequestStatus,
+): Promise<void> {
+  const { error } = await supabase
+    .from('speak_requests')
+    .update({ status, resolved_at: new Date().toISOString() })
+    .eq('id', requestId)
   if (error) throw error
 }

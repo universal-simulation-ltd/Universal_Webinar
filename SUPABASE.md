@@ -158,3 +158,152 @@ If all five steps work, Phase 2 is complete. 🎉
 
 **Realtime not working** (relevant in Phase 3+)
 > Confirm under **Database → Replication** that `webinars`, `messages`, `reactions`, `speak_requests`, `attendees` are in the `supabase_realtime` publication. The migration adds them, but you can re-toggle from the UI if anything looks off.
+
+---
+
+## Phase 4 — LiveKit video setup
+
+Phase 4 adds live video and audio for the host, approved speakers, and all viewers.
+
+**Free tier note:** LiveKit Cloud gives you 25,000 participant-minutes/month for free — no credit card needed. A 1-hour webinar with 50 viewers uses ~3,000 participant-minutes, so you can run roughly 8 webinars like that per month before paying anything (~$0.006/participant-minute after that).
+
+---
+
+### Step 1 — Create a LiveKit Cloud project
+
+1. Go to <https://livekit.io/cloud> and sign up (GitHub login works).
+2. Click **New Project**.
+3. Give it a name (e.g. `universal-webinar`) and pick the region nearest your audience (London for UK).
+4. Click **Create**.
+5. On the project dashboard, note the **WebSocket URL** — it looks like `wss://universal-webinar-abc123.livekit.cloud`. Copy this.
+6. In the left nav, go to **Settings → Keys**.
+7. Click **Generate new key**.
+8. Copy the **API Key** (starts with `API...`) and the **Secret Key** (a long random string). Save both somewhere safe — the secret is only shown once.
+
+---
+
+### Step 2 — Add env vars locally
+
+Open `Universal_Apps/Universal_Webinar/.env.local` (create it if it doesn't exist) and add:
+
+```
+VITE_LIVEKIT_URL=wss://YOUR-PROJECT.livekit.cloud
+```
+
+Replace `wss://YOUR-PROJECT.livekit.cloud` with the WebSocket URL you copied in Step 1.
+
+Your full `.env.local` will look something like:
+
+```
+VITE_SUPABASE_URL=https://abcdefgh.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGci...
+VITE_LIVEKIT_URL=wss://universal-webinar-abc123.livekit.cloud
+```
+
+Restart `npm run dev` after editing the file.
+
+---
+
+### Step 3 — Add LiveKit secrets to Supabase
+
+The Edge Function that mints LiveKit tokens needs the API key and secret server-side (never in the browser).
+
+1. Go to your Supabase dashboard → your Universal Webinar project.
+2. Left nav → **Project Settings → Edge Functions**.
+3. Click **Add new secret** for each of the three values:
+
+| Name | Value |
+|---|---|
+| `LIVEKIT_API_KEY` | the API Key from Step 1 |
+| `LIVEKIT_API_SECRET` | the Secret Key from Step 1 |
+| `LIVEKIT_URL` | `wss://YOUR-PROJECT.livekit.cloud` |
+
+Click **Save** after each one.
+
+---
+
+### Step 4 — Deploy the Edge Function
+
+The `livekit-token` Edge Function is already written at `supabase/functions/livekit-token/index.ts`. You just need to push it to Supabase.
+
+You'll need the Supabase CLI installed (`npm install -g supabase` or `brew install supabase/tap/supabase`). You'll also need your **project ref** — this is the part of your Supabase URL before `.supabase.co` (e.g. if your URL is `https://abcdefgh.supabase.co` then the ref is `abcdefgh`).
+
+Run these commands:
+
+```
+cd /Users/jamesmarkey/Github/UNISIM/Universal_Apps/Universal_Webinar
+npx supabase login
+npx supabase link --project-ref abcdefgh
+npx supabase functions deploy livekit-token --no-verify-jwt
+```
+
+You should see `Deployed Functions livekit-token`. The `--no-verify-jwt` flag is intentional — the function does its own auth check internally by calling `auth.getUser()` with the caller's JWT.
+
+---
+
+### Step 5 — Run the Phase 4 database migration
+
+In your Supabase dashboard → **SQL Editor → New query**, paste the contents of:
+
+```
+supabase/migrations/0004_phase4_livekit.sql
+```
+
+Click **Run**. You should see `Success. No rows returned.`
+
+This migration adds:
+- Guest RLS policies on the `speak_requests` table so attendees can submit and read their own requests.
+- A `resolve_speak_request(request_id, status)` function that the admin calls to atomically approve/deny a request and update the attendee's role in one transaction.
+
+---
+
+### Step 6 — Add env var to Cloudflare Pages (production)
+
+1. Go to your Cloudflare dashboard → Pages → your `universal-webinar` project.
+2. **Settings → Environment variables → Production**.
+3. Add a new variable:
+   - **Variable name:** `VITE_LIVEKIT_URL`
+   - **Value:** `wss://YOUR-PROJECT.livekit.cloud`
+4. Click **Save**.
+5. Trigger a redeploy: **Deployments → your latest deployment → … → Retry deployment**.
+
+---
+
+### Step 7 — Test it end-to-end
+
+Open two browser windows — one for admin, one for a test guest.
+
+**Browser permissions:** the first time you use the camera/mic, your browser will ask for permission. Click **Allow**. If you accidentally clicked Block, reset it in your browser's address bar (click the lock icon → Permissions).
+
+1. **Admin** (`/admin/login`) → create a webinar or open an existing one → open the control room (`/admin/w/:slug`).
+2. **Guest** → open `/w/:slug` in a second browser/incognito → fill in name + email → join.
+3. **Admin** → click **Go live**. Your camera preview should appear in the stage area. If it asks for camera permission, click Allow.
+4. **Guest** → refresh (or the status will update automatically via realtime) → you should see the host's video stream appear.
+5. **Guest** → click **Request to speak**. The button changes to "Request sent — waiting…"
+6. **Admin** → the speaker queue card shows the guest's name with Approve/Deny buttons → click **Approve**.
+7. **Guest** → their view switches to the full `VideoConference` stage. They can now turn on their camera/mic.
+8. **Admin** → click the mute icon (speaker icon) next to any attendee → the guest sees "The host has muted you" and their chat input disappears.
+9. **Admin** → click **✕** next to an attendee → they are kicked and redirected back to the join page.
+10. **Admin** → click **End webinar** → the session closes.
+
+---
+
+### Troubleshooting
+
+**"LiveKit is not configured" shown in the admin stage**
+> `VITE_LIVEKIT_URL` is not set. Add it to `.env.local` and restart `npm run dev`, or add it to Cloudflare Pages env vars and redeploy.
+
+**Camera/mic not working**
+> The browser blocked access. Click the lock icon in the address bar, find Camera and Microphone, set both to Allow, then reload the page.
+
+**"Could not get LiveKit token" in the browser console**
+> The Edge Function isn't deployed or the Supabase secrets aren't set. Re-run Step 3 and Step 4. Check the function logs in Supabase → **Edge Functions → livekit-token → Logs**.
+
+**Video not appearing for guests**
+> The host hasn't published their camera yet (LiveKit only sends a stream once the host has turned on camera in the `VideoConference` UI). Also confirm the guest's browser allows autoplay — some block audio until the user interacts with the page.
+
+**"Only the admin may request a host token" error**
+> The admin user's email doesn't match `accounts@unisim.co.uk` in the Supabase auth table. The Edge Function pins the host role to that email. Check the user's email in Supabase → Authentication → Users.
+
+**Speaker request fails with RLS error**
+> Migration 0004 hasn't been run. Re-run Step 5.
