@@ -1,4 +1,4 @@
-import { Outlet, useLocation } from 'react-router-dom'
+import { Link, Outlet, useLocation } from 'react-router-dom'
 import { UniversalAppsNavBar, UniversalNavBar } from '@unisim/sdk'
 import { HeaderBrandMark } from './HeaderBrandMark'
 import { Logo } from './Logo'
