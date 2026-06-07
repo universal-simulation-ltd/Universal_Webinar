@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { HostNewForm } from '@/components/HostNewForm'
+import { WebinarPreview } from '@/components/WebinarPreview'
 
 export function Landing() {
   return (
@@ -21,9 +22,14 @@ export function Landing() {
         </div>
 
         <div className="container py-16 sm:py-20 lg:py-24">
-          <div className="grid items-start gap-12 lg:grid-cols-2 lg:gap-16">
-            {/* Left column — copy, demo CTA, OSS pill */}
-            <div className="text-center lg:text-left lg:pt-8">
+          <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+            {/* Left column — animated preview (below copy on mobile) */}
+            <div className="order-2 lg:order-1">
+              <WebinarPreview />
+            </div>
+
+            {/* Right column — copy, form, OSS pill */}
+            <div className="order-1 lg:order-2 text-center lg:text-left">
               <span className="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-white/80 px-3 py-1 text-xs font-medium text-brand-700 shadow-soft backdrop-blur">
                 <Sparkles className="h-3.5 w-3.5" />
                 Live, warm, in your pocket
@@ -40,10 +46,19 @@ export function Landing() {
                 time, and invite anyone up on stage with a single tap — no
                 installs, no friction.
               </p>
-              <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row lg:justify-start">
-                <Button asChild variant="outline" size="lg">
+              <div className="mt-8">
+                <div className="mb-3 text-center lg:text-left">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Open source · no signup yet · OTP at go-live
+                  </span>
+                </div>
+                <HostNewForm />
+              </div>
+              <div className="mt-4 flex flex-col items-center gap-3 sm:flex-row lg:justify-start">
+                <Button asChild variant="outline" size="sm">
                   <Link to="/w/demo">
-                    Join the demo room <ArrowRight className="h-4 w-4" />
+                    Join the demo room <ArrowRight className="h-3.5 w-3.5" />
                   </Link>
                 </Button>
               </div>
@@ -51,26 +66,12 @@ export function Landing() {
                 href="https://github.com/universal-simulation-ltd/Universal_Webinar"
                 target="_blank"
                 rel="noreferrer"
-                className="mt-6 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-medium text-slate-700 shadow-soft transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
+                className="mt-4 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-medium text-slate-700 shadow-soft transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
               >
                 <Github className="h-3.5 w-3.5" />
                 Open source — self-host or PRO hosted by UNI SIM
                 <ArrowRight className="h-3 w-3 opacity-60" />
               </a>
-            </div>
-
-            {/* Right column — host-new form to jump straight in */}
-            <div>
-              <div className="mb-4 text-center lg:text-left">
-                <span className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Open source · no signup yet · OTP at go-live
-                </span>
-                <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
-                  Set up your webinar
-                </h2>
-              </div>
-              <HostNewForm />
             </div>
           </div>
         </div>
