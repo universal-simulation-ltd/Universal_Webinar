@@ -1,6 +1,5 @@
-import { Link, Outlet, useLocation } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import { UniversalAppsNavBar, UniversalNavBar } from '@unisim/sdk'
-import { CompanyMenu } from './CompanyMenu'
 import { HeaderBrandMark } from './HeaderBrandMark'
 import { Logo } from './Logo'
 import { cn } from '@/lib/utils'
@@ -24,17 +23,6 @@ export function PublicLayout() {
         productLogo={<ProductLogo />}
         productHomeHref="/"
         suiteSwitcherIconSrc="/unisim-icon.png"
-        fileMenu={
-          <div className="flex items-center gap-1">
-            <CompanyMenu />
-            <Link
-              to="/admin/login"
-              className="rounded-md px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-            >
-              Admin
-            </Link>
-          </div>
-        }
       />
       <main className="flex-1">
         <Outlet />

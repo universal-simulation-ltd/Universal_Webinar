@@ -23,18 +23,9 @@ export function Landing() {
 
         <div className="container py-16 sm:py-20 lg:py-24">
           <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
-            {/* Left column — animated preview (below copy on mobile) */}
-            <div className="order-2 lg:order-1">
-              <WebinarPreview />
-            </div>
-
-            {/* Right column — copy, form, OSS pill */}
-            <div className="order-1 lg:order-2 text-center lg:text-left">
-              <span className="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-white/80 px-3 py-1 text-xs font-medium text-brand-700 shadow-soft backdrop-blur">
-                <Sparkles className="h-3.5 w-3.5" />
-                Live, warm, in your pocket
-              </span>
-              <h1 className="mt-6 text-4xl font-semibold leading-tight tracking-tight text-slate-900 sm:text-5xl xl:text-6xl">
+            {/* Left column — heading, copy, then animated preview */}
+            <div className="order-1 lg:order-1 text-center lg:text-left">
+              <h1 className="text-4xl font-semibold leading-tight tracking-tight text-slate-900 sm:text-5xl xl:text-6xl">
                 Webinars that feel like a{' '}
                 <span className="bg-gradient-to-r from-brand-500 to-brand-700 bg-clip-text text-transparent">
                   real conversation
@@ -47,6 +38,17 @@ export function Landing() {
                 installs, no friction.
               </p>
               <div className="mt-8">
+                <WebinarPreview />
+              </div>
+            </div>
+
+            {/* Right column — OSS pill, form, CTAs */}
+            <div className="order-2 lg:order-2 text-center lg:text-left">
+              <span className="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-white/80 px-3 py-1 text-xs font-medium text-brand-700 shadow-soft backdrop-blur">
+                <Sparkles className="h-3.5 w-3.5" />
+                Live, warm, in your pocket
+              </span>
+              <div className="mt-6">
                 <div className="mb-3 text-center lg:text-left">
                   <span className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700">
                     <Sparkles className="h-3.5 w-3.5" />
