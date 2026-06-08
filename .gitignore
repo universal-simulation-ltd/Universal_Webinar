@@ -35,5 +35,9 @@ dev-dist
 .cache
 .tmp
 
+# Supabase CLI local state
+supabase/.temp
+supabase/.branches
+
 # Claude / local
 .claude/
