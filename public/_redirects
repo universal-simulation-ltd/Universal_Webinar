@@ -17,6 +17,7 @@
 # Static files (PWA icons live in public/icons/, plus top-level public files).
 /webinar/icons/*              /icons/:splat         200
 /webinar/favicon.svg          /favicon.svg          200
+/webinar/og-image.png         /og-image.png         200
 /webinar/apple-touch-icon.png /apple-touch-icon.png 200
 /webinar/unisim-icon.png      /unisim-icon.png      200
 /webinar/unisim-mark.png      /unisim-mark.png      200

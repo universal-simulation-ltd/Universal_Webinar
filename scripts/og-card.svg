@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0f172a"/>
+      <stop offset="1" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fe8c01"/>
+      <stop offset="1" stop-color="#fbbf24"/>
+    </linearGradient>
+    <linearGradient id="cam" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff7c33"/>
+      <stop offset="0.55" stop-color="#e05504"/>
+      <stop offset="1" stop-color="#b53d04"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="1050" cy="120" r="320" fill="#fe8c01" opacity="0.08"/>
+  <circle cx="120" cy="560" r="260" fill="#fe8c01" opacity="0.06"/>
+
+  <text x="80" y="150" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="26" font-weight="600" letter-spacing="3" fill="#fe8c01">UNIVERSAL APPS · UNI·SIM</text>
+  <text x="78" y="252" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="74" font-weight="800" fill="#f8fafc">Universal Webinar</text>
+  <text x="80" y="330" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="36" font-weight="600" fill="#cbd5e1">Host live webinars right in</text>
+  <text x="80" y="380" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="36" font-weight="600" fill="#cbd5e1">the browser — no installs.</text>
+
+  <g font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="24" font-weight="600">
+    <rect x="80" y="438" width="150" height="52" rx="26" fill="url(#accent)"/>
+    <text x="155" y="472" text-anchor="middle" fill="#0f172a" font-weight="800">100% Free</text>
+    <rect x="246" y="438" width="186" height="52" rx="26" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+    <text x="339" y="472" text-anchor="middle" fill="#e2e8f0">Screen share</text>
+    <rect x="448" y="438" width="158" height="52" rx="26" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+    <text x="527" y="472" text-anchor="middle" fill="#e2e8f0">In-browser</text>
+  </g>
+
+  <text x="80" y="556" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="26" font-weight="600" fill="#94a3b8">opensource.unisim.co.uk/webinar</text>
+
+  <!-- Right: product mark (Webinar camera favicon, scaled 64 -> 344) -->
+  <g transform="translate(792, 143)">
+    <g transform="scale(5.375)">
+      <rect width="64" height="64" rx="14" fill="url(#cam)"/>
+      <path d="M14 22.5C14 19.46 16.46 17 19.5 17h17C39.54 17 42 19.46 42 22.5v19C42 44.54 39.54 47 36.5 47h-17C16.46 47 14 44.54 14 41.5v-19Z" fill="white" fill-opacity="0.95"/>
+      <path d="M52 24.5a1.5 1.5 0 0 0-2.32-1.25L44 26.9v10.2l5.68 3.65A1.5 1.5 0 0 0 52 39.5V24.5Z" fill="white" fill-opacity="0.95"/>
+    </g>
+  </g>
+</svg>
