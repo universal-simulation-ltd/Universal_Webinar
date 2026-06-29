@@ -18,15 +18,37 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { useUniversal, useSubscription, useUser } from '@unisim/sdk'
 import { cn } from '@/lib/utils'
-import { createWebinar } from '@/lib/db'
+import { createWebinar, deleteWebinar } from '@/lib/db'
 import { rememberManageToken, uploadLogo } from '@/lib/host'
 import { getErrorMessage } from '@/lib/errors'
 import { slugifyTitle } from '@/lib/slug'
 
+// Turn the backend RPC's coded errors into host-friendly copy.
+function friendlyTokenError(msg: string): string {
+  if (msg.includes('token_in_use:')) {
+    const what = msg.split('token_in_use:')[1]?.trim() || 'another app'
+    return `Your free token is currently in use (${what}). Free it up or add another token to host a webinar.`
+  }
+  if (msg.includes('no_credits')) {
+    return "You've used your free webinar token. Add a token to host another webinar."
+  }
+  return msg
+}
+
 export function HostNewForm() {
   const navigate = useNavigate()
   const fileInput = useRef<HTMLInputElement | null>(null)
+
+  // Universal ID session (separate from the webinar's email-OTP host flow).
+  // A signed-in free-tier account spends its one complimentary token to host —
+  // a non-refundable spend, since hosting a live webinar costs us money.
+  const { supabase: suiteClient } = useUniversal()
+  const { user: suiteUser } = useUser()
+  const { subscription } = useSubscription()
+  const freeTier = !!suiteUser && subscription?.tier === 'free'
+  const tokenCount = subscription?.credits ?? 0
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -85,6 +107,25 @@ export function HostNewForm() {
         company_name: companyName.trim() || null,
         logo_url: logoUrl,
       })
+
+      // Free-tier Universal ID host: spend the one free token (non-refundable).
+      // On token failure, roll the just-created webinar back so we never leave a
+      // webinar the host can't actually run. Token errors block; anything else
+      // (e.g. no org) is non-fatal — the webinar stands, no token taken.
+      if (freeTier) {
+        const { error: tokErr } = await suiteClient.rpc('acquire_token_hold', {
+          p_app: 'webinar',
+          p_resource_id: created.slug,
+          p_label: `Webinar: ${title.trim() || created.slug}`,
+          p_refundable: false,
+        })
+        if (tokErr && (tokErr.message.includes('token_in_use:') || tokErr.message.includes('no_credits'))) {
+          await deleteWebinar(created.id)
+          setError(friendlyTokenError(tokErr.message))
+          return
+        }
+      }
+
       rememberManageToken(created.slug, created.manage_token)
       navigate(`/host/w/${created.slug}?token=${created.manage_token}`, {
         replace: true,
@@ -295,6 +336,16 @@ export function HostNewForm() {
               </div>
             )}
           </div>
+
+          {freeTier && (
+            <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
+              <p className="font-medium">Hosting uses your one free token.</p>
+              <p className="mt-0.5 text-xs text-amber-700">
+                Conducting this webinar spends your free token, and it <strong>won't be returned</strong> — live
+                hosting costs us money to run. You have {tokenCount} token{tokenCount === 1 ? '' : 's'}.
+              </p>
+            </div>
+          )}
 
           {error && (
             <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
