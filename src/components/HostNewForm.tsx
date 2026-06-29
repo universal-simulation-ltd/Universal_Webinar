@@ -42,13 +42,16 @@ export function HostNewForm() {
   const fileInput = useRef<HTMLInputElement | null>(null)
 
   // Universal ID session (separate from the webinar's email-OTP host flow).
-  // A signed-in free-tier account spends its one complimentary token to host —
-  // a non-refundable spend, since hosting a live webinar costs us money.
+  // Hosting now requires a (free) Universal ID account — that's where the one
+  // complimentary webinar token lives. A signed-in free-tier account spends its
+  // token to host (non-refundable, since live hosting costs us money).
   const { supabase: suiteClient } = useUniversal()
-  const { user: suiteUser } = useUser()
+  const { user: suiteUser, loading: suiteLoading } = useUser()
   const { subscription } = useSubscription()
   const freeTier = !!suiteUser && subscription?.tier === 'free'
   const tokenCount = subscription?.credits ?? 0
+  const needsAccount = !suiteLoading && !suiteUser
+  const accountUrl = `https://app.unisim.co.uk/login?redirect=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}`
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -87,6 +90,10 @@ export function HostNewForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (needsAccount) {
+      setError('Create your free UNI·SIM account to host — it only takes a minute.')
+      return
+    }
     setError(null)
     setSubmitting(true)
     try {
@@ -146,6 +153,22 @@ export function HostNewForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {needsAccount && (
+          <div className="mb-4 rounded-lg border border-brand-200 bg-brand-50 p-4">
+            <p className="text-sm font-semibold text-slate-900">Create your free account to host</p>
+            <p className="mt-1 text-xs text-slate-600">
+              Hosting a webinar needs a free UNI·SIM account — it takes about a minute and includes your
+              first webinar free. Already have one? Just sign in.
+            </p>
+            <a
+              href={accountUrl}
+              className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
+            >
+              Create / sign in with Universal ID
+              <ArrowRight className="h-4 w-4" />
+            </a>
+          </div>
+        )}
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div className="space-y-1.5">
             <Label htmlFor="title">Title</Label>
@@ -197,7 +220,7 @@ export function HostNewForm() {
             <button
               type="button"
               onClick={() => setOptionalOpen((v) => !v)}
-              aria-expanded={optionalOpen}
+              aria-expanded={optionalOpen ? 'true' : 'false'}
               aria-controls="optional-details"
               className="flex w-full items-center justify-between rounded-md py-1 text-left transition-colors hover:text-slate-900"
             >
@@ -353,12 +376,14 @@ export function HostNewForm() {
             </p>
           )}
 
-          <Button type="submit" size="lg" className="w-full" disabled={submitting}>
+          <Button type="submit" size="lg" className="w-full" disabled={submitting || needsAccount}>
             {submitting ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Creating…
               </>
+            ) : needsAccount ? (
+              'Create a free account to host'
             ) : (
               <>
                 Create webinar
