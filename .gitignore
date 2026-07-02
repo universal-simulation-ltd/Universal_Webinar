@@ -41,3 +41,6 @@ supabase/.branches
 
 # Claude / local
 .claude/
+
+# Internal project notes — not published (matches the other Universal Apps repos)
+CLAUDE.md
