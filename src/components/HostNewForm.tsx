@@ -25,14 +25,16 @@ import { rememberManageToken, uploadLogo } from '@/lib/host'
 import { getErrorMessage } from '@/lib/errors'
 import { slugifyTitle } from '@/lib/slug'
 
-// Turn the backend RPC's coded errors into host-friendly copy.
+// Turn the backend RPC's coded errors into host-friendly copy. Tokens are
+// per-app now (one free Webinar token per org, migration 0045) — token_in_use
+// only ever names this app's own live webinar, never another app.
 function friendlyTokenError(msg: string): string {
   if (msg.includes('token_in_use:')) {
-    const what = msg.split('token_in_use:')[1]?.trim() || 'another app'
-    return `Your free token is currently in use (${what}). Free it up or add another token to host a webinar.`
+    const what = msg.split('token_in_use:')[1]?.trim() || 'a live webinar'
+    return `Your free Webinar token is in use (${what}). Add a token to host another webinar.`
   }
   if (msg.includes('no_credits')) {
-    return "You've used your free webinar token. Add a token to host another webinar."
+    return "You've used your free Webinar token. Add a token to host another webinar."
   }
   return msg
 }
@@ -362,10 +364,11 @@ export function HostNewForm() {
 
           {freeTier && (
             <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
-              <p className="font-medium">Hosting uses your one free token.</p>
+              <p className="font-medium">Hosting uses your free Webinar token.</p>
               <p className="mt-0.5 text-xs text-amber-700">
-                Conducting this webinar spends your free token, and it <strong>won't be returned</strong> — live
-                hosting costs us money to run. You have {tokenCount} token{tokenCount === 1 ? '' : 's'}.
+                Every Universal app comes with one free token; conducting a webinar spends this app&apos;s,
+                and it <strong>won't be returned</strong> — live hosting costs us money to run.
+                You have {tokenCount} purchased token{tokenCount === 1 ? '' : 's'}.
               </p>
             </div>
           )}
