@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { UniversalProvider } from '@unisim/sdk'
 import App from './App'
+import UsageTracker from './UsageTracker'
 import { AuthProvider } from './lib/auth'
 import './index.css'
 
@@ -23,6 +24,7 @@ const universalConfig = {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <UniversalProvider config={universalConfig}>
+      <UsageTracker />
       <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '') || '/'}>
         <AuthProvider>
           <App />
