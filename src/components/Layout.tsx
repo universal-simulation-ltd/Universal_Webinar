@@ -18,11 +18,16 @@ function ProductLogo() {
 export function PublicLayout() {
   return (
     <div className="flex min-h-full flex-col bg-slate-50">
+      {/* Every public page and the footer lay out inside Tailwind's `.container`,
+          so handing the same class to the navbar lines the suite switcher up
+          with the page content (and the changelog cluster with its right edge)
+          at every breakpoint. */}
       <UniversalAppsNavBar
         product="webinar"
         productLogo={<ProductLogo />}
         productHomeHref="/"
         suiteSwitcherIconSrc="/unisim-icon.png"
+        contentClassName="container"
       />
       <main className="flex-1">
         <Outlet />
