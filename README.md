@@ -14,7 +14,7 @@ Built as an installable PWA. One admin hosts a single live webinar. Guests join 
 - **Routing:** React Router v6
 - **Realtime + DB + Auth + Storage:** Supabase *(wires up in Phase 2)*
 - **Video/audio:** LiveKit Cloud *(wires up in Phase 4)*
-- **Hosting:** GitHub Pages (deploys to <https://webinar.unisim.co.uk>)
+- **Hosting:** Cloudflare Pages, served at <https://opensource.unisim.co.uk/webinar> via the `opensource-portal` Worker
 
 ## Current status: Phase 2 — Supabase, admin auth, webinar CRUD, pre-registration
 
@@ -55,15 +55,9 @@ npm run preview     # serve the production build locally
 
 ## Deploy
 
-Pushes to `main` auto-deploy to GitHub Pages via [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml). The hosted PRO instance lives at <https://webinar.unisim.co.uk> (custom domain pinned via [`public/CNAME`](public/CNAME)).
+The hosted instance lives at <https://opensource.unisim.co.uk/webinar> — a Cloudflare Pages project served by path via the `opensource-portal` Worker, which proxies `/webinar/*` to the Pages deployment. Production builds use `base: '/webinar/'` (see [`vite.config.ts`](vite.config.ts)); local dev stays at `/`.
 
-To wire up GitHub Pages on a fork:
-
-1. *Settings → Pages → Build and deployment → Source* = **GitHub Actions**.
-2. *Settings → Secrets and variables → Actions* — add `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_PLATFORM_SUPABASE_URL`, `VITE_PLATFORM_SUPABASE_ANON_KEY`.
-3. Push to `main`. The workflow builds, copies `index.html` → `404.html` for SPA routing, and publishes.
-
-Static `dist/` output is portable — it can also be hosted on any static host (Vercel, Netlify, Cloudflare Pages, the user's shared hosting via FTP, etc.).
+To self-host a fork, set `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_PLATFORM_SUPABASE_URL`, `VITE_PLATFORM_SUPABASE_ANON_KEY`, then run `npm run build`. The static `dist/` output is portable — host it on any static host (Cloudflare Pages, Vercel, Netlify, the user's shared hosting via FTP, etc.). If you serve it from the domain root rather than under `/webinar/`, build with the base path overridden accordingly.
 
 ## Roadmap
 
@@ -114,7 +108,6 @@ supabase/
   migrations/
     0001_init.sql       Tables, RLS, realtime publication
 public/
-  CNAME                 GitHub Pages custom domain (webinar.unisim.co.uk)
   favicon.svg
   apple-touch-icon.png
   icons/                PWA icons (192, 512, maskable)
