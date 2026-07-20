@@ -84,6 +84,21 @@ export async function listRegistrations(
   return (data ?? []) as RegistrationRow[]
 }
 
+// Unverified hosts (token-only, no auth session) read their registrations
+// through a security-definer RPC — the `manage_token` is the authorisation, the
+// same pattern as `updateWebinarByToken`. Returns the full list newest-first.
+export async function listRegistrationsByToken(
+  slug: string,
+  token: string,
+): Promise<RegistrationRow[]> {
+  const { data, error } = await supabase.rpc('list_registrations_by_token', {
+    p_slug: slug,
+    p_token: token,
+  })
+  if (error) throw error
+  return (data ?? []) as RegistrationRow[]
+}
+
 // Anonymous guests have INSERT permission on registrations but no SELECT, so
 // we can't do INSERT ... RETURNING. Plain insert + treat "already registered"
 // (unique_violation, Postgres SQLSTATE 23505) as a successful no-op.
