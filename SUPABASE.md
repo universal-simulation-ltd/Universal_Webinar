@@ -26,6 +26,9 @@ In **SQL Editor → New query**, paste each migration file in order and click **
 1. [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql) — creates the tables, base RLS, and the Realtime publication.
 2. [`supabase/migrations/0002_phase3_chat.sql`](supabase/migrations/0002_phase3_chat.sql) — adds the guest-chat RLS policies, identity helper functions, and the `author_name` trigger.
 3. [`supabase/migrations/0003_multihost.sql`](supabase/migrations/0003_multihost.sql) — pivots to multi-host SaaS: adds host-email / company / logo fields to webinars, the `manage_token`-based RPC for unverified hosts, the OTP-verification RPC, and the `logos` storage bucket. Pins `is_admin()` to `accounts@unisim.co.uk` so OTP-verified hosts don't inherit god-mode.
+4. [`supabase/migrations/0005_registration_list.sql`](supabase/migrations/0005_registration_list.sql) — the read counterpart of the `manage_token` write RPC: `list_registrations_by_token(slug, token)` lets an unverified host see their own registrations on `/host/w/:slug`. Also tightens the authenticated registration policies so an OTP-verified host only sees / manages registrations for their own webinars (the old policy let any host read every host's registrant emails).
+
+(`0004_phase4_livekit.sql` is the Phase 4 video migration — see the LiveKit section below; run it when you reach Phase 4.)
 
 All migrations are idempotent and safe to re-run.
 

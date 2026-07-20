@@ -8,6 +8,7 @@ import {
   Camera,
   Check,
   Copy,
+  Download,
   Eye,
   EyeOff,
   Hand,
@@ -47,6 +48,11 @@ import {
   softDeleteMessage,
   updateWebinar,
 } from '@/lib/db'
+import {
+  buildRegistrationsCsv,
+  downloadCsv,
+  registrationsCsvFilename,
+} from '@/lib/csv'
 import { getErrorMessage } from '@/lib/errors'
 import { getLiveKitToken, isLiveKitConfigured } from '@/lib/livekit'
 import {
@@ -610,16 +616,44 @@ export function AdminControl() {
                   No one has registered yet.
                 </p>
               ) : (
-                <ul className="divide-y divide-slate-100 text-sm">
-                  {registrations.slice(0, 10).map((r) => (
-                    <li key={r.id} className="flex flex-col py-2">
-                      <span className="font-medium text-slate-900">
-                        {r.name}
-                      </span>
-                      <span className="text-xs text-slate-500">{r.email}</span>
-                    </li>
-                  ))}
-                </ul>
+                <>
+                  <ul className="max-h-80 divide-y divide-slate-100 overflow-y-auto text-sm">
+                    {registrations.map((r) => (
+                      <li key={r.id} className="flex flex-col py-2">
+                        <span className="font-medium text-slate-900">
+                          {r.name}
+                        </span>
+                        <span className="text-xs text-slate-500">
+                          {r.email}
+                        </span>
+                        <span className="text-xs text-slate-400">
+                          {new Date(r.registered_at).toLocaleString(undefined, {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit',
+                          })}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  {webinar && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-3 w-full"
+                      onClick={() =>
+                        downloadCsv(
+                          buildRegistrationsCsv(registrations),
+                          registrationsCsvFilename(webinar),
+                        )
+                      }
+                    >
+                      <Download className="h-4 w-4" />
+                      Export CSV
+                    </Button>
+                  )}
+                </>
               )}
             </CardContent>
           </Card>

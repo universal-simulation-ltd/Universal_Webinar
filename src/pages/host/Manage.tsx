@@ -5,6 +5,7 @@ import {
   Camera,
   Check,
   Copy,
+  Download,
   Eye,
   EyeOff,
   Hand,
@@ -12,6 +13,7 @@ import {
   Lock,
   MonitorUp,
   Power,
+  RefreshCw,
   Settings2,
   ShieldCheck,
   Users,
@@ -26,16 +28,17 @@ import {
 } from '@/components/ui/card'
 import { OtpVerifyDialog } from '@/components/OtpVerifyDialog'
 import { cn } from '@/lib/utils'
-import {
-  countRegistrations,
-  getWebinarBySlug,
-  listRegistrations,
-} from '@/lib/db'
+import { getWebinarBySlug, listRegistrationsByToken } from '@/lib/db'
 import {
   rememberManageToken,
   recallManageToken,
   updateWebinarByToken,
 } from '@/lib/host'
+import {
+  buildRegistrationsCsv,
+  downloadCsv,
+  registrationsCsvFilename,
+} from '@/lib/csv'
 import { getErrorMessage } from '@/lib/errors'
 import type { RegistrationRow, WebinarRow, WebinarUpdate } from '@/lib/database.types'
 
@@ -51,7 +54,7 @@ export function HostManage() {
   const [token, setToken] = useState<string | null>(initialToken)
   const [webinar, setWebinar] = useState<WebinarRow | null>(null)
   const [registrations, setRegistrations] = useState<RegistrationRow[]>([])
-  const [registrationCount, setRegistrationCount] = useState(0)
+  const [refreshingRegs, setRefreshingRegs] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [tokenInvalid, setTokenInvalid] = useState(false)
@@ -85,12 +88,8 @@ export function HostManage() {
           setParams(next, { replace: true })
         }
         setWebinar(w)
-        const [count, regs] = await Promise.all([
-          countRegistrations(w.id),
-          listRegistrations(w.id),
-        ])
+        const regs = await listRegistrationsByToken(w.slug, token)
         if (!active) return
-        setRegistrationCount(count)
         setRegistrations(regs)
       } catch (err) {
         if (active) setError(getErrorMessage(err, 'Load failed.'))
@@ -114,6 +113,26 @@ export function HostManage() {
     } finally {
       setSaving(null)
     }
+  }
+
+  async function reloadRegistrations() {
+    if (!webinar || !token) return
+    setRefreshingRegs(true)
+    try {
+      setRegistrations(await listRegistrationsByToken(webinar.slug, token))
+    } catch (err) {
+      setError(getErrorMessage(err, 'Could not refresh registrations.'))
+    } finally {
+      setRefreshingRegs(false)
+    }
+  }
+
+  function exportRegistrationsCsv() {
+    if (!webinar || registrations.length === 0) return
+    downloadCsv(
+      buildRegistrationsCsv(registrations),
+      registrationsCsvFilename(webinar),
+    )
   }
 
   function attemptGoLive() {
@@ -402,17 +421,30 @@ export function HostManage() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-slate-500" />
-                Registrations
-              </CardTitle>
-              <CardDescription>
-                {registrationCount} pre-registered
-                {registrations.length > 0 &&
-                registrations.length !== registrationCount
-                  ? ` (showing ${registrations.length})`
-                  : ''}
-              </CardDescription>
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-slate-500" />
+                    Registrations
+                  </CardTitle>
+                  <CardDescription>
+                    {registrations.length}{' '}
+                    {registrations.length === 1 ? 'person' : 'people'}{' '}
+                    pre-registered
+                  </CardDescription>
+                </div>
+                <button
+                  type="button"
+                  onClick={reloadRegistrations}
+                  disabled={refreshingRegs}
+                  title="Refresh"
+                  className="mt-0.5 rounded-md p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 disabled:opacity-50"
+                >
+                  <RefreshCw
+                    className={cn('h-4 w-4', refreshingRegs && 'animate-spin')}
+                  />
+                </button>
+              </div>
             </CardHeader>
             <CardContent>
               {registrations.length === 0 ? (
@@ -421,16 +453,37 @@ export function HostManage() {
                   above.
                 </p>
               ) : (
-                <ul className="divide-y divide-slate-100 text-sm">
-                  {registrations.slice(0, 10).map((r) => (
-                    <li key={r.id} className="flex flex-col py-2">
-                      <span className="font-medium text-slate-900">
-                        {r.name}
-                      </span>
-                      <span className="text-xs text-slate-500">{r.email}</span>
-                    </li>
-                  ))}
-                </ul>
+                <>
+                  <ul className="max-h-80 divide-y divide-slate-100 overflow-y-auto text-sm">
+                    {registrations.map((r) => (
+                      <li key={r.id} className="flex flex-col py-2">
+                        <span className="font-medium text-slate-900">
+                          {r.name}
+                        </span>
+                        <span className="text-xs text-slate-500">
+                          {r.email}
+                        </span>
+                        <span className="text-xs text-slate-400">
+                          {new Date(r.registered_at).toLocaleString(undefined, {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit',
+                          })}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3 w-full"
+                    onClick={exportRegistrationsCsv}
+                  >
+                    <Download className="h-4 w-4" />
+                    Export CSV
+                  </Button>
+                </>
               )}
             </CardContent>
           </Card>
