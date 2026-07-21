@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ArrowRight,
@@ -21,7 +21,7 @@ import {
 import { useUniversal, useSubscription, useUser } from '@unisim/sdk'
 import { cn } from '@/lib/utils'
 import { createWebinar, deleteWebinar } from '@/lib/db'
-import { rememberManageToken, uploadLogo } from '@/lib/host'
+import { rememberManageToken, uploadLogo, sendHostOtp, verifyHostOtp } from '@/lib/host'
 import { getErrorMessage } from '@/lib/errors'
 import { slugifyTitle } from '@/lib/slug'
 
@@ -53,7 +53,6 @@ export function HostNewForm() {
   const freeTier = !!suiteUser && subscription?.tier === 'free'
   const tokenCount = subscription?.credits ?? 0
   const needsAccount = !suiteLoading && !suiteUser
-  const accountUrl = `https://app.unisim.co.uk/login?redirect=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}`
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -68,6 +67,15 @@ export function HostNewForm() {
   const [optionalOpen, setOptionalOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // When not signed in, clicking Go live sends a verification code (which creates
+  // the account); the host types it here, then the webinar is created.
+  const [otpStep, setOtpStep] = useState(false)
+  const [otpCode, setOtpCode] = useState('')
+  const [verifying, setVerifying] = useState(false)
+
+  // "Go live" now, or "Schedule webinar" when a future date/time is set.
+  const isScheduled = !!scheduledAt && new Date(scheduledAt).getTime() > Date.now()
+  const goLabel = isScheduled ? 'Schedule webinar' : 'Go live'
 
   function pickLogo(file: File | null) {
     if (!file) {
@@ -90,12 +98,10 @@ export function HostNewForm() {
     reader.readAsDataURL(file)
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (needsAccount) {
-      setError('Create your free UNI·SIM account to host — it only takes a minute.')
-      return
-    }
+  // Create the webinar, spend the free token where applicable, and jump in.
+  // Runs directly when already signed in, or right after OTP verification (below)
+  // creates the account and signs the host in.
+  const createAndGo = useCallback(async () => {
     setError(null)
     setSubmitting(true)
     try {
@@ -120,7 +126,8 @@ export function HostNewForm() {
       // Free-tier Universal ID host: spend the one free token (non-refundable).
       // On token failure, roll the just-created webinar back so we never leave a
       // webinar the host can't actually run. Token errors block; anything else
-      // (e.g. no org) is non-fatal — the webinar stands, no token taken.
+      // (e.g. no org, or a brand-new account whose subscription hasn't loaded) is
+      // non-fatal — the webinar stands, no token taken.
       if (freeTier) {
         const { error: tokErr } = await suiteClient.rpc('acquire_token_hold', {
           p_app: 'webinar',
@@ -144,6 +151,48 @@ export function HostNewForm() {
     } finally {
       setSubmitting(false)
     }
+  }, [logoFile, title, description, scheduledAt, showGuestCount, allowSpeakRequests, hostName, hostEmail, companyName, freeTier, suiteClient, navigate])
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setError(null)
+    // Already signed in with a Universal ID → straight to creating the webinar.
+    if (!needsAccount) {
+      await createAndGo()
+      return
+    }
+    // Otherwise, sign them up on the spot: send a verification code to their email
+    // (creating their Universal ID account), which they enter below.
+    if (!hostEmail.trim()) {
+      setError('Enter your email so we can send your verification code.')
+      return
+    }
+    setSubmitting(true)
+    try {
+      await sendHostOtp(hostEmail.trim().toLowerCase())
+      setOtpStep(true)
+    } catch (err) {
+      setError(getErrorMessage(err))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function handleVerify() {
+    if (!otpCode.trim()) return
+    setError(null)
+    setVerifying(true)
+    try {
+      await verifyHostOtp(hostEmail.trim().toLowerCase(), otpCode.trim())
+      // Signed in now (the account was created) — go create the webinar.
+      setOtpStep(false)
+      setOtpCode('')
+      await createAndGo()
+    } catch (err) {
+      setError(getErrorMessage(err))
+    } finally {
+      setVerifying(false)
+    }
   }
 
   return (
@@ -155,22 +204,6 @@ export function HostNewForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {needsAccount && (
-          <div className="mb-4 rounded-lg border border-brand-200 bg-brand-50 p-4">
-            <p className="text-sm font-semibold text-slate-900">Create your free account to host</p>
-            <p className="mt-1 text-xs text-slate-600">
-              Hosting a webinar needs a free UNI·SIM account — it takes about a minute and includes your
-              first webinar free. Already have one? Just sign in.
-            </p>
-            <a
-              href={accountUrl}
-              className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
-            >
-              Create / sign in with Universal ID
-              <ArrowRight className="h-4 w-4" />
-            </a>
-          </div>
-        )}
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div className="space-y-1.5">
             <Label htmlFor="title">Title</Label>
@@ -379,21 +412,46 @@ export function HostNewForm() {
             </p>
           )}
 
-          <Button type="submit" size="lg" className="w-full" disabled={submitting || needsAccount}>
-            {submitting ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Creating…
-              </>
-            ) : needsAccount ? (
-              'Create a free account to host'
-            ) : (
-              <>
-                Create webinar
-                <ArrowRight className="h-4 w-4" />
-              </>
-            )}
-          </Button>
+          {otpStep ? (
+            <div className="space-y-2 rounded-lg border border-brand-200 bg-brand-50 p-4">
+              <p className="text-sm font-semibold text-slate-900">Check your email</p>
+              <p className="text-xs text-slate-600">
+                We sent a 6-digit code to <strong>{hostEmail.trim().toLowerCase()}</strong>. Enter it to create your
+                account and {isScheduled ? 'schedule' : 'start'} your webinar.
+              </p>
+              <div className="flex gap-2 pt-1">
+                <Input
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  placeholder="123456"
+                  aria-label="6-digit verification code"
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void handleVerify() } }}
+                />
+                <Button type="button" onClick={() => void handleVerify()} disabled={verifying || otpCode.trim().length < 6}>
+                  {verifying ? <><Loader2 className="h-4 w-4 animate-spin" /> Verifying…</> : <>Verify &amp; {isScheduled ? 'schedule' : 'go live'}</>}
+                </Button>
+              </div>
+              <button type="button" onClick={() => { setOtpStep(false); setError(null) }} className="text-xs text-slate-500 underline-offset-2 hover:underline">
+                Use a different email
+              </button>
+            </div>
+          ) : (
+            <Button type="submit" size="lg" className="w-full" disabled={submitting}>
+              {submitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {needsAccount ? 'Sending code…' : 'Creating…'}
+                </>
+              ) : (
+                <>
+                  {goLabel}
+                  <ArrowRight className="h-4 w-4" />
+                </>
+              )}
+            </Button>
+          )}
         </form>
       </CardContent>
     </Card>
