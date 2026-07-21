@@ -18,7 +18,12 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { useUniversal, useSubscription, useUser } from '@unisim/sdk'
+import {
+  useUniversal,
+  useSubscription,
+  useUser,
+  useCurrentUserIdentity,
+} from '@unisim/sdk'
 import { cn } from '@/lib/utils'
 import { createWebinar, deleteWebinar } from '@/lib/db'
 import { rememberManageToken, uploadLogo, sendHostOtp, verifyHostOtp } from '@/lib/host'
@@ -49,10 +54,17 @@ export function HostNewForm() {
   // token to host (non-refundable, since live hosting costs us money).
   const { supabase: suiteClient } = useUniversal()
   const { user: suiteUser, loading: suiteLoading } = useUser()
+  const identity = useCurrentUserIdentity()
   const { subscription } = useSubscription()
   const freeTier = !!suiteUser && subscription?.tier === 'free'
   const tokenCount = subscription?.credits ?? 0
   const needsAccount = !suiteLoading && !suiteUser
+  // Signed in with a Universal ID → we already hold their (verified) email and
+  // name, so we don't ask for them again. A signed-in ID always has a confirmed
+  // email (the OTP/verification step is what mints the account), so there's no
+  // "signed in but unverified" state to pre-fill an editable field for.
+  const signedInEmail = identity.email ?? suiteUser?.email ?? ''
+  const signedInName = identity.displayName ?? ''
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -109,6 +121,10 @@ export function HostNewForm() {
       if (logoFile) {
         logoUrl = await uploadLogo(logoFile)
       }
+      // When signed in the "About you" fields are hidden, so take the host's
+      // details straight from their Universal ID rather than the empty inputs.
+      const effHostName = needsAccount ? hostName : signedInName
+      const effHostEmail = needsAccount ? hostEmail : signedInEmail
       const slug = slugifyTitle(title)
       const created = await createWebinar({
         slug,
@@ -117,8 +133,8 @@ export function HostNewForm() {
         scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : null,
         show_guest_count: showGuestCount,
         allow_speak_requests: allowSpeakRequests,
-        host_name: hostName.trim() || null,
-        host_email: hostEmail.trim().toLowerCase() || null,
+        host_name: effHostName.trim() || null,
+        host_email: effHostEmail.trim().toLowerCase() || null,
         company_name: companyName.trim() || null,
         logo_url: logoUrl,
       })
@@ -151,7 +167,7 @@ export function HostNewForm() {
     } finally {
       setSubmitting(false)
     }
-  }, [logoFile, title, description, scheduledAt, showGuestCount, allowSpeakRequests, hostName, hostEmail, companyName, freeTier, suiteClient, navigate])
+  }, [logoFile, title, description, scheduledAt, showGuestCount, allowSpeakRequests, needsAccount, hostName, hostEmail, signedInName, signedInEmail, companyName, freeTier, suiteClient, navigate])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -216,40 +232,60 @@ export function HostNewForm() {
             />
           </div>
 
-          <div className="border-t border-slate-100 pt-4">
-            <p className="mb-3 text-xs font-medium uppercase tracking-wide text-slate-500">
-              About you
-            </p>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="hostName">Your name</Label>
-                <Input
-                  id="hostName"
-                  value={hostName}
-                  onChange={(e) => setHostName(e.target.value)}
-                  placeholder="Jane Cooper"
-                  autoComplete="name"
-                  required
-                />
+          {needsAccount ? (
+            // Not signed in → collect an email so we can send a verification
+            // code (which creates their Universal ID) when they go live.
+            <div className="border-t border-slate-100 pt-4">
+              <p className="mb-3 text-xs font-medium uppercase tracking-wide text-slate-500">
+                About you
+              </p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="hostName">Your name</Label>
+                  <Input
+                    id="hostName"
+                    value={hostName}
+                    onChange={(e) => setHostName(e.target.value)}
+                    placeholder="Jane Cooper"
+                    autoComplete="name"
+                    required
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="hostEmail">Your email</Label>
+                  <Input
+                    id="hostEmail"
+                    type="email"
+                    value={hostEmail}
+                    onChange={(e) => setHostEmail(e.target.value)}
+                    placeholder="jane@example.com"
+                    autoComplete="email"
+                    required
+                  />
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="hostEmail">Your email</Label>
-                <Input
-                  id="hostEmail"
-                  type="email"
-                  value={hostEmail}
-                  onChange={(e) => setHostEmail(e.target.value)}
-                  placeholder="jane@example.com"
-                  autoComplete="email"
-                  required
-                />
-              </div>
+              <p className="mt-1.5 text-xs text-slate-500">
+                We'll send a 6-digit code here when you click <strong>Go
+                live</strong>.
+              </p>
             </div>
-            <p className="mt-1.5 text-xs text-slate-500">
-              We'll send a 6-digit code here when you click <strong>Go
-              live</strong>.
-            </p>
-          </div>
+          ) : (
+            // Signed in → we already have their verified details; don't ask again.
+            !suiteLoading && (
+              <div className="border-t border-slate-100 pt-4">
+                <p className="text-xs text-slate-500">
+                  Hosting as{' '}
+                  <strong className="text-slate-700">
+                    {signedInName || signedInEmail}
+                  </strong>
+                  {signedInName && signedInEmail && (
+                    <span className="text-slate-400"> · {signedInEmail}</span>
+                  )}
+                  .
+                </p>
+              </div>
+            )
+          )}
 
           <div className="border-t border-slate-100 pt-4">
             <button
