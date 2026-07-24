@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
@@ -6,11 +7,36 @@ import path from 'node:path'
 // Universal Webinar is served under /webinar/ via the opensource-portal worker
 // (opensource.unisim.co.uk/webinar). Local dev stays at root so hot-reload
 // works without the prefix.
+// Build-version marker: prefer the Cloudflare Pages commit SHA baked in at build
+// time, fall back to the local git short SHA, then 'dev'. Surfaced as a
+// <meta name="build-sha"> tag and a startup console.log so the live build is
+// identifiable in-browser without wrangler.
+function resolveBuildSha(): string {
+  if (process.env.CF_PAGES_COMMIT_SHA) return process.env.CF_PAGES_COMMIT_SHA
+  try {
+    return execSync('git rev-parse --short HEAD').toString().trim()
+  } catch {
+    return 'dev'
+  }
+}
+const BUILD_SHA = resolveBuildSha()
+
 export default defineConfig(({ mode }) => {
   const BASE_PATH = mode === 'production' ? '/webinar/' : '/'
   return {
     base: BASE_PATH,
+    define: {
+      'import.meta.env.VITE_BUILD_SHA': JSON.stringify(BUILD_SHA),
+    },
     plugins: [
+      {
+        name: 'build-sha-meta',
+        transformIndexHtml() {
+          return [
+            { tag: 'meta', attrs: { name: 'build-sha', content: BUILD_SHA }, injectTo: 'head' as const },
+          ]
+        },
+      },
       react(),
       VitePWA({
         registerType: 'autoUpdate',
