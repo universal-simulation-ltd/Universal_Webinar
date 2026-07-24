@@ -7,6 +7,8 @@ import UsageTracker from './UsageTracker'
 import { AuthProvider } from './lib/auth'
 import './index.css'
 
+console.log(`build: ${import.meta.env.VITE_BUILD_SHA}`)
+
 // Fall back to the REAL public suite project when the platform Supabase env
 // vars aren't set at build time (publishable anon key — safe to ship; RLS is the
 // security boundary). The previous localhost fallback kept the tree mounted but
