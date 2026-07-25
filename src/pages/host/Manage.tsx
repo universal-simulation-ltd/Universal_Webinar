@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import {
   AlertTriangle,
+  Archive,
   BellRing,
   Camera,
   Check,
@@ -20,6 +21,7 @@ import {
   RefreshCw,
   Settings2,
   ShieldCheck,
+  TrendingUp,
   UserCheck,
   Users,
   Video,
@@ -37,10 +39,13 @@ import {
 import { OtpVerifyDialog } from '@/components/OtpVerifyDialog'
 import { cn } from '@/lib/utils'
 import {
+  archiveWebinarByToken,
   getWebinarBySlug,
+  getWebinarStatsByToken,
   listRegistrationsByToken,
   sendRegistrationConfirmation,
   setRegistrationStatusByToken,
+  type WebinarStats,
 } from '@/lib/db'
 import {
   getWebinarByManageToken,
@@ -93,6 +98,12 @@ export function HostManage() {
   // Which registration is mid-approve, so its buttons can disable individually
   // rather than freezing the whole panel.
   const [statusSaving, setStatusSaving] = useState<string | null>(null)
+  const [stats, setStats] = useState<WebinarStats | null>(null)
+  const [closing, setClosing] = useState(false)
+  const [confirmClose, setConfirmClose] = useState(false)
+  // Closing destroys data on the free tier, so the host has to have taken their
+  // export first. Tracked rather than merely suggested — see the close card.
+  const [exported, setExported] = useState(false)
 
   // Sync the draft whenever the loaded webinar changes.
   const savedQuestions = useMemo(() => parseQuestions(webinar?.custom_questions), [webinar])
@@ -159,6 +170,12 @@ export function HostManage() {
         const regs = await listRegistrationsByToken(w.slug, token)
         if (!active) return
         setRegistrations(regs)
+        try {
+          const s = await getWebinarStatsByToken(w.slug, token)
+          if (active) setStats(s)
+        } catch {
+          // Non-fatal — the panel still works without the summary.
+        }
       } catch (err) {
         if (active) setError(getErrorMessage(err, 'Load failed.'))
       } finally {
@@ -233,6 +250,7 @@ export function HostManage() {
 
   function exportRegistrationsCsv() {
     if (!webinar || registrations.length === 0) return
+    setExported(true)
     downloadCsv(
       buildRegistrationsCsv(registrations, savedQuestions),
       registrationsCsvFilename(webinar),
@@ -270,6 +288,20 @@ export function HostManage() {
       },
       'status',
     )
+  }
+
+  async function closeWebinar() {
+    if (!webinar || !token) return
+    setClosing(true)
+    try {
+      const next = await archiveWebinarByToken(webinar.slug, token)
+      setWebinar(next)
+      setConfirmClose(false)
+    } catch (err) {
+      setError(getErrorMessage(err, 'Could not close the webinar.'))
+    } finally {
+      setClosing(false)
+    }
   }
 
   async function copyOpenJoinLink() {
@@ -756,6 +788,40 @@ export function HostManage() {
             </CardContent>
           </Card>
 
+          {stats && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-slate-500" />
+                  How it went
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <dl className="grid grid-cols-3 gap-3 text-center">
+                  {[
+                    { k: 'Registered', v: stats.registered },
+                    { k: 'Turned up', v: stats.attended },
+                    { k: 'No-shows', v: stats.no_show },
+                  ].map(({ k, v }) => (
+                    <div key={k} className="rounded-lg bg-slate-50 py-2">
+                      <dt className="text-[11px] uppercase tracking-wide text-slate-500">
+                        {k}
+                      </dt>
+                      <dd className="text-lg font-semibold text-slate-900">{v}</dd>
+                    </div>
+                  ))}
+                </dl>
+                {stats.registered > 0 && (
+                  <p className="mt-2 text-center text-xs text-slate-500">
+                    {Math.round((stats.attended / stats.registered) * 100)}% of
+                    registrants attended
+                    {stats.waitlisted > 0 && ` · ${stats.waitlisted} never got a seat`}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardHeader>
               <div className="flex items-start justify-between gap-2">
@@ -933,6 +999,97 @@ export function HostManage() {
                 </>
               )}
             </CardContent>
+          </Card>
+          <Card className={cn(webinar.archived_at && 'border-slate-300 bg-slate-50')}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Archive className="h-4 w-4 text-slate-500" />
+                {webinar.archived_at ? 'Closed' : 'Finished with this webinar?'}
+              </CardTitle>
+              <CardDescription>
+                {webinar.archived_at ? (
+                  webinar.purge_after ? (
+                    <>
+                      Closed, and your token is back. This webinar and its
+                      registrations are deleted on{' '}
+                      <strong>
+                        {formatWithZone(
+                          new Date(webinar.purge_after),
+                          localTimezone(),
+                        )}
+                      </strong>
+                      . Upgrade before then to keep the history.
+                    </>
+                  ) : (
+                    <>Closed, and your token is back. Your history is kept.</>
+                  )
+                ) : (
+                  <>
+                    Closing hands your token back so you can run another
+                    webinar. Take your registrant list first — on the free plan
+                    this webinar and everyone in it are deleted 30 days later.
+                  </>
+                )}
+              </CardDescription>
+            </CardHeader>
+            {!webinar.archived_at && (
+              <CardContent className="space-y-3">
+                {registrations.length > 0 && !exported && (
+                  <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                    You haven't exported your {registrations.length}{' '}
+                    {registrations.length === 1 ? 'registrant' : 'registrants'}{' '}
+                    yet. Use <strong>Export CSV</strong> above first — names,
+                    emails and answers all go with it.
+                  </div>
+                )}
+                {confirmClose ? (
+                  <div className="space-y-2 rounded-lg border border-red-200 bg-red-50 p-3">
+                    <p className="text-sm font-medium text-red-900">
+                      Close “{webinar.title}”?
+                    </p>
+                    <p className="text-xs text-red-800">
+                      Your token comes back straight away. The webinar stops
+                      accepting anyone and disappears from public view. This
+                      can't be undone.
+                    </p>
+                    <div className="flex gap-2 pt-1">
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        disabled={closing}
+                        onClick={() => void closeWebinar()}
+                      >
+                        {closing ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" /> Closing…
+                          </>
+                        ) : (
+                          'Yes, close it'
+                        )}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        disabled={closing}
+                        onClick={() => setConfirmClose(false)}
+                      >
+                        Keep it open
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => setConfirmClose(true)}
+                  >
+                    <Archive className="h-4 w-4" />
+                    Close &amp; free my token
+                  </Button>
+                )}
+              </CardContent>
+            )}
           </Card>
         </aside>
       </div>
