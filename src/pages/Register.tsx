@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import {
   ArrowRight,
+  BellRing,
   Calendar,
   CheckCircle2,
   Loader2,
@@ -294,6 +295,15 @@ export function Register() {
                       We've emailed <strong>{email}</strong> your join link
                       {scheduleInfo?.isFuture ? ' and a calendar invite' : ''} —
                       keep it and use it to join from any device.
+                    </span>
+                  </p>
+                )}
+                {webinar.send_reminders && scheduleInfo?.isFuture && (
+                  <p className="flex items-start gap-1.5 text-slate-500">
+                    <BellRing className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
+                    <span>
+                      We'll nudge you the day before and again an hour before it
+                      starts.
                     </span>
                   </p>
                 )}

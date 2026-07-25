@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import {
   AlertTriangle,
+  BellRing,
   Camera,
   Check,
   Copy,
@@ -438,6 +439,20 @@ export function HostManage() {
                 }
               />
               <ToggleRow
+                icon={<BellRing className="h-4 w-4" />}
+                label="Remind registrants before it starts"
+                hint={
+                  webinar.scheduled_at
+                    ? 'A nudge the day before and again an hour ahead.'
+                    : 'Set a date under Scheduled for — reminders need one.'
+                }
+                checked={webinar.send_reminders}
+                disabled={saving === 'send_reminders'}
+                onChange={(next) =>
+                  patch({ send_reminders: next }, 'send_reminders')
+                }
+              />
+              <ToggleRow
                 icon={<Lock className="h-4 w-4" />}
                 label="PIN-lock the webinar"
                 hint="Lands in Phase 6."
@@ -550,6 +565,22 @@ export function HostManage() {
                               >
                                 <Mail className="h-3 w-3" />
                                 emailed
+                              </span>
+                            )}
+                            {(r.reminder_24h_sent_at || r.reminder_1h_sent_at) && (
+                              <span
+                                className="inline-flex items-center gap-1 text-emerald-600"
+                                title={[
+                                  r.reminder_24h_sent_at &&
+                                    `Day-before reminder ${new Date(r.reminder_24h_sent_at).toLocaleString()}`,
+                                  r.reminder_1h_sent_at &&
+                                    `Hour-before reminder ${new Date(r.reminder_1h_sent_at).toLocaleString()}`,
+                                ]
+                                  .filter(Boolean)
+                                  .join('\n')}
+                              >
+                                <BellRing className="h-3 w-3" />
+                                reminded
                               </span>
                             )}
                           </span>
