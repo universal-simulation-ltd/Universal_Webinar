@@ -47,6 +47,7 @@ export const WEBINAR_COLUMNS = [
   'send_confirmation',
   'send_reminders',
   'require_approval',
+  'capacity',
 ].join(', ')
 
 export async function listWebinars(): Promise<WebinarRow[]> {
@@ -204,6 +205,19 @@ export async function getRegistrationByJoinToken(
   if (error) throw error
   const rows = (data ?? []) as JoinTokenLookup[]
   return rows[0] ?? null
+}
+
+// How many seats are left, or null when the webinar is uncapped. Anon has no
+// SELECT on registrations so it can't count approved rows itself — this RPC is
+// the only way for the register page to know a room is full before submitting.
+export async function getWebinarFreeSeats(
+  webinarId: string,
+): Promise<number | null> {
+  const { data, error } = await supabase.rpc('webinar_free_seats', {
+    p_webinar_id: webinarId,
+  })
+  if (error) throw error
+  return (data as number | null) ?? null
 }
 
 // Host approves / waitlists / declines a registrant, authorised by the manage

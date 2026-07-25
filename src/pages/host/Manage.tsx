@@ -23,6 +23,7 @@ import {
   X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import {
   Card,
   CardContent,
@@ -93,6 +94,22 @@ export function HostManage() {
   useEffect(() => {
     setQuestionsDraft(savedQuestions)
   }, [savedQuestions])
+  const approvedCount = useMemo(
+    () => registrations.filter((r) => r.status === 'approved').length,
+    [registrations],
+  )
+  const waitlistedCount = useMemo(
+    () => registrations.filter((r) => r.status === 'waitlisted').length,
+    [registrations],
+  )
+  // null capacity = unlimited, so there is no "seats left" to show.
+  const seatsLeft = useMemo(
+    () =>
+      webinar?.capacity != null
+        ? Math.max(webinar.capacity - approvedCount, 0)
+        : null,
+    [webinar, approvedCount],
+  )
   const pendingCount = useMemo(
     () => registrations.filter((r) => r.status === 'pending').length,
     [registrations],
@@ -535,6 +552,53 @@ export function HostManage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-slate-500" />
+                Seat limit
+              </CardTitle>
+              <CardDescription>
+                {seatsLeft === null
+                  ? 'Unlimited seats. Set a number to start a waitlist once it fills.'
+                  : seatsLeft > 0
+                    ? `${seatsLeft} of ${webinar.capacity} seat${webinar.capacity === 1 ? '' : 's'} left.`
+                    : `Full — new sign-ups join the waitlist${waitlistedCount > 0 ? ` (${waitlistedCount} waiting)` : ''}.`}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min={1}
+                  placeholder="Unlimited"
+                  defaultValue={webinar.capacity ?? ''}
+                  disabled={saving === 'capacity'}
+                  aria-label="Seat limit"
+                  onBlur={(e) => {
+                    const raw = e.target.value.trim()
+                    const next = raw === '' ? null : Number(raw)
+                    if (next !== null && (!Number.isFinite(next) || next < 1)) {
+                      e.target.value = String(webinar.capacity ?? '')
+                      return
+                    }
+                    if (next === webinar.capacity) return
+                    void patch({ capacity: next }, 'capacity')
+                  }}
+                  className="w-32"
+                />
+                {saving === 'capacity' && (
+                  <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
+                )}
+              </div>
+              <p className="mt-2 text-xs text-slate-500">
+                Only approved registrants take a seat. When one frees up, the
+                longest-waiting person is let in automatically
+                {webinar.require_approval ? ' — back into your approval queue' : ''}.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
                 <Settings2 className="h-4 w-4 text-slate-500" />
                 Registration questions
               </CardTitle>
@@ -588,6 +652,11 @@ export function HostManage() {
                     {pendingCount > 0 && (
                       <span className="font-medium text-amber-700">
                         {' '}· {pendingCount} awaiting you
+                      </span>
+                    )}
+                    {waitlistedCount > 0 && (
+                      <span className="text-slate-500">
+                        {' '}· {waitlistedCount} waitlisted
                       </span>
                     )}
                   </CardDescription>
