@@ -20,6 +20,7 @@ import {
   ShieldCheck,
   UserCheck,
   Users,
+  Video,
   X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -539,6 +540,16 @@ export function HostManage() {
                 }
               />
               <ToggleRow
+                icon={<Mail className="h-4 w-4" />}
+                label="Email a follow-up afterwards"
+                hint="Thanks to those who came, and a catch-up to those who missed it."
+                checked={webinar.send_followup}
+                disabled={saving === 'send_followup'}
+                onChange={(next) =>
+                  patch({ send_followup: next }, 'send_followup')
+                }
+              />
+              <ToggleRow
                 icon={<Lock className="h-4 w-4" />}
                 label="PIN-lock the webinar"
                 hint="Lands in Phase 6."
@@ -546,6 +557,43 @@ export function HostManage() {
                 disabled
                 onChange={() => {}}
               />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Video className="h-4 w-4 text-slate-500" />
+                Recording
+              </CardTitle>
+              <CardDescription>
+                Paste the link once it's up — it goes out in the follow-up email
+                to everyone who registered, including the people who missed it.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="url"
+                  placeholder="https://…"
+                  defaultValue={webinar.recording_url ?? ''}
+                  disabled={saving === 'recording_url'}
+                  aria-label="Recording link"
+                  onBlur={(e) => {
+                    const next = e.target.value.trim() || null
+                    if (next === (webinar.recording_url ?? null)) return
+                    void patch({ recording_url: next }, 'recording_url')
+                  }}
+                />
+                {saving === 'recording_url' && (
+                  <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
+                )}
+              </div>
+              {webinar.status !== 'ended' && (
+                <p className="mt-2 text-xs text-slate-500">
+                  The follow-up sends once the webinar has ended.
+                </p>
+              )}
             </CardContent>
           </Card>
 

@@ -81,6 +81,7 @@ export function HostNewForm() {
   const [sendConfirmation, setSendConfirmation] = useState(true)
   const [sendReminders, setSendReminders] = useState(true)
   const [capacity, setCapacity] = useState('')
+  const [sendFollowup, setSendFollowup] = useState(true)
   const [customQuestions, setCustomQuestions] = useState<CustomQuestion[]>([])
   const [optionalOpen, setOptionalOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -142,6 +143,7 @@ export function HostNewForm() {
         send_confirmation: sendConfirmation,
         send_reminders: sendReminders,
         capacity: capacity.trim() === '' ? null : Number(capacity),
+        send_followup: sendFollowup,
         host_name: effHostName.trim() || null,
         host_email: effHostEmail.trim().toLowerCase() || null,
         company_name: companyName.trim() || null,
@@ -177,7 +179,7 @@ export function HostNewForm() {
     } finally {
       setSubmitting(false)
     }
-  }, [logoFile, title, description, scheduledAt, showGuestCount, allowSpeakRequests, sendConfirmation, sendReminders, capacity, customQuestions, needsAccount, hostName, hostEmail, signedInName, signedInEmail, companyName, freeTier, suiteClient, navigate])
+  }, [logoFile, title, description, scheduledAt, showGuestCount, allowSpeakRequests, sendConfirmation, sendReminders, capacity, sendFollowup, customQuestions, needsAccount, hostName, hostEmail, signedInName, signedInEmail, companyName, freeTier, suiteClient, navigate])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -491,6 +493,23 @@ export function HostNewForm() {
                       <span className="block text-xs text-slate-500">
                         A nudge the day before and again an hour ahead. Needs a
                         scheduled date.
+                      </span>
+                    </span>
+                  </label>
+                  <label className="flex items-start gap-3 py-1.5">
+                    <input
+                      type="checkbox"
+                      checked={sendFollowup}
+                      onChange={(e) => setSendFollowup(e.target.checked)}
+                      className="mt-1 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                    />
+                    <span className="text-sm">
+                      <span className="font-medium text-slate-900">
+                        Email a follow-up afterwards
+                      </span>
+                      <span className="block text-xs text-slate-500">
+                        Thanks to those who came, a catch-up link to those who
+                        missed it.
                       </span>
                     </span>
                   </label>
