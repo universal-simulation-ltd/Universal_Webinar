@@ -18,7 +18,9 @@ import {
   RefreshCw,
   Settings2,
   ShieldCheck,
+  UserCheck,
   Users,
+  X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -30,7 +32,12 @@ import {
 } from '@/components/ui/card'
 import { OtpVerifyDialog } from '@/components/OtpVerifyDialog'
 import { cn } from '@/lib/utils'
-import { getWebinarBySlug, listRegistrationsByToken } from '@/lib/db'
+import {
+  getWebinarBySlug,
+  listRegistrationsByToken,
+  sendRegistrationConfirmation,
+  setRegistrationStatusByToken,
+} from '@/lib/db'
 import {
   getWebinarByManageToken,
   rememberManageToken,
@@ -48,7 +55,12 @@ import {
   type CustomQuestion,
   parseQuestions,
 } from '@/lib/customQuestions'
-import type { RegistrationRow, WebinarRow, WebinarUpdate } from '@/lib/database.types'
+import type {
+  RegistrationRow,
+  RegistrationStatus,
+  WebinarRow,
+  WebinarUpdate,
+} from '@/lib/database.types'
 
 export function HostManage() {
   const { slug = '' } = useParams()
@@ -72,12 +84,19 @@ export function HostManage() {
   // Draft of the custom registration questions — edited locally, saved on demand
   // (unlike the room toggles, which save on each change).
   const [questionsDraft, setQuestionsDraft] = useState<CustomQuestion[]>([])
+  // Which registration is mid-approve, so its buttons can disable individually
+  // rather than freezing the whole panel.
+  const [statusSaving, setStatusSaving] = useState<string | null>(null)
 
   // Sync the draft whenever the loaded webinar changes.
   const savedQuestions = useMemo(() => parseQuestions(webinar?.custom_questions), [webinar])
   useEffect(() => {
     setQuestionsDraft(savedQuestions)
   }, [savedQuestions])
+  const pendingCount = useMemo(
+    () => registrations.filter((r) => r.status === 'pending').length,
+    [registrations],
+  )
   const questionsDirty = useMemo(
     () => JSON.stringify(questionsDraft) !== JSON.stringify(savedQuestions),
     [questionsDraft, savedQuestions],
@@ -139,6 +158,42 @@ export function HostManage() {
       setError(getErrorMessage(err, 'Update failed.'))
     } finally {
       setSaving(null)
+    }
+  }
+
+  // Approve / waitlist / decline. Approving is also what releases the phase-4
+  // confirmation email: send-webinar-confirmation defers on a gated webinar and
+  // leaves confirmation_sent_at null, so this second call is the one that
+  // actually delivers the join link.
+  async function changeStatus(reg: RegistrationRow, next: RegistrationStatus) {
+    if (!webinar || !token) return
+    setStatusSaving(reg.id)
+    try {
+      const updated = await setRegistrationStatusByToken(
+        webinar.slug,
+        token,
+        reg.id,
+        next,
+      )
+      setRegistrations((prev) =>
+        prev.map((r) => (r.id === reg.id ? { ...r, ...updated } : r)),
+      )
+      if (next === 'approved') {
+        const sent = await sendRegistrationConfirmation(webinar.id, reg.email)
+        if (sent) {
+          setRegistrations((prev) =>
+            prev.map((r) =>
+              r.id === reg.id
+                ? { ...r, confirmation_sent_at: new Date().toISOString() }
+                : r,
+            ),
+          )
+        }
+      }
+    } catch (err) {
+      setError(getErrorMessage(err, 'Could not update that registration.'))
+    } finally {
+      setStatusSaving(null)
     }
   }
 
@@ -443,6 +498,16 @@ export function HostManage() {
                 }
               />
               <ToggleRow
+                icon={<UserCheck className="h-4 w-4" />}
+                label="Approve registrants yourself"
+                hint="New sign-ups wait for your OK before they get a join link."
+                checked={webinar.require_approval}
+                disabled={saving === 'require_approval'}
+                onChange={(next) =>
+                  patch({ require_approval: next }, 'require_approval')
+                }
+              />
+              <ToggleRow
                 icon={<BellRing className="h-4 w-4" />}
                 label="Remind registrants before it starts"
                 hint={
@@ -520,6 +585,11 @@ export function HostManage() {
                     {registrations.length}{' '}
                     {registrations.length === 1 ? 'person' : 'people'}{' '}
                     pre-registered
+                    {pendingCount > 0 && (
+                      <span className="font-medium text-amber-700">
+                        {' '}· {pendingCount} awaiting you
+                      </span>
+                    )}
                   </CardDescription>
                 </div>
                 <button
@@ -588,6 +658,65 @@ export function HostManage() {
                               </span>
                             )}
                           </span>
+                          {r.status !== 'approved' && (
+                            <span
+                              className={cn(
+                                'mt-1 inline-flex w-fit items-center rounded-full px-2 py-0.5 text-[11px] font-medium',
+                                r.status === 'pending' && 'bg-amber-50 text-amber-800',
+                                r.status === 'waitlisted' && 'bg-slate-100 text-slate-700',
+                                r.status === 'declined' && 'bg-red-50 text-red-700',
+                              )}
+                            >
+                              {r.status === 'pending'
+                                ? 'Awaiting your approval'
+                                : r.status === 'waitlisted'
+                                  ? 'Waitlisted'
+                                  : 'Declined'}
+                            </span>
+                          )}
+                          {webinar.require_approval && (
+                            <div className="mt-1.5 flex flex-wrap gap-1.5">
+                              {r.status !== 'approved' && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 px-2 text-xs"
+                                  disabled={statusSaving === r.id}
+                                  onClick={() => void changeStatus(r, 'approved')}
+                                >
+                                  {statusSaving === r.id ? (
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                  ) : (
+                                    <Check className="h-3 w-3" />
+                                  )}
+                                  Approve
+                                </Button>
+                              )}
+                              {r.status !== 'waitlisted' && r.status !== 'declined' && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 px-2 text-xs text-slate-500"
+                                  disabled={statusSaving === r.id}
+                                  onClick={() => void changeStatus(r, 'waitlisted')}
+                                >
+                                  Waitlist
+                                </Button>
+                              )}
+                              {r.status !== 'declined' && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 px-2 text-xs text-red-600"
+                                  disabled={statusSaving === r.id}
+                                  onClick={() => void changeStatus(r, 'declined')}
+                                >
+                                  <X className="h-3 w-3" />
+                                  Decline
+                                </Button>
+                              )}
+                            </div>
+                          )}
                           {answered.length > 0 && (
                             <dl className="mt-1.5 space-y-1 border-l-2 border-slate-100 pl-2">
                               {answered.map((q) => (

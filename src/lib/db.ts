@@ -6,6 +6,7 @@ import type {
   AttendeeRow,
   JoinTokenLookup,
   MessageRow,
+  RegistrationStatus,
   ReactionRow,
   RegistrationRow,
   SpeakRequestInsert,
@@ -45,6 +46,7 @@ export const WEBINAR_COLUMNS = [
   'custom_questions',
   'send_confirmation',
   'send_reminders',
+  'require_approval',
 ].join(', ')
 
 export async function listWebinars(): Promise<WebinarRow[]> {
@@ -202,6 +204,25 @@ export async function getRegistrationByJoinToken(
   if (error) throw error
   const rows = (data ?? []) as JoinTokenLookup[]
   return rows[0] ?? null
+}
+
+// Host approves / waitlists / declines a registrant, authorised by the manage
+// token (the same pattern as updateWebinarByToken). Returns the updated row so
+// the panel can re-render without a refetch.
+export async function setRegistrationStatusByToken(
+  slug: string,
+  token: string,
+  registrationId: string,
+  status: RegistrationStatus,
+): Promise<RegistrationRow> {
+  const { data, error } = await supabase.rpc('set_registration_status_by_token', {
+    p_slug: slug,
+    p_token: token,
+    p_registration_id: registrationId,
+    p_status: status,
+  })
+  if (error) throw error
+  return data as RegistrationRow
 }
 
 // ──────────────────────────────────────────────────────────────────────────────

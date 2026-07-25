@@ -39,7 +39,7 @@ import {
 } from '@/lib/db'
 import { getErrorMessage } from '@/lib/errors'
 import { supabase } from '@/lib/supabase'
-import type { WebinarRow } from '@/lib/database.types'
+import type { RegistrationStatus, WebinarRow } from '@/lib/database.types'
 
 const NAME_KEY = 'uw:lastName'
 const EMAIL_KEY = 'uw:lastEmail'
@@ -68,6 +68,9 @@ export function Register() {
   // email, so the success card can say so honestly rather than promising a
   // message that may never arrive.
   const [confirmationSent, setConfirmationSent] = useState(false)
+  // Phase 6. On a gated webinar a registrant is held at 'pending' until the
+  // host acts, so "registered" and "allowed in" are no longer the same thing.
+  const [regStatus, setRegStatus] = useState<RegistrationStatus>('approved')
 
   // The host's custom registration questions (cleaned of anything malformed).
   const questions = useMemo(() => parseQuestions(webinar?.custom_questions), [webinar])
@@ -104,6 +107,11 @@ export function Register() {
         if (!active || !found || found.webinar_id !== webinar.id) return
         setName(found.name)
         setEmail(found.email)
+        setRegStatus(found.status)
+        if (found.status !== 'approved') {
+          setRegistered(true)
+          return
+        }
         if (webinar.status === 'live') {
           navigate(`/w/${webinar.slug}/live`, { replace: true })
         } else {
@@ -176,14 +184,18 @@ export function Register() {
       await registerForWebinar(webinar.id, trimmedName, trimmedEmail, cleanAnswers(questions, answers))
 
       // 3. Create the attendee row tied to this anon user (idempotent).
-      const existing = await getMyAttendee(webinar.id)
-      if (!existing) {
-        await joinAsAttendee({
-          webinar_id: webinar.id,
-          name: trimmedName,
-          email: trimmedEmail,
-          auth_user_id: userId,
-        })
+      //    Skipped when the host gates the room — the database trigger would
+      //    reject it anyway, and a pending guest has no seat yet.
+      if (!webinar.require_approval) {
+        const existing = await getMyAttendee(webinar.id)
+        if (!existing) {
+          await joinAsAttendee({
+            webinar_id: webinar.id,
+            name: trimmedName,
+            email: trimmedEmail,
+            auth_user_id: userId,
+          })
+        }
       }
 
       localStorage.setItem(NAME_KEY, trimmedName)
@@ -197,6 +209,12 @@ export function Register() {
       )
 
       // 5. Send live attendees straight into the room — no second prompt.
+      //    A gated registrant stays here instead; they aren't in yet.
+      if (webinar.require_approval) {
+        setRegStatus('pending')
+        setRegistered(true)
+        return
+      }
       if (webinar.status === 'live') {
         navigate(`/w/${webinar.slug}/live`, { replace: true })
         return
@@ -261,11 +279,63 @@ export function Register() {
         <div className="mb-6 text-center">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700">
             <ShieldCheck className="h-3.5 w-3.5" />
-            {registered ? "You're in" : 'Save your seat'}
+            {!registered
+              ? 'Save your seat'
+              : regStatus === 'approved'
+                ? "You're in"
+                : regStatus === 'declined'
+                  ? 'Not approved'
+                  : regStatus === 'waitlisted'
+                    ? 'On the waitlist'
+                    : 'Awaiting approval'}
           </span>
         </div>
 
-        {registered ? (
+        {registered && regStatus !== 'approved' ? (
+          // Phase 6 — registered, but the host gates this room. Deliberately no
+          // "Enter the room" button and no calendar invite: nothing is confirmed
+          // until they're approved, and offering either would imply a seat they
+          // don't have.
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-amber-700">
+                <ShieldCheck className="h-5 w-5" />
+                {regStatus === 'declined'
+                  ? 'Not approved this time'
+                  : regStatus === 'waitlisted'
+                    ? "You're on the waitlist"
+                    : 'Waiting for the host'}
+              </CardTitle>
+              <CardDescription className="space-y-1.5">
+                {regStatus === 'declined' ? (
+                  <p>
+                    The host isn't able to give you a place at{' '}
+                    <strong>{webinar.title}</strong>. If you think that's a
+                    mistake, get in touch with them directly.
+                  </p>
+                ) : regStatus === 'waitlisted' ? (
+                  <p>
+                    <strong>{webinar.title}</strong> is full, so you're on the
+                    waitlist. We'll email <strong>{email}</strong> if a place
+                    opens up.
+                  </p>
+                ) : (
+                  <p>
+                    Your request to join <strong>{webinar.title}</strong> has
+                    gone to the host. We'll email <strong>{email}</strong> with
+                    your join link as soon as they approve it.
+                  </p>
+                )}
+                {scheduleInfo?.isFuture && regStatus !== 'declined' && (
+                  <p className="flex items-center gap-1.5 text-slate-500">
+                    <Calendar className="h-3.5 w-3.5" />
+                    {scheduleInfo.label}
+                  </p>
+                )}
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        ) : registered ? (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-emerald-700">
@@ -334,6 +404,7 @@ export function Register() {
                   await supabase.auth.signOut()
                   setRegistered(false)
                   setConfirmationSent(false)
+                  setRegStatus('approved')
                   setName('')
                   setEmail('')
                   localStorage.removeItem(NAME_KEY)
@@ -482,9 +553,13 @@ export function Register() {
         )}
 
         <p className="mt-4 text-center text-xs text-slate-500">
-          {registered
-            ? 'See you soon.'
-            : 'By joining, you agree to be visible to the host.'}
+          {!registered
+            ? 'By joining, you agree to be visible to the host.'
+            : regStatus === 'approved'
+              ? 'See you soon.'
+              : regStatus === 'declined'
+                ? ''
+                : "You don't need to do anything else — we'll be in touch."}
         </p>
       </div>
     </div>

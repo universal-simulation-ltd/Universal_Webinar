@@ -7,6 +7,14 @@ import type { CustomQuestion, CustomAnswers } from './customQuestions'
 
 export type WebinarStatus = 'scheduled' | 'live' | 'ended'
 
+// Phase 6. Only 'approved' can create an attendee row (enforced by a trigger,
+// not by this type) — everything else is held at the door.
+export type RegistrationStatus =
+  | 'pending'
+  | 'approved'
+  | 'waitlisted'
+  | 'declined'
+
 export interface WebinarRow {
   id: string
   slug: string
@@ -30,6 +38,7 @@ export interface WebinarRow {
   custom_questions: CustomQuestion[]
   send_confirmation: boolean
   send_reminders: boolean
+  require_approval: boolean
 }
 
 // `manage_token` is deliberately absent from WebinarRow. Migration 0067 revokes
@@ -60,6 +69,7 @@ export interface WebinarInsert {
   custom_questions?: CustomQuestion[]
   send_confirmation?: boolean
   send_reminders?: boolean
+  require_approval?: boolean
 }
 
 export interface WebinarUpdate {
@@ -79,6 +89,7 @@ export interface WebinarUpdate {
   custom_questions?: CustomQuestion[]
   send_confirmation?: boolean
   send_reminders?: boolean
+  require_approval?: boolean
 }
 
 export interface RegistrationRow {
@@ -99,6 +110,10 @@ export interface RegistrationRow {
   // guard, so a null means "still due", not "never happening".
   reminder_24h_sent_at: string | null
   reminder_1h_sent_at: string | null
+  // Phase 6 approval gating (migration 0070). Set by a BEFORE INSERT trigger
+  // from the webinar's require_approval, never by the client — a payload
+  // claiming 'approved' is overridden server-side.
+  status: RegistrationStatus
 }
 
 // What the anon registrant gets back when they exchange the `?t=` token from
@@ -110,6 +125,7 @@ export interface JoinTokenLookup {
   name: string
   email: string
   registered_at: string
+  status: RegistrationStatus
 }
 
 export interface RegistrationInsert {
