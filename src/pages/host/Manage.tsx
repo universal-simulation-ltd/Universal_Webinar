@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import {
   AlertTriangle,
@@ -182,21 +182,18 @@ export function HostManage() {
     )
   }
 
-  const handleVerified = useCallback(
-    (next: WebinarRow) => {
-      setWebinar(next)
-      // Immediately flip to live after successful verification.
-      void patch(
-        {
-          status: 'live',
-          started_at: next.started_at ?? new Date().toISOString(),
-          ended_at: null,
-        },
-        'status',
-      )
-    },
-    [],
-  )
+  function handleVerified(next: WebinarRow) {
+    setWebinar(next)
+    // Immediately flip to live after successful verification.
+    void patch(
+      {
+        status: 'live',
+        started_at: next.started_at ?? new Date().toISOString(),
+        ended_at: null,
+      },
+      'status',
+    )
+  }
 
   async function copyShareLink() {
     if (!webinar) return
