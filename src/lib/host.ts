@@ -80,7 +80,13 @@ export async function getWebinarByManageToken(
     if (error.code === '22P02') return null
     throw error
   }
-  return (data as WebinarRow | null) ?? null
+  // A composite-returning function that matches nothing comes back from
+  // PostgREST as a row of nulls — `{"id":null,"slug":null,…}` — not as `null`.
+  // That object is truthy, so the miss has to be detected on a field that is
+  // NOT NULL in the table rather than on the row itself.
+  const row = data as (Partial<WebinarRow> & { id: string | null }) | null
+  if (!row || row.id === null) return null
+  return row as WebinarRow
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
