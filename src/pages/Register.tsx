@@ -27,6 +27,8 @@ import {
   cleanAnswers,
 } from '@/lib/customQuestions'
 import { AddToCalendarButton } from '@/components/AddToCalendarButton'
+import TimezonePicker from '@/components/TimezonePicker'
+import { formatLocalWithUtc, localTimezone } from '@/lib/time'
 import { HostedBy } from '@/components/HostedBy'
 import { useAuth } from '@/lib/auth'
 import {
@@ -75,6 +77,10 @@ export function Register() {
   // Whether the room is out of seats. Anon can't count registrations, so this
   // comes from the webinar_free_seats() RPC rather than a client-side tally.
   const [roomFull, setRoomFull] = useState(false)
+  // Which zone the times on this page are shown in. Defaults to the viewer's
+  // own, but they can switch it — useful when deciding whether a session is
+  // reachable from somewhere else, or when a device's locale is untrustworthy.
+  const [displayTz, setDisplayTz] = useState(() => localTimezone())
 
   // The host's custom registration questions (cleaned of anything malformed).
   const questions = useMemo(() => parseQuestions(webinar?.custom_questions), [webinar])
@@ -279,15 +285,13 @@ export function Register() {
     return {
       date,
       isFuture: date.getTime() > Date.now(),
-      label: date.toLocaleString(undefined, {
-        weekday: 'long',
-        month: 'short',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-      }),
+      // Always zone-labelled, with the UTC anchor alongside — an unlabelled
+      // local time is untrustworthy when a viewer's devices disagree about
+      // their locale, and it has to reconcile against the UTC we quote in the
+      // confirmation email.
+      label: formatLocalWithUtc(date, displayTz),
     }
-  }, [webinar])
+  }, [webinar, displayTz])
 
   if (loading) {
     return (
@@ -598,6 +602,17 @@ export function Register() {
               </form>
             </CardContent>
           </Card>
+        )}
+
+        {scheduleInfo && (
+          <div className="mt-4 flex justify-center">
+            <TimezonePicker
+              value={displayTz}
+              onChange={setDisplayTz}
+              at={scheduleInfo.date}
+              label="Times shown in"
+            />
+          </div>
         )}
 
         <p className="mt-4 text-center text-xs text-slate-500">

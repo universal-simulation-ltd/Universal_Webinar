@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { localTimezone } from './time'
 import type { CustomAnswers } from './customQuestions'
 import type {
   AttendeeInsert,
@@ -160,6 +161,10 @@ export async function registerForWebinar(
     webinar_id: webinarId,
     name: name.trim(),
     email: trimmedEmail,
+    // Captured so their confirmation / reminder emails can speak in their own
+    // local time rather than hedging in UTC. Best-effort: a browser that won't
+    // tell us leaves it null and those emails fall back to UTC.
+    timezone: localTimezone(),
     ...(customAnswers && Object.keys(customAnswers).length > 0
       ? { custom_answers: customAnswers }
       : {}),
