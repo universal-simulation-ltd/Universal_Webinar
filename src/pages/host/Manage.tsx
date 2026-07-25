@@ -11,6 +11,7 @@ import {
   Hand,
   Loader2,
   Lock,
+  Mail,
   MonitorUp,
   Power,
   RefreshCw,
@@ -427,6 +428,16 @@ export function HostManage() {
                 }
               />
               <ToggleRow
+                icon={<Mail className="h-4 w-4" />}
+                label="Email registrants a confirmation"
+                hint="Their own join link, plus a calendar invite when the session has a date."
+                checked={webinar.send_confirmation}
+                disabled={saving === 'send_confirmation'}
+                onChange={(next) =>
+                  patch({ send_confirmation: next }, 'send_confirmation')
+                }
+              />
+              <ToggleRow
                 icon={<Lock className="h-4 w-4" />}
                 label="PIN-lock the webinar"
                 hint="Lands in Phase 6."
@@ -525,13 +536,22 @@ export function HostManage() {
                           <span className="text-xs text-slate-500">
                             {r.email}
                           </span>
-                          <span className="text-xs text-slate-400">
+                          <span className="flex items-center gap-1.5 text-xs text-slate-400">
                             {new Date(r.registered_at).toLocaleString(undefined, {
                               month: 'short',
                               day: 'numeric',
                               hour: 'numeric',
                               minute: '2-digit',
                             })}
+                            {r.confirmation_sent_at && (
+                              <span
+                                className="inline-flex items-center gap-1 text-emerald-600"
+                                title={`Confirmation emailed ${new Date(r.confirmation_sent_at).toLocaleString()}`}
+                              >
+                                <Mail className="h-3 w-3" />
+                                emailed
+                              </span>
+                            )}
                           </span>
                           {answered.length > 0 && (
                             <dl className="mt-1.5 space-y-1 border-l-2 border-slate-100 pl-2">

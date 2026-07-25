@@ -29,6 +29,7 @@ export interface WebinarRow {
   host_verified: boolean
   manage_token: string
   custom_questions: CustomQuestion[]
+  send_confirmation: boolean
 }
 
 export interface WebinarInsert {
@@ -45,6 +46,7 @@ export interface WebinarInsert {
   company_name?: string | null
   logo_url?: string | null
   custom_questions?: CustomQuestion[]
+  send_confirmation?: boolean
 }
 
 export interface WebinarUpdate {
@@ -62,6 +64,7 @@ export interface WebinarUpdate {
   company_name?: string | null
   logo_url?: string | null
   custom_questions?: CustomQuestion[]
+  send_confirmation?: boolean
 }
 
 export interface RegistrationRow {
@@ -71,6 +74,23 @@ export interface RegistrationRow {
   email: string
   registered_at: string
   custom_answers: CustomAnswers
+  // Per-registrant join token (migration 0065). Only ever readable by the host
+  // (via list_registrations_by_token) and the send-webinar-confirmation function
+  // — the registrant themselves gets it in their confirmation email, never from
+  // an API response, because anon has no SELECT on registrations.
+  join_token: string
+  confirmation_sent_at: string | null
+}
+
+// What the anon registrant gets back when they exchange the `?t=` token from
+// their confirmation email — their own registration and nothing else.
+export interface JoinTokenLookup {
+  registration_id: string
+  webinar_id: string
+  slug: string
+  name: string
+  email: string
+  registered_at: string
 }
 
 export interface RegistrationInsert {
