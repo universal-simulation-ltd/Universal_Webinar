@@ -30,6 +30,7 @@ export interface WebinarRow {
   manage_token: string
   custom_questions: CustomQuestion[]
   send_confirmation: boolean
+  send_reminders: boolean
 }
 
 export interface WebinarInsert {
@@ -47,6 +48,7 @@ export interface WebinarInsert {
   logo_url?: string | null
   custom_questions?: CustomQuestion[]
   send_confirmation?: boolean
+  send_reminders?: boolean
 }
 
 export interface WebinarUpdate {
@@ -65,6 +67,7 @@ export interface WebinarUpdate {
   logo_url?: string | null
   custom_questions?: CustomQuestion[]
   send_confirmation?: boolean
+  send_reminders?: boolean
 }
 
 export interface RegistrationRow {
@@ -80,6 +83,11 @@ export interface RegistrationRow {
   // an API response, because anon has no SELECT on registrations.
   join_token: string
   confirmation_sent_at: string | null
+  // Phase 5 reminder slots (migration 0066). Written only by the scheduled
+  // process-webinar-reminders sweep; each stamp is that slot's idempotency
+  // guard, so a null means "still due", not "never happening".
+  reminder_24h_sent_at: string | null
+  reminder_1h_sent_at: string | null
 }
 
 // What the anon registrant gets back when they exchange the `?t=` token from
