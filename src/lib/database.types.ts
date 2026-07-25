@@ -45,6 +45,11 @@ export interface WebinarRow {
   // Phase 8. The walk-up door at /w/<slug>. Default on; the host can shut it
   // mid-session without affecting anyone who already registered.
   open_join: boolean
+  // Closing a webinar archives it and hands the host's token back. purge_after
+  // is when the row is actually destroyed — null means kept indefinitely (a
+  // paying host), otherwise 30 days after closing.
+  archived_at: string | null
+  purge_after: string | null
 }
 
 // `manage_token` is deliberately absent from WebinarRow. Migration 0067 revokes

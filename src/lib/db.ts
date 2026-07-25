@@ -51,6 +51,8 @@ export const WEBINAR_COLUMNS = [
   'capacity',
   'send_followup',
   'open_join',
+  'archived_at',
+  'purge_after',
 ].join(', ')
 
 export async function listWebinars(): Promise<WebinarRow[]> {
@@ -225,6 +227,47 @@ export async function getWebinarFreeSeats(
   })
   if (error) throw error
   return (data as number | null) ?? null
+}
+
+export interface WebinarStats {
+  registered: number
+  approved: number
+  pending: number
+  waitlisted: number
+  declined: number
+  attended: number
+  no_show: number
+}
+
+// What the host would be giving up by closing. Attendance isn't otherwise
+// readable through a manage token, and it's the half that makes the summary
+// worth reading.
+export async function getWebinarStatsByToken(
+  slug: string,
+  token: string,
+): Promise<WebinarStats | null> {
+  const { data, error } = await supabase.rpc('webinar_stats_by_token', {
+    p_slug: slug,
+    p_token: token,
+  })
+  if (error) throw error
+  const rows = (data ?? []) as WebinarStats[]
+  return rows[0] ?? null
+}
+
+// Close the webinar: archives it and returns the host's token so they can run
+// another. Irreversible from the app's side — the row is destroyed 30 days
+// later on the free tier.
+export async function archiveWebinarByToken(
+  slug: string,
+  token: string,
+): Promise<WebinarRow> {
+  const { data, error } = await supabase.rpc('archive_webinar_by_token', {
+    p_slug: slug,
+    p_token: token,
+  })
+  if (error) throw error
+  return data as WebinarRow
 }
 
 // Host approves / waitlists / declines a registrant, authorised by the manage
