@@ -4,6 +4,7 @@ import type {
   AttendeeInsert,
   AttendeeRole,
   AttendeeRow,
+  JoinTokenLookup,
   MessageRow,
   ReactionRow,
   RegistrationRow,
@@ -122,6 +123,45 @@ export async function registerForWebinar(
     if (error.code === '23505') return
     throw error
   }
+}
+
+// Ask the backend to email this registrant their confirmation (session details,
+// a .ics invite, and their own join link). The edge function does all the
+// gating: it checks the host opted in, that a registration really exists for
+// this webinar + email, and that one hasn't already been sent.
+//
+// Deliberately NEVER throws. A confirmation email is a nice-to-have on top of a
+// registration that has already been saved — if the provider is down, or the
+// function isn't deployed in a self-hosted setup, the guest is still registered
+// and the page still shows them their join link.
+export async function sendRegistrationConfirmation(
+  webinarId: string,
+  email: string,
+): Promise<boolean> {
+  try {
+    const { data, error } = await supabase.functions.invoke(
+      'send-webinar-confirmation',
+      { body: { webinarId, email: email.trim().toLowerCase() } },
+    )
+    if (error) return false
+    return (data as { sent?: boolean } | null)?.sent === true
+  } catch {
+    return false
+  }
+}
+
+// Exchange the `?t=` token from a confirmation email for that registrant's own
+// details, so their personal link drops them straight into the "you're in"
+// state on any device. Returns null for an unknown/expired token.
+export async function getRegistrationByJoinToken(
+  token: string,
+): Promise<JoinTokenLookup | null> {
+  const { data, error } = await supabase.rpc('get_registration_by_join_token', {
+    p_token: token,
+  })
+  if (error) throw error
+  const rows = (data ?? []) as JoinTokenLookup[]
+  return rows[0] ?? null
 }
 
 // ──────────────────────────────────────────────────────────────────────────────

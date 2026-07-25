@@ -13,13 +13,22 @@ export function buildRegistrationsCsv(
   registrations: RegistrationRow[],
   questions: CustomQuestion[] = [],
 ): string {
-  const header = ['Name', 'Email', 'Registered at', ...questions.map((q) => q.label)]
+  const header = [
+    'Name',
+    'Email',
+    'Registered at',
+    'Confirmation emailed',
+    ...questions.map((q) => q.label),
+  ]
   const rows = registrations.map((r) => {
     const ans = r.custom_answers ?? {}
     return [
       r.name ?? '',
       r.email ?? '',
       new Date(r.registered_at).toISOString(),
+      r.confirmation_sent_at
+        ? new Date(r.confirmation_sent_at).toISOString()
+        : '',
       ...questions.map((q) => ans[q.id] ?? ''),
     ]
       .map((v) => csvCell(String(v)))

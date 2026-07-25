@@ -78,6 +78,7 @@ export function HostNewForm() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [showGuestCount, setShowGuestCount] = useState(true)
   const [allowSpeakRequests, setAllowSpeakRequests] = useState(false)
+  const [sendConfirmation, setSendConfirmation] = useState(true)
   const [customQuestions, setCustomQuestions] = useState<CustomQuestion[]>([])
   const [optionalOpen, setOptionalOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -136,6 +137,7 @@ export function HostNewForm() {
         scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : null,
         show_guest_count: showGuestCount,
         allow_speak_requests: allowSpeakRequests,
+        send_confirmation: sendConfirmation,
         host_name: effHostName.trim() || null,
         host_email: effHostEmail.trim().toLowerCase() || null,
         company_name: companyName.trim() || null,
@@ -171,7 +173,7 @@ export function HostNewForm() {
     } finally {
       setSubmitting(false)
     }
-  }, [logoFile, title, description, scheduledAt, showGuestCount, allowSpeakRequests, customQuestions, needsAccount, hostName, hostEmail, signedInName, signedInEmail, companyName, freeTier, suiteClient, navigate])
+  }, [logoFile, title, description, scheduledAt, showGuestCount, allowSpeakRequests, sendConfirmation, customQuestions, needsAccount, hostName, hostEmail, signedInName, signedInEmail, companyName, freeTier, suiteClient, navigate])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -435,6 +437,23 @@ export function HostNewForm() {
                     <span className="text-sm">
                       <span className="font-medium text-slate-900">
                         Allow guests to request to speak
+                      </span>
+                    </span>
+                  </label>
+                  <label className="flex items-start gap-3 py-1.5">
+                    <input
+                      type="checkbox"
+                      checked={sendConfirmation}
+                      onChange={(e) => setSendConfirmation(e.target.checked)}
+                      className="mt-1 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                    />
+                    <span className="text-sm">
+                      <span className="font-medium text-slate-900">
+                        Email registrants a confirmation
+                      </span>
+                      <span className="block text-xs text-slate-500">
+                        Their own join link, plus a calendar invite when the
+                        session has a date.
                       </span>
                     </span>
                   </label>

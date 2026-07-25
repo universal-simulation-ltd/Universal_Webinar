@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import {
   ArrowRight,
   Calendar,
   CheckCircle2,
   Loader2,
+  Mail,
   Radio,
   ShieldCheck,
 } from 'lucide-react'
@@ -29,9 +30,11 @@ import { HostedBy } from '@/components/HostedBy'
 import { useAuth } from '@/lib/auth'
 import {
   getMyAttendee,
+  getRegistrationByJoinToken,
   getWebinarBySlug,
   joinAsAttendee,
   registerForWebinar,
+  sendRegistrationConfirmation,
 } from '@/lib/db'
 import { getErrorMessage } from '@/lib/errors'
 import { supabase } from '@/lib/supabase'
@@ -43,7 +46,13 @@ const EMAIL_KEY = 'uw:lastEmail'
 export function Register() {
   const { slug = '' } = useParams()
   const navigate = useNavigate()
+  const [params] = useSearchParams()
   const { user, loading: authLoading, configured, signInAnonymously } = useAuth()
+
+  // `?t=` is the per-registrant join token from a confirmation email — holding
+  // it proves you're the person who registered, on whatever device you open the
+  // email with.
+  const joinToken = params.get('t')
 
   const [webinar, setWebinar] = useState<WebinarRow | null>(null)
   const [loading, setLoading] = useState(true)
@@ -54,6 +63,10 @@ export function Register() {
   const [submitting, setSubmitting] = useState(false)
   const [registered, setRegistered] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Whether the backend actually accepted this registration's confirmation
+  // email, so the success card can say so honestly rather than promising a
+  // message that may never arrive.
+  const [confirmationSent, setConfirmationSent] = useState(false)
 
   // The host's custom registration questions (cleaned of anything malformed).
   const questions = useMemo(() => parseQuestions(webinar?.custom_questions), [webinar])
@@ -76,6 +89,33 @@ export function Register() {
       active = false
     }
   }, [slug])
+
+  // Arrived from a confirmation email. Exchange the token for this registrant's
+  // own details and show them the "you're in" state straight away — they've
+  // already registered, so never ask them to fill the form again (and never make
+  // them find the device they registered on).
+  useEffect(() => {
+    if (!webinar || !joinToken) return
+    let active = true
+    ;(async () => {
+      try {
+        const found = await getRegistrationByJoinToken(joinToken)
+        if (!active || !found || found.webinar_id !== webinar.id) return
+        setName(found.name)
+        setEmail(found.email)
+        if (webinar.status === 'live') {
+          navigate(`/w/${webinar.slug}/live`, { replace: true })
+        } else {
+          setRegistered(true)
+        }
+      } catch {
+        // A bad or stale token just falls through to the normal form.
+      }
+    })()
+    return () => {
+      active = false
+    }
+  }, [webinar, joinToken, navigate])
 
   // If the user already has an attendee row in this webinar (returning visit),
   // treat the page as the success-state view rather than asking for details
@@ -148,7 +188,14 @@ export function Register() {
       localStorage.setItem(NAME_KEY, trimmedName)
       localStorage.setItem(EMAIL_KEY, trimmedEmail)
 
-      // 4. Send live attendees straight into the room — no second prompt.
+      // 4. Email them their confirmation + personal join link. Fired without
+      // awaiting so a slow provider never holds up the "you're in" state — the
+      // seat is already saved, and the call can't throw.
+      void sendRegistrationConfirmation(webinar.id, trimmedEmail).then(
+        setConfirmationSent,
+      )
+
+      // 5. Send live attendees straight into the room — no second prompt.
       if (webinar.status === 'live') {
         navigate(`/w/${webinar.slug}/live`, { replace: true })
         return
@@ -240,6 +287,16 @@ export function Register() {
                     Happening right now.
                   </p>
                 )}
+                {confirmationSent && (
+                  <p className="flex items-start gap-1.5 text-slate-500">
+                    <Mail className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
+                    <span>
+                      We've emailed <strong>{email}</strong> your join link
+                      {scheduleInfo?.isFuture ? ' and a calendar invite' : ''} —
+                      keep it and use it to join from any device.
+                    </span>
+                  </p>
+                )}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -266,6 +323,7 @@ export function Register() {
                 onClick={async () => {
                   await supabase.auth.signOut()
                   setRegistered(false)
+                  setConfirmationSent(false)
                   setName('')
                   setEmail('')
                   localStorage.removeItem(NAME_KEY)
@@ -330,7 +388,9 @@ export function Register() {
                     disabled={submitting || !configured}
                   />
                   <p className="text-xs text-slate-500">
-                    We share this only with the host.
+                    {webinar.send_confirmation
+                      ? 'We email your join link here, and share it only with the host.'
+                      : 'We share this only with the host.'}
                   </p>
                 </div>
 

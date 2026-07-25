@@ -141,13 +141,13 @@ export function HostEmails() {
       title="Automatic emails"
       description="Hands-off comms before, during, and after every session."
       bullets={[
-        'Registration confirmation (with calendar attachment)',
+        '✅ Registration confirmation — live now, with the registrant’s own join link and a calendar attachment. Toggle it per webinar under Room settings.',
         'T-24h and T-1h reminders',
         'No-show follow-up with recording link',
         'Custom thank-you / next-steps email',
         'All sent from your verified domain via Resend',
       ]}
-      cta="lands in Phase 3.9"
+      cta="reminders land next"
     />
   )
 }
