@@ -42,6 +42,9 @@ export interface WebinarRow {
   // Phase 7. null = unlimited. Only `approved` registrations occupy a seat.
   capacity: number | null
   send_followup: boolean
+  // Phase 8. The walk-up door at /w/<slug>. Default on; the host can shut it
+  // mid-session without affecting anyone who already registered.
+  open_join: boolean
 }
 
 // `manage_token` is deliberately absent from WebinarRow. Migration 0067 revokes
@@ -75,6 +78,7 @@ export interface WebinarInsert {
   require_approval?: boolean
   capacity?: number | null
   send_followup?: boolean
+  open_join?: boolean
 }
 
 export interface WebinarUpdate {
@@ -97,6 +101,7 @@ export interface WebinarUpdate {
   require_approval?: boolean
   capacity?: number | null
   send_followup?: boolean
+  open_join?: boolean
 }
 
 export interface RegistrationRow {

@@ -6,6 +6,8 @@ import {
   Camera,
   Check,
   Copy,
+  DoorClosed,
+  DoorOpen,
   Download,
   Eye,
   EyeOff,
@@ -82,6 +84,7 @@ export function HostManage() {
   const [tokenInvalid, setTokenInvalid] = useState(false)
   const [saving, setSaving] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [openCopied, setOpenCopied] = useState(false)
   const [verifyOpen, setVerifyOpen] = useState(false)
   // Draft of the custom registration questions — edited locally, saved on demand
   // (unlike the room toggles, which save on each change).
@@ -266,6 +269,15 @@ export function HostManage() {
       },
       'status',
     )
+  }
+
+  async function copyOpenJoinLink() {
+    if (!webinar) return
+    await navigator.clipboard.writeText(
+      `${window.location.origin}/w/${webinar.slug}`,
+    )
+    setOpenCopied(true)
+    setTimeout(() => setOpenCopied(false), 1500)
   }
 
   async function copyShareLink() {
@@ -557,6 +569,64 @@ export function HostManage() {
                 disabled
                 onChange={() => {}}
               />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <DoorOpen className="h-4 w-4 text-slate-500" />
+                Open join link
+              </CardTitle>
+              <CardDescription>
+                Share this anywhere — a newsletter beforehand, or drop it in
+                chat during the session for people who never signed up. They
+                give a name and email at the door.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center gap-2">
+                <code className="flex-1 truncate rounded-md bg-slate-50 px-2.5 py-2 text-xs text-slate-600">
+                  {`${window.location.origin}/w/${webinar.slug}`}
+                </code>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={copyOpenJoinLink}
+                  disabled={!webinar.open_join}
+                >
+                  {openCopied ? (
+                    <Check className="h-4 w-4" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                  {openCopied ? 'Copied!' : 'Copy'}
+                </Button>
+              </div>
+              <ToggleRow
+                icon={
+                  webinar.open_join ? (
+                    <DoorOpen className="h-4 w-4" />
+                  ) : (
+                    <DoorClosed className="h-4 w-4" />
+                  )
+                }
+                label={webinar.open_join ? 'Link is live' : 'Link is switched off'}
+                hint={
+                  webinar.open_join
+                    ? 'Anyone with the link can walk in.'
+                    : 'Walk-ups are blocked. People who already registered can still join with their own link.'
+                }
+                checked={webinar.open_join}
+                disabled={saving === 'open_join'}
+                onChange={(next) => patch({ open_join: next }, 'open_join')}
+              />
+              {webinar.require_approval && webinar.open_join && (
+                <p className="rounded-md bg-amber-50 px-2.5 py-2 text-xs text-amber-800">
+                  You're approving registrants, so walk-ups are turned away
+                  regardless — they'll be asked to register first.
+                </p>
+              )}
             </CardContent>
           </Card>
 
