@@ -3,6 +3,8 @@
 // `supabase gen types typescript --project-id <id>`. For now this stays small
 // and explicit so the app code is fully typed without depending on a CLI step.
 
+import type { CustomQuestion, CustomAnswers } from './customQuestions'
+
 export type WebinarStatus = 'scheduled' | 'live' | 'ended'
 
 export interface WebinarRow {
@@ -26,6 +28,7 @@ export interface WebinarRow {
   logo_url: string | null
   host_verified: boolean
   manage_token: string
+  custom_questions: CustomQuestion[]
 }
 
 export interface WebinarInsert {
@@ -41,6 +44,7 @@ export interface WebinarInsert {
   host_email?: string | null
   company_name?: string | null
   logo_url?: string | null
+  custom_questions?: CustomQuestion[]
 }
 
 export interface WebinarUpdate {
@@ -57,6 +61,7 @@ export interface WebinarUpdate {
   host_name?: string | null
   company_name?: string | null
   logo_url?: string | null
+  custom_questions?: CustomQuestion[]
 }
 
 export interface RegistrationRow {
@@ -65,12 +70,14 @@ export interface RegistrationRow {
   name: string
   email: string
   registered_at: string
+  custom_answers: CustomAnswers
 }
 
 export interface RegistrationInsert {
   webinar_id: string
   name: string
   email: string
+  custom_answers?: CustomAnswers
 }
 
 export type AttendeeRole = 'guest' | 'speaker' | 'banned'

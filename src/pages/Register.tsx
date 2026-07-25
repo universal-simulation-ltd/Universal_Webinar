@@ -18,6 +18,12 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import {
+  type CustomAnswers,
+  parseQuestions,
+  validateAnswers,
+  cleanAnswers,
+} from '@/lib/customQuestions'
 import { AddToCalendarButton } from '@/components/AddToCalendarButton'
 import { HostedBy } from '@/components/HostedBy'
 import { useAuth } from '@/lib/auth'
@@ -43,9 +49,14 @@ export function Register() {
   const [loading, setLoading] = useState(true)
   const [name, setName] = useState(() => localStorage.getItem(NAME_KEY) ?? '')
   const [email, setEmail] = useState(() => localStorage.getItem(EMAIL_KEY) ?? '')
+  const [answers, setAnswers] = useState<CustomAnswers>({})
+  const [answerErrors, setAnswerErrors] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
   const [registered, setRegistered] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // The host's custom registration questions (cleaned of anything malformed).
+  const questions = useMemo(() => parseQuestions(webinar?.custom_questions), [webinar])
 
   useEffect(() => {
     let active = true
@@ -94,6 +105,13 @@ export function Register() {
     e.preventDefault()
     if (!webinar) return
     setError(null)
+    // Validate the host's required custom questions before doing anything else.
+    const aErrors = validateAnswers(questions, answers)
+    setAnswerErrors(aErrors)
+    if (Object.keys(aErrors).length > 0) {
+      setError('Please answer the required questions.')
+      return
+    }
     setSubmitting(true)
     try {
       // 1. Make sure we have a Supabase session (anonymous is fine).
@@ -113,8 +131,8 @@ export function Register() {
       const trimmedName = name.trim()
       const trimmedEmail = email.trim().toLowerCase()
 
-      // 2. Capture in registrations (idempotent on email).
-      await registerForWebinar(webinar.id, trimmedName, trimmedEmail)
+      // 2. Capture in registrations (idempotent on email), with any answers.
+      await registerForWebinar(webinar.id, trimmedName, trimmedEmail, cleanAnswers(questions, answers))
 
       // 3. Create the attendee row tied to this anon user (idempotent).
       const existing = await getMyAttendee(webinar.id)
@@ -315,6 +333,57 @@ export function Register() {
                     We share this only with the host.
                   </p>
                 </div>
+
+                {questions.map((q) => {
+                  const val = answers[q.id] ?? ''
+                  const setVal = (v: string) => {
+                    setAnswers((prev) => ({ ...prev, [q.id]: v }))
+                    if (answerErrors[q.id]) setAnswerErrors((prev) => ({ ...prev, [q.id]: '' }))
+                  }
+                  const qErr = answerErrors[q.id]
+                  return (
+                    <div key={q.id} className="space-y-1.5">
+                      <Label htmlFor={`q-${q.id}`}>
+                        {q.label}
+                        {q.required && <span className="ml-0.5 text-red-500">*</span>}
+                      </Label>
+                      {q.type === 'textarea' ? (
+                        <textarea
+                          id={`q-${q.id}`}
+                          value={val}
+                          onChange={(e) => setVal(e.target.value)}
+                          rows={3}
+                          maxLength={500}
+                          disabled={submitting || !configured}
+                          className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-base text-slate-900 placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 disabled:opacity-50"
+                        />
+                      ) : q.type === 'select' ? (
+                        <select
+                          id={`q-${q.id}`}
+                          value={val}
+                          onChange={(e) => setVal(e.target.value)}
+                          disabled={submitting || !configured}
+                          className="flex h-11 w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-base text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 disabled:opacity-50"
+                        >
+                          <option value="">Choose…</option>
+                          {(q.options ?? []).map((o) => (
+                            <option key={o} value={o}>{o}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <Input
+                          id={`q-${q.id}`}
+                          value={val}
+                          onChange={(e) => setVal(e.target.value)}
+                          maxLength={500}
+                          disabled={submitting || !configured}
+                        />
+                      )}
+                      {qErr && <p className="text-xs text-red-600">{qErr}</p>}
+                    </div>
+                  )
+                })}
+
                 {error && (
                   <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
                     {error}

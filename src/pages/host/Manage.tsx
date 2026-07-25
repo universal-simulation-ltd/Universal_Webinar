@@ -40,6 +40,11 @@ import {
   registrationsCsvFilename,
 } from '@/lib/csv'
 import { getErrorMessage } from '@/lib/errors'
+import CustomQuestionsEditor from '@/components/CustomQuestionsEditor'
+import {
+  type CustomQuestion,
+  parseQuestions,
+} from '@/lib/customQuestions'
 import type { RegistrationRow, WebinarRow, WebinarUpdate } from '@/lib/database.types'
 
 export function HostManage() {
@@ -61,6 +66,19 @@ export function HostManage() {
   const [saving, setSaving] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [verifyOpen, setVerifyOpen] = useState(false)
+  // Draft of the custom registration questions — edited locally, saved on demand
+  // (unlike the room toggles, which save on each change).
+  const [questionsDraft, setQuestionsDraft] = useState<CustomQuestion[]>([])
+
+  // Sync the draft whenever the loaded webinar changes.
+  const savedQuestions = useMemo(() => parseQuestions(webinar?.custom_questions), [webinar])
+  useEffect(() => {
+    setQuestionsDraft(savedQuestions)
+  }, [savedQuestions])
+  const questionsDirty = useMemo(
+    () => JSON.stringify(questionsDraft) !== JSON.stringify(savedQuestions),
+    [questionsDraft, savedQuestions],
+  )
 
   useEffect(() => {
     let active = true
@@ -130,7 +148,7 @@ export function HostManage() {
   function exportRegistrationsCsv() {
     if (!webinar || registrations.length === 0) return
     downloadCsv(
-      buildRegistrationsCsv(registrations),
+      buildRegistrationsCsv(registrations, savedQuestions),
       registrationsCsvFilename(webinar),
     )
   }
@@ -421,6 +439,47 @@ export function HostManage() {
 
           <Card>
             <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings2 className="h-4 w-4 text-slate-500" />
+                Registration questions
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <CustomQuestionsEditor
+                value={questionsDraft}
+                onChange={setQuestionsDraft}
+                disabled={saving === 'custom_questions'}
+              />
+              {questionsDirty && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    disabled={saving === 'custom_questions'}
+                    onClick={() =>
+                      patch({ custom_questions: parseQuestions(questionsDraft) }, 'custom_questions')
+                    }
+                  >
+                    {saving === 'custom_questions' ? (
+                      <><Loader2 className="h-4 w-4 animate-spin" /> Saving…</>
+                    ) : (
+                      'Save questions'
+                    )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={saving === 'custom_questions'}
+                    onClick={() => setQuestionsDraft(savedQuestions)}
+                  >
+                    Discard
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <CardTitle className="flex items-center gap-2">
@@ -455,24 +514,42 @@ export function HostManage() {
               ) : (
                 <>
                   <ul className="max-h-80 divide-y divide-slate-100 overflow-y-auto text-sm">
-                    {registrations.map((r) => (
-                      <li key={r.id} className="flex flex-col py-2">
-                        <span className="font-medium text-slate-900">
-                          {r.name}
-                        </span>
-                        <span className="text-xs text-slate-500">
-                          {r.email}
-                        </span>
-                        <span className="text-xs text-slate-400">
-                          {new Date(r.registered_at).toLocaleString(undefined, {
-                            month: 'short',
-                            day: 'numeric',
-                            hour: 'numeric',
-                            minute: '2-digit',
-                          })}
-                        </span>
-                      </li>
-                    ))}
+                    {registrations.map((r) => {
+                      const ans = r.custom_answers ?? {}
+                      const answered = savedQuestions.filter((q) => (ans[q.id] ?? '').trim())
+                      return (
+                        <li key={r.id} className="flex flex-col py-2">
+                          <span className="font-medium text-slate-900">
+                            {r.name}
+                          </span>
+                          <span className="text-xs text-slate-500">
+                            {r.email}
+                          </span>
+                          <span className="text-xs text-slate-400">
+                            {new Date(r.registered_at).toLocaleString(undefined, {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: 'numeric',
+                              minute: '2-digit',
+                            })}
+                          </span>
+                          {answered.length > 0 && (
+                            <dl className="mt-1.5 space-y-1 border-l-2 border-slate-100 pl-2">
+                              {answered.map((q) => (
+                                <div key={q.id}>
+                                  <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                                    {q.label}
+                                  </dt>
+                                  <dd className="whitespace-pre-wrap text-xs text-slate-600">
+                                    {ans[q.id]}
+                                  </dd>
+                                </div>
+                              ))}
+                            </dl>
+                          )}
+                        </li>
+                      )
+                    })}
                   </ul>
                   <Button
                     variant="outline"

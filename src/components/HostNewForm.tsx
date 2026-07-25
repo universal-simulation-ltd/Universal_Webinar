@@ -29,6 +29,8 @@ import { createWebinar, deleteWebinar } from '@/lib/db'
 import { rememberManageToken, uploadLogo, sendHostOtp, verifyHostOtp } from '@/lib/host'
 import { getErrorMessage } from '@/lib/errors'
 import { slugifyTitle } from '@/lib/slug'
+import CustomQuestionsEditor from '@/components/CustomQuestionsEditor'
+import { type CustomQuestion, parseQuestions } from '@/lib/customQuestions'
 
 // Turn the backend RPC's coded errors into host-friendly copy. Tokens are
 // per-app now (one free Webinar token per org, migration 0045) — token_in_use
@@ -76,6 +78,7 @@ export function HostNewForm() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [showGuestCount, setShowGuestCount] = useState(true)
   const [allowSpeakRequests, setAllowSpeakRequests] = useState(false)
+  const [customQuestions, setCustomQuestions] = useState<CustomQuestion[]>([])
   const [optionalOpen, setOptionalOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -137,6 +140,7 @@ export function HostNewForm() {
         host_email: effHostEmail.trim().toLowerCase() || null,
         company_name: companyName.trim() || null,
         logo_url: logoUrl,
+        custom_questions: parseQuestions(customQuestions),
       })
 
       // Free-tier Universal ID host: spend the one free token (non-refundable).
@@ -167,7 +171,7 @@ export function HostNewForm() {
     } finally {
       setSubmitting(false)
     }
-  }, [logoFile, title, description, scheduledAt, showGuestCount, allowSpeakRequests, needsAccount, hostName, hostEmail, signedInName, signedInEmail, companyName, freeTier, suiteClient, navigate])
+  }, [logoFile, title, description, scheduledAt, showGuestCount, allowSpeakRequests, customQuestions, needsAccount, hostName, hostEmail, signedInName, signedInEmail, companyName, freeTier, suiteClient, navigate])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -323,6 +327,14 @@ export function HostNewForm() {
                     type="datetime-local"
                     value={scheduledAt}
                     onChange={(e) => setScheduledAt(e.target.value)}
+                  />
+                </div>
+
+                <div className="pt-2">
+                  <CustomQuestionsEditor
+                    value={customQuestions}
+                    onChange={setCustomQuestions}
+                    disabled={submitting}
                   />
                 </div>
 

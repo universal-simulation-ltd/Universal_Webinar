@@ -1,3 +1,4 @@
+import type { CustomQuestion } from './customQuestions'
 import type { RegistrationRow, WebinarRow } from './database.types'
 
 // Escape a single CSV cell per RFC 4180: wrap in double quotes and double any
@@ -8,13 +9,22 @@ function csvCell(value: string): string {
   return `"${safe.replace(/"/g, '""')}"`
 }
 
-export function buildRegistrationsCsv(registrations: RegistrationRow[]): string {
-  const header = ['Name', 'Email', 'Registered at']
-  const rows = registrations.map((r) =>
-    [r.name ?? '', r.email ?? '', new Date(r.registered_at).toISOString()]
+export function buildRegistrationsCsv(
+  registrations: RegistrationRow[],
+  questions: CustomQuestion[] = [],
+): string {
+  const header = ['Name', 'Email', 'Registered at', ...questions.map((q) => q.label)]
+  const rows = registrations.map((r) => {
+    const ans = r.custom_answers ?? {}
+    return [
+      r.name ?? '',
+      r.email ?? '',
+      new Date(r.registered_at).toISOString(),
+      ...questions.map((q) => ans[q.id] ?? ''),
+    ]
       .map((v) => csvCell(String(v)))
-      .join(','),
-  )
+      .join(',')
+  })
   // Prepend a UTF-8 BOM so Excel opens accented names correctly.
   return '﻿' + [header.map(csvCell).join(','), ...rows].join('\r\n')
 }
