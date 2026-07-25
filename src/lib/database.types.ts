@@ -39,6 +39,8 @@ export interface WebinarRow {
   send_confirmation: boolean
   send_reminders: boolean
   require_approval: boolean
+  // Phase 7. null = unlimited. Only `approved` registrations occupy a seat.
+  capacity: number | null
 }
 
 // `manage_token` is deliberately absent from WebinarRow. Migration 0067 revokes
@@ -70,6 +72,7 @@ export interface WebinarInsert {
   send_confirmation?: boolean
   send_reminders?: boolean
   require_approval?: boolean
+  capacity?: number | null
 }
 
 export interface WebinarUpdate {
@@ -90,6 +93,7 @@ export interface WebinarUpdate {
   send_confirmation?: boolean
   send_reminders?: boolean
   require_approval?: boolean
+  capacity?: number | null
 }
 
 export interface RegistrationRow {

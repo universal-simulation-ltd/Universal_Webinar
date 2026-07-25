@@ -33,6 +33,7 @@ import {
   getMyAttendee,
   getRegistrationByJoinToken,
   getWebinarBySlug,
+  getWebinarFreeSeats,
   joinAsAttendee,
   registerForWebinar,
   sendRegistrationConfirmation,
@@ -71,9 +72,16 @@ export function Register() {
   // Phase 6. On a gated webinar a registrant is held at 'pending' until the
   // host acts, so "registered" and "allowed in" are no longer the same thing.
   const [regStatus, setRegStatus] = useState<RegistrationStatus>('approved')
+  // Whether the room is out of seats. Anon can't count registrations, so this
+  // comes from the webinar_free_seats() RPC rather than a client-side tally.
+  const [roomFull, setRoomFull] = useState(false)
 
   // The host's custom registration questions (cleaned of anything malformed).
   const questions = useMemo(() => parseQuestions(webinar?.custom_questions), [webinar])
+
+  // "Gated" = the server will decide this registrant's status rather than
+  // auto-approving them: either the host vets sign-ups, or seats are capped.
+  const gated = !!webinar && (webinar.require_approval || webinar.capacity != null)
 
   useEffect(() => {
     let active = true
@@ -93,6 +101,22 @@ export function Register() {
       active = false
     }
   }, [slug])
+
+  useEffect(() => {
+    if (!webinar || webinar.capacity == null) return
+    let active = true
+    ;(async () => {
+      try {
+        const free = await getWebinarFreeSeats(webinar.id)
+        if (active) setRoomFull(free !== null && free <= 0)
+      } catch {
+        // Non-fatal — worst case we don't warn, and the trigger waitlists them.
+      }
+    })()
+    return () => {
+      active = false
+    }
+  }, [webinar])
 
   // Arrived from a confirmation email. Exchange the token for this registrant's
   // own details and show them the "you're in" state straight away — they've
@@ -184,9 +208,10 @@ export function Register() {
       await registerForWebinar(webinar.id, trimmedName, trimmedEmail, cleanAnswers(questions, answers))
 
       // 3. Create the attendee row tied to this anon user (idempotent).
-      //    Skipped when the host gates the room — the database trigger would
-      //    reject it anyway, and a pending guest has no seat yet.
-      if (!webinar.require_approval) {
+      //    Skipped when the room is gated in ANY way — by approval or by a seat
+      //    limit. The database trigger rejects it regardless, and a guest who
+      //    is pending or waitlisted has no seat yet.
+      if (!gated) {
         const existing = await getMyAttendee(webinar.id)
         if (!existing) {
           await joinAsAttendee({
@@ -210,8 +235,24 @@ export function Register() {
 
       // 5. Send live attendees straight into the room — no second prompt.
       //    A gated registrant stays here instead; they aren't in yet.
-      if (webinar.require_approval) {
-        setRegStatus('pending')
+      if (gated) {
+        // The insert can't tell us its own status back (anon has no SELECT on
+        // registrations), so mirror the server's rule: approval first, then the
+        // seat limit. Re-read the seat count rather than trusting the value
+        // fetched on page load — someone else may have taken the last seat
+        // while this form was open.
+        let full = roomFull
+        if (!webinar.require_approval && webinar.capacity != null) {
+          try {
+            const free = await getWebinarFreeSeats(webinar.id)
+            full = free !== null && free <= 0
+          } catch {
+            // Keep the on-load value.
+          }
+        }
+        setRegStatus(
+          webinar.require_approval ? 'pending' : full ? 'waitlisted' : 'approved',
+        )
         setRegistered(true)
         return
       }
@@ -436,6 +477,13 @@ export function Register() {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {roomFull && (
+                <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+                  <strong>This session is full.</strong> You can still sign up —
+                  you'll join the waitlist, and we'll email you if a place opens
+                  up.
+                </div>
+              )}
               {!configured && (
                 <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
                   Supabase isn't connected yet. The host needs to finish setup.

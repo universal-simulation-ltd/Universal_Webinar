@@ -80,6 +80,7 @@ export function HostNewForm() {
   const [allowSpeakRequests, setAllowSpeakRequests] = useState(false)
   const [sendConfirmation, setSendConfirmation] = useState(true)
   const [sendReminders, setSendReminders] = useState(true)
+  const [capacity, setCapacity] = useState('')
   const [customQuestions, setCustomQuestions] = useState<CustomQuestion[]>([])
   const [optionalOpen, setOptionalOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -140,6 +141,7 @@ export function HostNewForm() {
         allow_speak_requests: allowSpeakRequests,
         send_confirmation: sendConfirmation,
         send_reminders: sendReminders,
+        capacity: capacity.trim() === '' ? null : Number(capacity),
         host_name: effHostName.trim() || null,
         host_email: effHostEmail.trim().toLowerCase() || null,
         company_name: companyName.trim() || null,
@@ -175,7 +177,7 @@ export function HostNewForm() {
     } finally {
       setSubmitting(false)
     }
-  }, [logoFile, title, description, scheduledAt, showGuestCount, allowSpeakRequests, sendConfirmation, sendReminders, customQuestions, needsAccount, hostName, hostEmail, signedInName, signedInEmail, companyName, freeTier, suiteClient, navigate])
+  }, [logoFile, title, description, scheduledAt, showGuestCount, allowSpeakRequests, sendConfirmation, sendReminders, capacity, customQuestions, needsAccount, hostName, hostEmail, signedInName, signedInEmail, companyName, freeTier, suiteClient, navigate])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -332,6 +334,22 @@ export function HostNewForm() {
                     value={scheduledAt}
                     onChange={(e) => setScheduledAt(e.target.value)}
                   />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="capacity">Seat limit</Label>
+                  <Input
+                    id="capacity"
+                    type="number"
+                    min={1}
+                    value={capacity}
+                    onChange={(e) => setCapacity(e.target.value)}
+                    placeholder="Unlimited"
+                  />
+                  <p className="text-xs text-slate-500">
+                    Leave blank for unlimited. Once it's full, new sign-ups join
+                    a waitlist and are let in automatically if someone drops out.
+                  </p>
                 </div>
 
                 <div className="pt-2">
