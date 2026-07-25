@@ -13,7 +13,12 @@ import {
 } from '@/components/ui/card'
 import { HostedBy } from '@/components/HostedBy'
 import { useAuth } from '@/lib/auth'
-import { getMyAttendee, getWebinarBySlug, joinAsAttendee } from '@/lib/db'
+import {
+  getMyAttendee,
+  getWebinarBySlug,
+  joinAsAttendee,
+  registerForWebinar,
+} from '@/lib/db'
 import { getErrorMessage } from '@/lib/errors'
 import type { WebinarRow } from '@/lib/database.types'
 
@@ -98,6 +103,13 @@ export function Join() {
         setError('Could not start a session. Try again.')
         return
       }
+      // Register the walk-up as well as admitting them. Without this they'd be
+      // invisible in the host's registrations list and would miss the
+      // post-session follow-up — and registering first is also what lets the
+      // server decide their status (approved / waitlisted / pending), which the
+      // attendee trigger then enforces. Idempotent on email.
+      await registerForWebinar(webinar.id, name.trim(), email.trim().toLowerCase())
+
       // Avoid double-insert if attendee already exists.
       const existing = await getMyAttendee(webinar.id)
       if (!existing) {
@@ -116,7 +128,19 @@ export function Join() {
       // Translate its coded message into something a guest can act on rather
       // than surfacing a raw Postgres error.
       const raw = getErrorMessage(err, 'Could not join.')
-      if (raw.includes('approval_required')) {
+      if (raw.includes('open_join_disabled')) {
+        setError(
+          "The host has closed walk-up joining for this session. If you registered earlier, use the join link in your confirmation email.",
+        )
+      } else if (raw.includes('webinar_full')) {
+        setError(
+          "This session is full. Register on the sign-up page to join the waitlist — we'll email you if a place opens up.",
+        )
+      } else if (raw.includes('registration is waitlisted')) {
+        setError(
+          "You're on the waitlist for this session. We'll email you if a place opens up.",
+        )
+      } else if (raw.includes('approval_required')) {
         setError(
           raw.includes('no registration found')
             ? "This webinar is invite-only — you'll need to register first, and the host approves each request."
@@ -171,7 +195,9 @@ export function Join() {
             <CardDescription>
               {webinar.require_approval
                 ? 'This room is approved by the host. Register first and they’ll let you in.'
-                : 'Tell us who you are so the host can welcome you in.'}
+                : !webinar.open_join
+                  ? 'Walk-up joining is closed for this session. Registered guests can still join with the link from their confirmation email.'
+                  : 'Tell us who you are so the host can welcome you in.'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -238,13 +264,15 @@ export function Join() {
                 type="submit"
                 size="lg"
                 className="w-full"
-                disabled={submitting || !configured}
+                disabled={submitting || !configured || !webinar.open_join}
               >
                 {submitting ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Joining…
                   </>
+                ) : !webinar.open_join ? (
+                  'Walk-up joining is closed'
                 ) : (
                   'Join now'
                 )}
