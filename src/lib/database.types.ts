@@ -41,6 +41,7 @@ export interface WebinarRow {
   require_approval: boolean
   // Phase 7. null = unlimited. Only `approved` registrations occupy a seat.
   capacity: number | null
+  send_followup: boolean
 }
 
 // `manage_token` is deliberately absent from WebinarRow. Migration 0067 revokes
@@ -73,6 +74,7 @@ export interface WebinarInsert {
   send_reminders?: boolean
   require_approval?: boolean
   capacity?: number | null
+  send_followup?: boolean
 }
 
 export interface WebinarUpdate {
@@ -94,6 +96,7 @@ export interface WebinarUpdate {
   send_reminders?: boolean
   require_approval?: boolean
   capacity?: number | null
+  send_followup?: boolean
 }
 
 export interface RegistrationRow {
@@ -114,6 +117,7 @@ export interface RegistrationRow {
   // guard, so a null means "still due", not "never happening".
   reminder_24h_sent_at: string | null
   reminder_1h_sent_at: string | null
+  followup_sent_at: string | null
   // Phase 6 approval gating (migration 0070). Set by a BEFORE INSERT trigger
   // from the webinar's require_approval, never by the client — a payload
   // claiming 'approved' is overridden server-side.

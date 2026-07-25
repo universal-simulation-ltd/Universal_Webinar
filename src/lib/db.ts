@@ -48,6 +48,7 @@ export const WEBINAR_COLUMNS = [
   'send_reminders',
   'require_approval',
   'capacity',
+  'send_followup',
 ].join(', ')
 
 export async function listWebinars(): Promise<WebinarRow[]> {
