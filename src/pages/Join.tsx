@@ -112,7 +112,19 @@ export function Join() {
       localStorage.setItem(EMAIL_KEY, email.trim().toLowerCase())
       navigate(`/w/${webinar.slug}/live`, { replace: true })
     } catch (err) {
-      setError(getErrorMessage(err, 'Could not join.'))
+      // Phase 6: the attendee trigger rejects anyone the host hasn't approved.
+      // Translate its coded message into something a guest can act on rather
+      // than surfacing a raw Postgres error.
+      const raw = getErrorMessage(err, 'Could not join.')
+      if (raw.includes('approval_required')) {
+        setError(
+          raw.includes('no registration found')
+            ? "This webinar is invite-only — you'll need to register first, and the host approves each request."
+            : "You've registered, but the host hasn't approved your place yet. We'll email you when they do.",
+        )
+      } else {
+        setError(raw)
+      }
     } finally {
       setSubmitting(false)
     }
@@ -157,7 +169,9 @@ export function Join() {
           <CardHeader>
             <CardTitle>{webinar.title}</CardTitle>
             <CardDescription>
-              Tell us who you are so the host can welcome you in.
+              {webinar.require_approval
+                ? 'This room is approved by the host. Register first and they’ll let you in.'
+                : 'Tell us who you are so the host can welcome you in.'}
             </CardDescription>
           </CardHeader>
           <CardContent>
