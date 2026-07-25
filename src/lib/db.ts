@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import type { CustomAnswers } from './customQuestions'
 import type {
   AttendeeInsert,
   AttendeeRole,
@@ -106,12 +107,16 @@ export async function registerForWebinar(
   webinarId: string,
   name: string,
   email: string,
+  customAnswers?: CustomAnswers,
 ): Promise<void> {
   const trimmedEmail = email.trim().toLowerCase()
   const { error } = await supabase.from('registrations').insert({
     webinar_id: webinarId,
     name: name.trim(),
     email: trimmedEmail,
+    ...(customAnswers && Object.keys(customAnswers).length > 0
+      ? { custom_answers: customAnswers }
+      : {}),
   })
   if (error) {
     if (error.code === '23505') return
