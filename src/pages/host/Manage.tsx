@@ -32,6 +32,7 @@ import { OtpVerifyDialog } from '@/components/OtpVerifyDialog'
 import { cn } from '@/lib/utils'
 import { getWebinarBySlug, listRegistrationsByToken } from '@/lib/db'
 import {
+  getWebinarByManageToken,
   rememberManageToken,
   recallManageToken,
   updateWebinarByToken,
@@ -88,15 +89,21 @@ export function HostManage() {
     setError(null)
     ;(async () => {
       try {
-        const w = await getWebinarBySlug(slug)
+        // The token is verified server-side now (migration 0067) — it's the
+        // authorisation, and the row it unlocks comes back in the same call.
+        const w = token ? await getWebinarByManageToken(slug, token) : null
         if (!active) return
-        if (!w) {
-          setError(`No webinar found for "${slug}".`)
-          return
-        }
-        if (!token || token !== w.manage_token) {
+        if (!token || !w) {
+          // No token, wrong token, or no such webinar. Fall back to the public
+          // row so a locked-out host still sees which webinar they landed on.
+          const publicRow = await getWebinarBySlug(slug)
+          if (!active) return
+          if (!publicRow) {
+            setError(`No webinar found for "${slug}".`)
+            return
+          }
           setTokenInvalid(true)
-          setWebinar(w)
+          setWebinar(publicRow)
           return
         }
         rememberManageToken(slug, token)

@@ -27,15 +27,26 @@ export interface WebinarRow {
   company_name: string | null
   logo_url: string | null
   host_verified: boolean
-  manage_token: string
   custom_questions: CustomQuestion[]
   send_confirmation: boolean
   send_reminders: boolean
 }
 
+// `manage_token` is deliberately absent from WebinarRow. Migration 0067 revokes
+// it from anon + authenticated at the column level, so no read of the base
+// table can ever return it — a stray `webinar.manage_token` should be a type
+// error, not a silent undefined. It reaches the browser in exactly two places,
+// both of which already hold the token: the client mints it at creation time
+// (createWebinar), and update_webinar_by_token echoes the row back.
+export interface WebinarWithManageToken extends WebinarRow {
+  manage_token: string
+}
+
 export interface WebinarInsert {
   slug: string
   title: string
+  // Optional: createWebinar mints one when it isn't supplied. See db.ts.
+  manage_token?: string
   description?: string
   scheduled_at?: string | null
   status?: WebinarStatus

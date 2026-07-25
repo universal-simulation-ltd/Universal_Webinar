@@ -14,36 +14,76 @@ import type {
   WebinarInsert,
   WebinarRow,
   WebinarUpdate,
+  WebinarWithManageToken,
 } from './database.types'
+
+// Every column of `webinars` except the host's secret `manage_token`, which
+// migration 0067 revokes from anon + authenticated at the column level. `*` is
+// no longer usable: PostgREST passes it through as a bare SQL `*`, which now
+// fails with "permission denied for column manage_token". Keep this list in
+// step with WebinarRow — a column missing here is simply absent at runtime.
+export const WEBINAR_COLUMNS = [
+  'id',
+  'slug',
+  'title',
+  'description',
+  'scheduled_at',
+  'started_at',
+  'ended_at',
+  'status',
+  'allow_speak_requests',
+  'show_guest_count',
+  'recording_url',
+  'created_at',
+  'updated_at',
+  'created_by',
+  'host_name',
+  'host_email',
+  'company_name',
+  'logo_url',
+  'host_verified',
+  'custom_questions',
+  'send_confirmation',
+  'send_reminders',
+].join(', ')
 
 export async function listWebinars(): Promise<WebinarRow[]> {
   const { data, error } = await supabase
     .from('webinars')
-    .select('*')
+    .select(WEBINAR_COLUMNS)
     .order('scheduled_at', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: false })
   if (error) throw error
-  return (data ?? []) as WebinarRow[]
+  return (data ?? []) as unknown as WebinarRow[]
 }
 
 export async function getWebinarBySlug(slug: string): Promise<WebinarRow | null> {
   const { data, error } = await supabase
     .from('webinars')
-    .select('*')
+    .select(WEBINAR_COLUMNS)
     .eq('slug', slug)
     .maybeSingle()
   if (error) throw error
   return data as WebinarRow | null
 }
 
-export async function createWebinar(insert: WebinarInsert): Promise<WebinarRow> {
+// The manage token can't be read back out of the table any more, so the client
+// mints it here and hands it to the INSERT rather than letting the column
+// default fire. crypto.randomUUID() is CSPRNG-backed and gives the same 122
+// bits as gen_random_uuid(); choosing your own token can only ever weaken a
+// webinar you are creating yourself, and the update RPC strips the column from
+// its patch, so it stays unforgeable for anyone else's row.
+export async function createWebinar(
+  insert: WebinarInsert,
+): Promise<WebinarWithManageToken> {
+  const manageToken = insert.manage_token ?? crypto.randomUUID()
   const { data, error } = await supabase
     .from('webinars')
-    .insert(insert)
-    .select('*')
+    .insert({ ...insert, manage_token: manageToken })
+    .select(WEBINAR_COLUMNS)
     .single()
   if (error) throw error
-  return data as WebinarRow
+  return { ...(data as unknown as WebinarRow), manage_token: manageToken }
 }
 
 export async function updateWebinar(
@@ -54,10 +94,10 @@ export async function updateWebinar(
     .from('webinars')
     .update(patch)
     .eq('id', id)
-    .select('*')
+    .select(WEBINAR_COLUMNS)
     .single()
   if (error) throw error
-  return data as WebinarRow
+  return data as unknown as WebinarRow
 }
 
 export async function deleteWebinar(id: string): Promise<void> {
