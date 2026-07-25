@@ -123,6 +123,9 @@ export interface RegistrationRow {
   reminder_24h_sent_at: string | null
   reminder_1h_sent_at: string | null
   followup_sent_at: string | null
+  // IANA zone from the registrant's browser at sign-up (migration 0075), used
+  // to localise their emails. Null = never learned, emails fall back to UTC.
+  timezone: string | null
   // Phase 6 approval gating (migration 0070). Set by a BEFORE INSERT trigger
   // from the webinar's require_approval, never by the client — a payload
   // claiming 'approved' is overridden server-side.
@@ -146,6 +149,7 @@ export interface RegistrationInsert {
   name: string
   email: string
   custom_answers?: CustomAnswers
+  timezone?: string | null
 }
 
 export type AttendeeRole = 'guest' | 'speaker' | 'banned'

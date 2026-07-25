@@ -54,6 +54,7 @@ import {
   registrationsCsvFilename,
 } from '@/lib/csv'
 import { getErrorMessage } from '@/lib/errors'
+import { formatWithZone, localTimezone } from '@/lib/time'
 import CustomQuestionsEditor from '@/components/CustomQuestionsEditor'
 import {
   type CustomQuestion,
@@ -813,12 +814,10 @@ export function HostManage() {
                             {r.email}
                           </span>
                           <span className="flex items-center gap-1.5 text-xs text-slate-400">
-                            {new Date(r.registered_at).toLocaleString(undefined, {
-                              month: 'short',
-                              day: 'numeric',
-                              hour: 'numeric',
-                              minute: '2-digit',
-                            })}
+                            {formatWithZone(
+                              new Date(r.registered_at),
+                              localTimezone(),
+                            )}
                             {r.confirmation_sent_at && (
                               <span
                                 className="inline-flex items-center gap-1 text-emerald-600"

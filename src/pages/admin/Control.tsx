@@ -59,6 +59,7 @@ import {
   joinWebinarChannel,
   leaveChannel,
 } from '@/lib/realtime'
+import { formatWithZone, localTimezone } from '@/lib/time'
 import type {
   AttendeeRow,
   MessageRow,
@@ -627,12 +628,7 @@ export function AdminControl() {
                           {r.email}
                         </span>
                         <span className="text-xs text-slate-400">
-                          {new Date(r.registered_at).toLocaleString(undefined, {
-                            month: 'short',
-                            day: 'numeric',
-                            hour: 'numeric',
-                            minute: '2-digit',
-                          })}
+                          {formatWithZone(new Date(r.registered_at), localTimezone())}
                         </span>
                       </li>
                     ))}
