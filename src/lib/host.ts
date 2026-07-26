@@ -115,8 +115,19 @@ export async function sendHostOtp(email: string): Promise<void> {
   const { error } = await supabase.auth.signInWithOtp({
     email: email.trim().toLowerCase(),
     options: {
-      // Disable the legacy magic-link redirect — we want a typed OTP code.
+      // We want a typed OTP code, but the email carries a link too and some
+      // hosts will tap it.
       shouldCreateUser: true,
+      // Without this the magic link falls back to the project's global site_url
+      // (https://app.unisim.co.uk) and a host who taps it lands on the suite hub
+      // instead of here. The Supabase project is shared, so its site_url can't
+      // be any one product's.
+      //
+      // BASE_URL is Vite's configured base ('/webinar/' in production, '/' in dev), and
+      // the trailing slash is stripped so this sends the exact bare form the
+      // redirect allowlist carries — a listed entry without a wildcard has to
+      // match exactly, and '.../webinar/' is not '.../webinar'.
+      emailRedirectTo: `${window.location.origin}${import.meta.env.BASE_URL}`.replace(/\/$/, ''),
     },
   })
   if (error) throw error
