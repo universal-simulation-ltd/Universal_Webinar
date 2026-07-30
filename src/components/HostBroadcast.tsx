@@ -9,6 +9,7 @@ import {
 import { ConnectionState, Track } from 'livekit-client'
 import { Camera, CameraOff, Loader2, Mic, MicOff, MonitorUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { CameraBubble } from '@/components/CameraBubble'
 import { cn } from '@/lib/utils'
 
 /**
@@ -54,15 +55,17 @@ function HostBroadcastInner() {
   const [busy, setBusy] = useState<string | null>(null)
   const [deviceError, setDeviceError] = useState<string | null>(null)
 
-  // Show the host their own published video, screen share winning if both are
-  // live — that is what the room is looking at.
+  // Show the host exactly what the room is looking at: the screen share as the
+  // main view when there is one, with the camera as a bubble over it, so they
+  // can see whether their face is covering the thing they're presenting.
   const tracks = useTracks([Track.Source.ScreenShare, Track.Source.Camera], {
     onlySubscribed: false,
   })
   const own = tracks.filter((t) => t.participant.isLocal)
-  const preview =
-    own.find((t) => t.source === Track.Source.ScreenShare) ??
-    own.find((t) => t.source === Track.Source.Camera)
+  const screen = own.find((t) => t.source === Track.Source.ScreenShare)
+  const camera = own.find((t) => t.source === Track.Source.Camera)
+  const main = screen ?? camera
+  const bubble = screen ? camera : undefined
 
   async function toggle(what: 'camera' | 'mic' | 'screen') {
     setBusy(what)
@@ -99,11 +102,20 @@ function HostBroadcastInner() {
   return (
     <div className="flex h-full flex-col">
       <div className="relative flex-1 overflow-hidden rounded-xl bg-slate-900">
-        {preview ? (
-          <VideoTrack
-            trackRef={preview}
-            className="h-full w-full object-contain"
-          />
+        {main ? (
+          <>
+            <VideoTrack
+              trackRef={main}
+              className="h-full w-full object-contain"
+            />
+            {bubble && (
+              <CameraBubble
+                trackRef={bubble}
+                storageKey="unisim-webinar-camera-bubble-host"
+                label="Your camera"
+              />
+            )}
+          </>
         ) : (
           <div className="absolute inset-0 grid place-items-center text-center text-sm text-slate-300">
             <div>

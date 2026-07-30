@@ -11,6 +11,7 @@ import {
 import { ConnectionState, Track } from 'livekit-client'
 import { AlertCircle, FileText, Hand, Heart, Loader2, MicOff, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { CameraBubble } from '@/components/CameraBubble'
 import { ChatPanel } from '@/components/ChatPanel'
 import { SharedDocViewer } from '@/components/SharedDocViewer'
 import {
@@ -75,7 +76,14 @@ function HostStageInner() {
     onlySubscribed: true,
   })
 
-  const hostVideoTrack = videoTracks[0]
+  // Pick the screen share deliberately rather than taking videoTracks[0] and
+  // hoping: with both published the array order is not guaranteed, so a guest
+  // could have been shown the host's face while a slide deck went unseen.
+  const screenTrack = videoTracks.find((t) => t.source === Track.Source.ScreenShare)
+  const cameraTrack = videoTracks.find((t) => t.source === Track.Source.Camera)
+  const hostVideoTrack = screenTrack ?? cameraTrack
+  // Only a bubble when there is something behind it to sit on top of.
+  const hostBubbleTrack = screenTrack ? cameraTrack : undefined
   const hostAudioTrack = audioTracks[0]
 
   if (connectionState === ConnectionState.Connecting) {
@@ -102,8 +110,22 @@ function HostStageInner() {
       {hostAudioTrack && <AudioTrack trackRef={hostAudioTrack} />}
       <VideoTrack
         trackRef={hostVideoTrack}
-        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        style={{
+          width: '100%',
+          height: '100%',
+          // A shared screen is cropped by `cover` — losing the edges of a slide
+          // or the taskbar you were pointing at. Contain it; a camera feed
+          // still fills the frame.
+          objectFit: screenTrack ? 'contain' : 'cover',
+        }}
       />
+      {hostBubbleTrack && (
+        <CameraBubble
+          trackRef={hostBubbleTrack}
+          storageKey="unisim-webinar-camera-bubble-guest"
+          label="Presenter camera"
+        />
+      )}
     </>
   )
 }
