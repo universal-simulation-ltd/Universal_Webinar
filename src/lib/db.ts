@@ -2,6 +2,7 @@ import { supabase } from './supabase'
 import { localTimezone } from './time'
 import type { CustomAnswers } from './customQuestions'
 import type {
+  AttendanceRow,
   AttendeeInsert,
   AttendeeRole,
   AttendeeRow,
@@ -253,6 +254,21 @@ export async function getWebinarStatsByToken(
   if (error) throw error
   const rows = (data ?? []) as WebinarStats[]
   return rows[0] ?? null
+}
+
+// The per-person counterpart of getWebinarStatsByToken's `attended` count.
+// Same token authorisation, and deliberately the same definition of attendance
+// (lowercased email) so the list and the count above it can't disagree.
+export async function getWebinarAttendanceByToken(
+  slug: string,
+  token: string,
+): Promise<AttendanceRow[]> {
+  const { data, error } = await supabase.rpc('webinar_attendance_by_token', {
+    p_slug: slug,
+    p_token: token,
+  })
+  if (error) throw error
+  return (data ?? []) as AttendanceRow[]
 }
 
 // Close the webinar: archives it and returns the host's token so they can run

@@ -157,6 +157,17 @@ export interface RegistrationInsert {
   timezone?: string | null
 }
 
+// What a manage-token host can learn about who turned up (migration 0096).
+// One row per PERSON rather than per attendee row — rejoining after a dropout
+// inserts a second row, and the RPC collapses those by lowercased email.
+// `last_left_at` is null while they are still in the room.
+export interface AttendanceRow {
+  name: string
+  email: string
+  first_joined_at: string
+  last_left_at: string | null
+}
+
 export type AttendeeRole = 'guest' | 'speaker' | 'banned'
 
 export interface AttendeeRow {

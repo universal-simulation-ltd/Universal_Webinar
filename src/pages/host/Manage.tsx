@@ -25,6 +25,7 @@ import {
   TrendingUp,
   UserCheck,
   Users,
+  UserX,
   Video,
   X,
 } from 'lucide-react'
@@ -41,6 +42,7 @@ import { OtpVerifyDialog } from '@/components/OtpVerifyDialog'
 import { cn } from '@/lib/utils'
 import {
   archiveWebinarByToken,
+  getWebinarAttendanceByToken,
   getWebinarBySlug,
   getWebinarStatsByToken,
   listRegistrationsByToken,
@@ -67,6 +69,7 @@ import {
   parseQuestions,
 } from '@/lib/customQuestions'
 import type {
+  AttendanceRow,
   RegistrationRow,
   RegistrationStatus,
   WebinarRow,
@@ -100,6 +103,7 @@ export function HostManage() {
   // rather than freezing the whole panel.
   const [statusSaving, setStatusSaving] = useState<string | null>(null)
   const [stats, setStats] = useState<WebinarStats | null>(null)
+  const [attendance, setAttendance] = useState<AttendanceRow[]>([])
   const [closing, setClosing] = useState(false)
   const [confirmClose, setConfirmClose] = useState(false)
   // Closing destroys data on the free tier, so the host has to have taken their
@@ -135,6 +139,25 @@ export function HostManage() {
     () => JSON.stringify(questionsDraft) !== JSON.stringify(savedQuestions),
     [questionsDraft, savedQuestions],
   )
+
+  // Attendance is keyed by lowercased email — the same definition migration
+  // 0096, the stats RPC and the follow-up emailer all use, so the badge, the
+  // count and who got a "we missed you" can't tell three different stories.
+  const attendedByEmail = useMemo(
+    () => new Map(attendance.map((a) => [a.email.toLowerCase(), a])),
+    [attendance],
+  )
+  // Anyone in the room who matches no registration walked up — a newsletter
+  // link or a forwarded join URL rather than the registration form.
+  const walkUps = useMemo(() => {
+    const registered = new Set(registrations.map((r) => r.email.toLowerCase()))
+    return attendance.filter((a) => !registered.has(a.email.toLowerCase()))
+  }, [attendance, registrations])
+  // "Didn't turn up" is only meaningful once there was something to turn up to,
+  // and only for people who were actually let in — someone still pending or
+  // declined never had the chance. Before the session it would just be a wall
+  // of red on a healthy registrations list.
+  const showNoShows = webinar?.status === 'ended'
 
   useEffect(() => {
     let active = true
@@ -176,6 +199,14 @@ export function HostManage() {
           if (active) setStats(s)
         } catch {
           // Non-fatal — the panel still works without the summary.
+        }
+        try {
+          const a = await getWebinarAttendanceByToken(w.slug, token)
+          if (active) setAttendance(a)
+        } catch {
+          // Also non-fatal: the attendance RPC is newer than some deployed
+          // databases, and a host who can't see who turned up should still get
+          // their registrations list rather than an error page.
         }
       } catch (err) {
         if (active) setError(getErrorMessage(err, 'Load failed.'))
@@ -242,6 +273,15 @@ export function HostManage() {
     setRefreshingRegs(true)
     try {
       setRegistrations(await listRegistrationsByToken(webinar.slug, token))
+      // Attendance moves faster than registrations during a live session, so
+      // the refresh has to pick it up too — otherwise walk-ups only appear on
+      // a full page reload. Failing here shouldn't lose the registrations we
+      // just fetched, hence the inner catch.
+      try {
+        setAttendance(await getWebinarAttendanceByToken(webinar.slug, token))
+      } catch {
+        // Non-fatal, same reasoning as the initial load.
+      }
     } catch (err) {
       setError(getErrorMessage(err, 'Could not refresh registrations.'))
     } finally {
@@ -250,10 +290,12 @@ export function HostManage() {
   }
 
   function exportRegistrationsCsv() {
-    if (!webinar || registrations.length === 0) return
+    // Walk-ups are worth exporting even if nobody pre-registered, so the guard
+    // is "is there anyone at all", not "are there registrations".
+    if (!webinar || (registrations.length === 0 && attendance.length === 0)) return
     setExported(true)
     downloadCsv(
-      buildRegistrationsCsv(registrations, savedQuestions),
+      buildRegistrationsCsv(registrations, savedQuestions, attendance),
       registrationsCsvFilename(webinar),
     )
   }
@@ -845,6 +887,11 @@ export function HostManage() {
                         {' '}· {waitlistedCount} waitlisted
                       </span>
                     )}
+                    {walkUps.length > 0 && (
+                      <span className="text-slate-500">
+                        {' '}· {walkUps.length} walked up
+                      </span>
+                    )}
                   </CardDescription>
                 </div>
                 <button
@@ -872,6 +919,9 @@ export function HostManage() {
                     {registrations.map((r) => {
                       const ans = r.custom_answers ?? {}
                       const answered = savedQuestions.filter((q) => (ans[q.id] ?? '').trim())
+                      const attended = attendedByEmail.get(r.email.toLowerCase())
+                      const noShow =
+                        showNoShows && !attended && r.status === 'approved'
                       return (
                         <li key={r.id} className="flex flex-col py-2">
                           <span className="font-medium text-slate-900">
@@ -920,6 +970,40 @@ export function HostManage() {
                               </span>
                             )}
                           </span>
+                          {/* Attendance is a fact about the person, not about
+                              an email, so it sits with the status chip rather
+                              than in the row of send markers above. */}
+                          {(attended || noShow) && (
+                            <span
+                              className={cn(
+                                'mt-1 inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium',
+                                attended
+                                  ? 'bg-emerald-50 text-emerald-700'
+                                  : 'bg-slate-100 text-slate-600',
+                              )}
+                              title={
+                                attended
+                                  ? `Joined ${new Date(attended.first_joined_at).toLocaleString()}${
+                                      attended.last_left_at
+                                        ? `, left ${new Date(attended.last_left_at).toLocaleString()}`
+                                        : ''
+                                    }`
+                                  : 'Approved to attend, but never joined the room'
+                              }
+                            >
+                              {attended ? (
+                                <>
+                                  <UserCheck className="h-3 w-3" />
+                                  Attended
+                                </>
+                              ) : (
+                                <>
+                                  <UserX className="h-3 w-3" />
+                                  Didn't attend
+                                </>
+                              )}
+                            </span>
+                          )}
                           {r.status !== 'approved' && (
                             <span
                               className={cn(
@@ -997,16 +1081,50 @@ export function HostManage() {
                       )
                     })}
                   </ul>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-3 w-full"
-                    onClick={exportRegistrationsCsv}
-                  >
-                    <Download className="h-4 w-4" />
-                    Export CSV
-                  </Button>
                 </>
+              )}
+
+              {/* Walk-ups sit outside the registrations branch on purpose: they
+                  are people the registrations list can never contain, so a
+                  webinar with nothing but walk-ups must still show them rather
+                  than only "no one has registered yet". */}
+              {walkUps.length > 0 && (
+                <div className="mt-4 border-t border-slate-100 pt-3">
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                    Walk-ups · {walkUps.length}
+                  </p>
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    Joined without registering — a forwarded link or your
+                    newsletter, rather than the registration form.
+                  </p>
+                  <ul className="mt-2 max-h-48 divide-y divide-slate-100 overflow-y-auto text-sm">
+                    {walkUps.map((a) => (
+                      <li key={a.email} className="flex flex-col py-2">
+                        <span className="font-medium text-slate-900">{a.name}</span>
+                        <span className="text-xs text-slate-500">{a.email}</span>
+                        <span className="text-xs text-slate-400">
+                          Joined{' '}
+                          {formatWithZone(
+                            new Date(a.first_joined_at),
+                            localTimezone(),
+                          )}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {(registrations.length > 0 || walkUps.length > 0) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-3 w-full"
+                  onClick={exportRegistrationsCsv}
+                >
+                  <Download className="h-4 w-4" />
+                  Export CSV
+                </Button>
               )}
             </CardContent>
           </Card>
