@@ -359,18 +359,18 @@ export function HostManage() {
     setDocBusy(true)
     const previous = webinar.shared_doc_url
     try {
-      const uploaded = await uploadSharedDoc(webinar.id, file)
+      const uploaded = await uploadSharedDoc(webinar.slug, token, file)
       try {
         await patchStrict(
           { shared_doc_url: uploaded.url, shared_doc_name: uploaded.name },
           'shared_doc',
         )
       } catch (err) {
-        await removeSharedDoc(uploaded.url)
+        await removeSharedDoc(webinar.slug, token, uploaded.url)
         throw err
       }
       // Replacing? The old one is now unreferenced.
-      if (previous) await removeSharedDoc(previous)
+      if (previous) await removeSharedDoc(webinar.slug, token, previous)
       if (uploaded.size < uploaded.originalSize) {
         setDocNote(
           `Shrunk from ${formatBytes(uploaded.originalSize)} to ${formatBytes(uploaded.size)} before uploading.`,
@@ -396,7 +396,7 @@ export function HostManage() {
       // an empty stage, which is what they asked for — the orphan goes with the
       // webinar at purge time.
       await patchStrict({ shared_doc_url: null, shared_doc_name: null }, 'shared_doc')
-      if (url) await removeSharedDoc(url)
+      if (url) await removeSharedDoc(webinar.slug, token, url)
     } catch (err) {
       setDocError(getErrorMessage(err, 'Could not take that down.'))
     } finally {
@@ -1503,19 +1503,20 @@ export function HostManage() {
           {/* Everything above only registered itself. This is what renders. */}
           {panelOrder.map((id) => panelNodes[id])}
 
-          {/* The recording link, the numbers and the keep-or-close decision all
-              moved to the wrap-up page, which "End webinar" navigates to. This
-              link is how you get there any other time — including for a webinar
-              that never ran, where closing is the only way to get the token
-              back for a different one. */}
-          <Button asChild variant="outline" size="sm" className="w-full">
-            <Link to={`/host/w/${webinar.slug}/wrap`}>
-              <Archive className="h-4 w-4" />
-              {webinar.status === 'ended'
-                ? 'Wrap-up — recording, numbers & closing'
-                : 'Recording, numbers & closing'}
-            </Link>
-          </Button>
+          {/* Only after the event. Before and during, the wrap-up is nothing a
+              host can act on — no attendance yet, no recording to paste — and
+              a link to "closing" next to the live controls is an invitation to
+              misclick. "End webinar" navigates there; this is how you get back.
+              An unstarted webinar that just needs closing is still reachable
+              by URL, and from the webinars list. */}
+          {webinar.status === 'ended' && (
+            <Button asChild variant="outline" size="sm" className="w-full">
+              <Link to={`/host/w/${webinar.slug}/wrap`}>
+                <Archive className="h-4 w-4" />
+                Wrap-up — recording, numbers &amp; closing
+              </Link>
+            </Button>
+          )}
 
           <button
             type="button"

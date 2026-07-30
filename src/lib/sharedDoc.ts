@@ -5,8 +5,19 @@ import { supabase } from './supabase'
  * The document a host puts on the stage — upload, replace and remove.
  *
  * Storage is the public `webinar-docs` bucket (migration 0098) under
- * `<webinar_id>/<random>.<ext>`. Writes need an auth session, which the host
- * already has: OTP verification is compulsory before going live.
+ * `<webinar_id>/<random>.<ext>`.
+ *
+ * ⚠️ Writes go through the `webinar-doc` edge function, NOT straight to
+ * storage. 0098's policies require an auth session whose email matches the
+ * host's, and a manage-token host frequently hasn't got one: `host_verified`
+ * is a column that stays true forever while the browser session expires, and a
+ * host who ever joined their own room as a guest holds an *anonymous* session,
+ * which passes the `to authenticated` role check while carrying no email claim
+ * at all. Both fail with `new row violates row-level security policy`.
+ *
+ * The function validates the manage token — this app's actual authorisation
+ * model — and returns a signed upload URL, so the bytes still go browser →
+ * storage directly and never through the function.
  */
 
 const BUCKET = 'webinar-docs'
@@ -35,28 +46,56 @@ const IMAGE_MAX_BYTES = 1.5 * 1024 * 1024
 export interface SharedDocUpload {
   url: string
   name: string
+  /** Storage path, so the caller can ask for it back later. */
+  path: string
   /** Bytes actually stored, so the UI can say what the shrink achieved. */
   size: number
   /** Bytes of the file the host picked. Equal to `size` when nothing shrank. */
   originalSize: number
 }
 
+interface SignResponse {
+  ok: boolean
+  error?: string
+  path?: string
+  token?: string
+  publicUrl?: string
+}
+
+/** Call the manage-token gatekeeper. Throws with whatever it said went wrong. */
+async function callDocFunction(body: Record<string, unknown>): Promise<SignResponse> {
+  const { data, error } = await supabase.functions.invoke<SignResponse>('webinar-doc', {
+    body,
+  })
+  if (error) {
+    // A non-2xx carries the function's own message in the response body, which
+    // is far more useful than "Edge Function returned a non-2xx status code".
+    const detail = await readFunctionError(error)
+    throw new Error(detail ?? error.message)
+  }
+  if (!data?.ok) throw new Error(data?.error ?? 'That did not work.')
+  return data
+}
+
+async function readFunctionError(error: unknown): Promise<string | null> {
+  const res = (error as { context?: Response })?.context
+  if (!res || typeof res.json !== 'function') return null
+  try {
+    const body = (await res.json()) as { error?: string }
+    return body?.error ?? null
+  } catch {
+    return null
+  }
+}
+
 export function isSharedDocType(type: string): boolean {
   return (SHARED_DOC_TYPES as readonly string[]).includes(type)
 }
 
-const EXT_FOR_TYPE: Record<string, string> = {
-  'application/pdf': 'pdf',
-  'image/png': 'png',
-  'image/jpeg': 'jpg',
-  'image/webp': 'webp',
-}
-
-function randomName(): string {
-  const bytes = new Uint8Array(12)
-  crypto.getRandomValues(bytes)
-  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
-}
+// The storage path (and therefore the extension and the random filename) is
+// decided by the `webinar-doc` function, not here — it owns the webinar-id
+// prefix that scopes the signed URL, and a client-chosen path would be a
+// client-chosen scope.
 
 /**
  * Shrink what we can.
@@ -86,7 +125,8 @@ async function prepare(file: File): Promise<File> {
  * (via `update_webinar_by_token`) — this only puts the bytes in place.
  */
 export async function uploadSharedDoc(
-  webinarId: string,
+  slug: string,
+  manageToken: string,
   file: File,
 ): Promise<SharedDocUpload> {
   if (!isSharedDocType(file.type)) {
@@ -106,20 +146,31 @@ export async function uploadSharedDoc(
     )
   }
 
-  const ext = EXT_FOR_TYPE[upload.type] ?? EXT_FOR_TYPE[file.type] ?? 'pdf'
-  const path = `${webinarId}/${randomName()}.${ext}`
+  // The function decides the path (it owns the webinar-id prefix) and hands
+  // back a token good for that one object.
+  const signed = await callDocFunction({
+    slug,
+    token: manageToken,
+    action: 'sign-upload',
+    contentType: upload.type,
+  })
+  if (!signed.path || !signed.token || !signed.publicUrl) {
+    throw new Error('Could not start the upload.')
+  }
 
   const { error } = await supabase.storage
     .from(BUCKET)
-    .upload(path, upload, { contentType: upload.type, upsert: false })
+    .uploadToSignedUrl(signed.path, signed.token, upload, {
+      contentType: upload.type,
+    })
   if (error) throw error
 
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path)
   return {
-    url: data.publicUrl,
+    url: signed.publicUrl,
     // The host's own filename, not the randomised storage one — it's what they
     // recognise, and guests see it as the label above the document.
     name: file.name,
+    path: signed.path,
     size: upload.size,
     originalSize: file.size,
   }
@@ -132,11 +183,20 @@ export async function uploadSharedDoc(
  * the stage, or a storage hiccup would leave them unable to take it down. The
  * orphaned object goes when the webinar is purged.
  */
-export async function removeSharedDoc(url: string): Promise<void> {
+export async function removeSharedDoc(
+  slug: string,
+  manageToken: string,
+  url: string,
+): Promise<void> {
   const marker = `/${BUCKET}/`
   const at = url.indexOf(marker)
   if (at === -1) return
   const path = decodeURIComponent(url.slice(at + marker.length).split('?')[0])
   if (!path) return
-  await supabase.storage.from(BUCKET).remove([path])
+  try {
+    await callDocFunction({ slug, token: manageToken, action: 'remove', path })
+  } catch {
+    // Swallowed on purpose — see the doc comment. The caller has already
+    // cleared the reference, or is about to.
+  }
 }
