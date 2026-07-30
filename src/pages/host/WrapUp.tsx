@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import {
   AlertTriangle,
   Archive,
@@ -57,7 +57,14 @@ import type {
  */
 export function HostWrapUp() {
   const { slug = '' } = useParams()
-  const token = useMemo(() => recallManageToken(slug), [slug])
+  const [params] = useSearchParams()
+  // Storage first, but honour ?token= as well: a host who opens this on a
+  // second device, or straight from the link in their confirmation email, has
+  // nothing in localStorage and would otherwise hit a dead end here.
+  const token = useMemo(
+    () => recallManageToken(slug) ?? params.get('token'),
+    [slug, params],
+  )
 
   const [webinar, setWebinar] = useState<WebinarRow | null>(null)
   const [registrations, setRegistrations] = useState<RegistrationRow[]>([])
@@ -74,7 +81,9 @@ export function HostWrapUp() {
     ;(async () => {
       try {
         if (!token) {
-          setError('We need your manage link to show this.')
+          setError(
+            'We need your manage link to show this. Open the webinar from the link you were given, then come back.',
+          )
           return
         }
         const w = await getWebinarByManageToken(slug, token)
