@@ -1,6 +1,10 @@
 import { supabase } from './supabase'
 import { WEBINAR_COLUMNS } from './db'
-import type { WebinarRow, WebinarUpdate } from './database.types'
+import type {
+  WebinarRow,
+  WebinarUpdate,
+  WebinarWithManageToken,
+} from './database.types'
 
 const MANAGE_TOKEN_KEY_PREFIX = 'uw:manageToken:'
 
@@ -69,7 +73,7 @@ export async function uploadLogo(file: File): Promise<string> {
 export async function getWebinarByManageToken(
   slug: string,
   token: string,
-): Promise<WebinarRow | null> {
+): Promise<WebinarWithManageToken | null> {
   const { data, error } = await supabase.rpc('get_webinar_by_manage_token', {
     p_slug: slug,
     p_token: token,
@@ -86,7 +90,7 @@ export async function getWebinarByManageToken(
   // NOT NULL in the table rather than on the row itself.
   const row = data as (Partial<WebinarRow> & { id: string | null }) | null
   if (!row || row.id === null) return null
-  return row as WebinarRow
+  return row as WebinarWithManageToken
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -97,14 +101,14 @@ export async function updateWebinarByToken(
   slug: string,
   token: string,
   patch: WebinarUpdate,
-): Promise<WebinarRow> {
+): Promise<WebinarWithManageToken> {
   const { data, error } = await supabase.rpc('update_webinar_by_token', {
     p_slug: slug,
     p_token: token,
     p_patch: patch as Record<string, unknown>,
   })
   if (error) throw error
-  return data as WebinarRow
+  return data as WebinarWithManageToken
 }
 
 // ──────────────────────────────────────────────────────────────────────────────

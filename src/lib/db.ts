@@ -58,6 +58,10 @@ export const WEBINAR_COLUMNS = [
   'shared_doc_url',
   'shared_doc_name',
   'kept_at',
+  // `pin_required` yes, `entry_pin` NEVER — the latter is revoked from anon and
+  // authenticated (0102), so naming it here would fail the whole select the way
+  // `select *` does with manage_token.
+  'pin_required',
 ].join(', ')
 
 export async function listWebinars(): Promise<WebinarRow[]> {
@@ -96,7 +100,13 @@ export async function createWebinar(
     .select(WEBINAR_COLUMNS)
     .single()
   if (error) throw error
-  return { ...(data as unknown as WebinarRow), manage_token: manageToken }
+  // A brand-new webinar has no PIN — the select can't read `entry_pin` back
+  // (0102 revokes it), and there is nothing to read.
+  return {
+    ...(data as unknown as WebinarRow),
+    manage_token: manageToken,
+    entry_pin: null,
+  }
 }
 
 export async function updateWebinar(
@@ -381,6 +391,52 @@ export async function getMyAttendee(
     .maybeSingle()
   if (error) throw error
   return data as AttendeeRow | null
+}
+
+/**
+ * Pre-flight for the join form (migration 0103): is this the right PIN?
+ *
+ * NOT the enforcement point — the attendee trigger is, and it can't be talked
+ * out of it. This exists so a wrong PIN is rejected *before* the form registers
+ * the person typing it, which would otherwise put someone who never got in on
+ * the host's list and in the follow-up mailing.
+ *
+ * Returns true for a webinar with no PIN, so the caller can ask unconditionally.
+ */
+export async function webinarPinMatches(
+  slug: string,
+  pin: string,
+): Promise<boolean> {
+  const { data, error } = await supabase.rpc('webinar_pin_matches', {
+    p_slug: slug,
+    p_pin: pin,
+  })
+  if (error) throw error
+  return data === true
+}
+
+/**
+ * Enter a PIN-locked room (migration 0102).
+ *
+ * The plain insert below cannot be used for these — the attendee trigger
+ * refuses it unless this RPC has cleared the PIN in the same transaction, so a
+ * PIN gate can't be walked around from the console. Idempotent: a reload gets
+ * the existing attendee row back.
+ */
+export async function joinWebinarWithPin(
+  slug: string,
+  pin: string,
+  name: string,
+  email: string,
+): Promise<AttendeeRow> {
+  const { data, error } = await supabase.rpc('join_webinar_with_pin', {
+    p_slug: slug,
+    p_pin: pin,
+    p_name: name,
+    p_email: email,
+  })
+  if (error) throw error
+  return data as AttendeeRow
 }
 
 export async function joinAsAttendee(

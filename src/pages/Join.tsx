@@ -17,7 +17,9 @@ import {
   getMyAttendee,
   getWebinarBySlug,
   joinAsAttendee,
+  joinWebinarWithPin,
   registerForWebinar,
+  webinarPinMatches,
 } from '@/lib/db'
 import { getErrorMessage } from '@/lib/errors'
 import type { WebinarRow } from '@/lib/database.types'
@@ -38,8 +40,11 @@ export function Join() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Phase 1 stub flag — gates the PIN input. Phase 6 wires real PIN checking.
-  const requiresPin = false
+  // Migration 0102. `pin_required` is the public mirror of "a PIN is set" —
+  // the PIN itself is not readable by anyone but the host, so this page can
+  // know to ask without ever holding the answer. The check that matters
+  // happens in the database; this field just saves a pointless round-trip.
+  const requiresPin = webinar?.pin_required ?? false
 
   useEffect(() => {
     let active = true
@@ -103,6 +108,15 @@ export function Join() {
         setError('Could not start a session. Try again.')
         return
       }
+      // Check the PIN BEFORE writing anything. Registering first is deliberate
+      // (see below), but doing it for someone who then fails the PIN would put
+      // a person who never got into the room on the host's list and in the
+      // follow-up mailing.
+      if (webinar.pin_required && !(await webinarPinMatches(slug, pin.trim()))) {
+        setError("That PIN isn't right. Check with whoever invited you.")
+        return
+      }
+
       // Register the walk-up as well as admitting them. Without this they'd be
       // invisible in the host's registrations list and would miss the
       // post-session follow-up — and registering first is also what lets the
@@ -113,12 +127,24 @@ export function Join() {
       // Avoid double-insert if attendee already exists.
       const existing = await getMyAttendee(webinar.id)
       if (!existing) {
-        await joinAsAttendee({
-          webinar_id: webinar.id,
-          name: name.trim(),
-          email: email.trim().toLowerCase(),
-          auth_user_id: userId,
-        })
+        if (webinar.pin_required) {
+          // A PIN-locked room can only be entered through the RPC — the plain
+          // insert below is refused by the attendee trigger unless that
+          // function has cleared the PIN in the same transaction (0102).
+          await joinWebinarWithPin(
+            webinar.slug,
+            pin.trim(),
+            name.trim(),
+            email.trim().toLowerCase(),
+          )
+        } else {
+          await joinAsAttendee({
+            webinar_id: webinar.id,
+            name: name.trim(),
+            email: email.trim().toLowerCase(),
+            auth_user_id: userId,
+          })
+        }
       }
       localStorage.setItem(NAME_KEY, name.trim())
       localStorage.setItem(EMAIL_KEY, email.trim().toLowerCase())
@@ -128,7 +154,14 @@ export function Join() {
       // Translate its coded message into something a guest can act on rather
       // than surfacing a raw Postgres error.
       const raw = getErrorMessage(err, 'Could not join.')
-      if (raw.includes('open_join_disabled')) {
+      if (raw.includes('pin_incorrect')) {
+        setError("That PIN isn't right. Check with whoever invited you.")
+      } else if (raw.includes('pin_required')) {
+        // The flag said no PIN but the door disagreed — the host locked the
+        // room after this page loaded. Re-read so the field appears.
+        setError('The host has just locked this room. Enter the PIN to join.')
+        void getWebinarBySlug(slug).then((w) => w && setWebinar(w))
+      } else if (raw.includes('open_join_disabled')) {
         setError(
           "The host has closed walk-up joining for this session. If you registered earlier, use the join link in your confirmation email.",
         )
@@ -247,10 +280,17 @@ export function Join() {
                     id="pin"
                     value={pin}
                     onChange={(e) => setPin(e.target.value)}
-                    placeholder="••••"
+                    placeholder="••••••"
                     inputMode="numeric"
                     autoComplete="one-time-code"
+                    required
+                    minLength={4}
+                    maxLength={16}
+                    disabled={submitting || !configured}
                   />
+                  <p className="text-xs text-slate-500">
+                    The host will have shared this with you separately.
+                  </p>
                 </div>
               )}
 

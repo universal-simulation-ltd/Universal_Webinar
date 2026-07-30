@@ -120,6 +120,14 @@ const PANEL_STORAGE_KEY = 'unisim-webinar-host-panels'
 /** How often the speaker queue re-reads itself while a session is live. */
 const SPEAK_QUEUE_POLL_MS = 10_000
 
+/** Six digits, from the CSPRNG. Long enough to say out loud, short enough to
+ *  type on a phone; the length limitation is discussed in migration 0102. */
+function randomPin(): string {
+  const bytes = new Uint32Array(1)
+  crypto.getRandomValues(bytes)
+  return String(bytes[0] % 1_000_000).padStart(6, '0')
+}
+
 function formatBytes(bytes: number): string {
   return bytes >= 1024 * 1024
     ? `${(bytes / 1024 / 1024).toFixed(1)} MB`
@@ -161,6 +169,11 @@ export function HostManage() {
   // "Shrunk from 8.2 MB to 640 KB" — worth saying, since the host picked a file
   // that would otherwise have been refused.
   const [docNote, setDocNote] = useState<string | null>(null)
+  // Held apart from `webinar` because it isn't on WebinarRow: `entry_pin` can't
+  // be selected from the table at all (0102), and only reaches us on the
+  // token-gated responses. Keeping it off the shared type is what stops it
+  // being rendered somewhere a guest can see.
+  const [entryPin, setEntryPin] = useState<string | null>(null)
 
   const {
     order: panelOrder,
@@ -256,6 +269,7 @@ export function HostManage() {
           setParams(next, { replace: true })
         }
         setWebinar(w)
+        setEntryPin(w.entry_pin)
         const regs = await listRegistrationsByToken(w.slug, token)
         if (!active) return
         setRegistrations(regs)
@@ -410,7 +424,9 @@ export function HostManage() {
     if (!webinar || !token) throw new Error('Not signed in to this webinar.')
     setSaving(label)
     try {
-      setWebinar(await updateWebinarByToken(webinar.slug, token, update))
+      const next = await updateWebinarByToken(webinar.slug, token, update)
+      setWebinar(next)
+      setEntryPin(next.entry_pin)
     } finally {
       setSaving(null)
     }
@@ -422,6 +438,7 @@ export function HostManage() {
     try {
       const next = await updateWebinarByToken(webinar.slug, token, update)
       setWebinar(next)
+      setEntryPin(next.entry_pin)
     } catch (err) {
       setError(getErrorMessage(err, 'Update failed.'))
     } finally {
@@ -1019,11 +1036,68 @@ export function HostManage() {
               <ToggleRow
                 icon={<Lock className="h-4 w-4" />}
                 label="PIN-lock the webinar"
-                hint="Lands in Phase 6."
-                checked={false}
-                disabled
-                onChange={() => {}}
+                hint={
+                  webinar.pin_required
+                    ? 'Everyone needs the PIN to get in — including people you approved.'
+                    : 'Ask everyone for a PIN at the door.'
+                }
+                checked={webinar.pin_required}
+                disabled={saving === 'entry_pin'}
+                onChange={(next) =>
+                  // Turning it on mints a PIN rather than leaving an empty
+                  // field to fill in: the toggle promises the room is locked,
+                  // and it has to be true the moment it flips.
+                  patch({ entry_pin: next ? randomPin() : null }, 'entry_pin')
+                }
               />
+
+              {webinar.pin_required && (
+                <div className="rounded-lg bg-slate-50 p-2.5">
+                  <label
+                    htmlFor="entry-pin"
+                    className="text-xs font-medium text-slate-700"
+                  >
+                    Room PIN
+                  </label>
+                  <div className="mt-1 flex items-center gap-2">
+                    <Input
+                      id="entry-pin"
+                      // Not type="password": the host is meant to read this out.
+                      defaultValue={entryPin ?? ''}
+                      key={entryPin ?? ''}
+                      minLength={4}
+                      maxLength={16}
+                      disabled={saving === 'entry_pin'}
+                      className="w-32 font-mono tracking-widest"
+                      onBlur={(e) => {
+                        const next = e.target.value.trim()
+                        if (next === (entryPin ?? '')) return
+                        if (next.length < 4 || next.length > 16) {
+                          e.target.value = entryPin ?? ''
+                          setError('A PIN needs to be 4 to 16 characters.')
+                          return
+                        }
+                        void patch({ entry_pin: next }, 'entry_pin')
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      disabled={saving === 'entry_pin'}
+                      onClick={() => void patch({ entry_pin: randomPin() }, 'entry_pin')}
+                    >
+                      <RefreshCw className="h-3.5 w-3.5" />
+                      New PIN
+                    </Button>
+                  </div>
+                  <p className="mt-1.5 text-[11px] text-slate-500">
+                    Tell your guests this separately — anyone with the join link
+                    still needs it. Changing it locks out anyone who hasn't
+                    joined yet, which is the point of a fresh one per session.
+                  </p>
+                </div>
+              )}
 
               {/* Seat limit lives here rather than in a card of its own: it is
                   a room rule like the toggles above it, and one number did not

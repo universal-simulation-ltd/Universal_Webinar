@@ -58,6 +58,11 @@ export interface WebinarRow {
   // webinar and its registrations indefinitely, and keep holding the token —
   // which is why it is NOT archived_at. Cleared when they finally close.
   kept_at: string | null
+  // Public half of the PIN lock (migration 0102) — whether the door asks for a
+  // PIN. The PIN itself is `entry_pin`, which anon and authenticated cannot
+  // select, so it is deliberately absent from this type. Maintained by a
+  // trigger; never write it directly.
+  pin_required: boolean
 }
 
 // `manage_token` is deliberately absent from WebinarRow. Migration 0067 revokes
@@ -68,6 +73,10 @@ export interface WebinarRow {
 // (createWebinar), and update_webinar_by_token echoes the row back.
 export interface WebinarWithManageToken extends WebinarRow {
   manage_token: string
+  // Same reasoning as manage_token: unreadable from the base table, but the
+  // two token-gated RPCs return whole rows and the caller already proved they
+  // hold the token. The host needs it back — they have to tell people the PIN.
+  entry_pin: string | null
 }
 
 export interface WebinarInsert {
@@ -118,6 +127,8 @@ export interface WebinarUpdate {
   shared_doc_url?: string | null
   shared_doc_name?: string | null
   kept_at?: string | null
+  /** Set to null (or '') to take the lock off. `pin_required` follows it. */
+  entry_pin?: string | null
 }
 
 export interface RegistrationRow {
