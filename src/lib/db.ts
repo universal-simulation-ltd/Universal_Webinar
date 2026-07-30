@@ -57,6 +57,7 @@ export const WEBINAR_COLUMNS = [
   'purge_after',
   'shared_doc_url',
   'shared_doc_name',
+  'kept_at',
 ].join(', ')
 
 export async function listWebinars(): Promise<WebinarRow[]> {

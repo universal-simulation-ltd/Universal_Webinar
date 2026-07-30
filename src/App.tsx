@@ -11,6 +11,7 @@ import { AdminControl } from '@/pages/admin/Control'
 import { AdminSettings } from '@/pages/admin/Settings'
 import { HostNew } from '@/pages/host/New'
 import { HostManage } from '@/pages/host/Manage'
+import { HostWrapUp } from '@/pages/host/WrapUp'
 import {
   HostBranding,
   HostEmails,
@@ -30,6 +31,10 @@ export default function App() {
         <Route path="/w/:slug/live" element={<Live />} />
         <Route path="/host/new" element={<HostNew />} />
         <Route path="/host/w/:slug" element={<HostManage />} />
+        {/* Where "End webinar" lands: the post-session decisions, away from
+            the live control page. Reads the manage token from storage, so a
+            host who bookmarks it still gets in. */}
+        <Route path="/host/w/:slug/wrap" element={<HostWrapUp />} />
         <Route path="/host/webinars" element={<HostWebinars />} />
         <Route path="/host/upgrade" element={<HostUpgrade />} />
         <Route path="/host/branding" element={<HostBranding />} />

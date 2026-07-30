@@ -54,6 +54,10 @@ export interface WebinarRow {
   // Uploaded to the public `webinar-docs` bucket by an OTP-verified host.
   shared_doc_url: string | null
   shared_doc_name: string | null
+  // The host chose "save to cloud" on the wrap-up (migration 0099): keep this
+  // webinar and its registrations indefinitely, and keep holding the token —
+  // which is why it is NOT archived_at. Cleared when they finally close.
+  kept_at: string | null
 }
 
 // `manage_token` is deliberately absent from WebinarRow. Migration 0067 revokes
@@ -113,6 +117,7 @@ export interface WebinarUpdate {
   open_join?: boolean
   shared_doc_url?: string | null
   shared_doc_name?: string | null
+  kept_at?: string | null
 }
 
 export interface RegistrationRow {

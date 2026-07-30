@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useParams, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import {
   AlertTriangle,
   Archive,
@@ -25,11 +25,9 @@ import {
   RefreshCw,
   Settings2,
   ShieldCheck,
-  TrendingUp,
   UserCheck,
   Users,
   UserX,
-  Video,
   X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -52,17 +50,14 @@ import {
 } from '@/lib/sharedDoc'
 import { usePanelLayout } from '@/lib/usePanelLayout'
 import {
-  archiveWebinarByToken,
   denySpeakRequestByToken,
   getWebinarAttendanceByToken,
   getWebinarBySlug,
-  getWebinarStatsByToken,
   listRegistrationsByToken,
   listSpeakQueueByToken,
   sendRegistrationConfirmation,
   setRegistrationStatusByToken,
   setSpeakBlockByToken,
-  type WebinarStats,
 } from '@/lib/db'
 import {
   getWebinarByManageToken,
@@ -109,21 +104,15 @@ type PanelId =
   | 'room'
   | 'communication'
   | 'openJoin'
-  | 'recording'
   | 'questions'
-  | 'stats'
   | 'registrations'
-  | 'close'
 
 const PANEL_DEFAULTS: PanelId[] = [
   'room',
   'communication',
   'openJoin',
-  'recording',
   'questions',
-  'stats',
   'registrations',
-  'close',
 ]
 
 const PANEL_STORAGE_KEY = 'unisim-webinar-host-panels'
@@ -139,6 +128,7 @@ function formatBytes(bytes: number): string {
 
 export function HostManage() {
   const { slug = '' } = useParams()
+  const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
 
   const initialToken = useMemo(
@@ -163,7 +153,6 @@ export function HostManage() {
   // Which registration is mid-approve, so its buttons can disable individually
   // rather than freezing the whole panel.
   const [statusSaving, setStatusSaving] = useState<string | null>(null)
-  const [stats, setStats] = useState<WebinarStats | null>(null)
   const [attendance, setAttendance] = useState<AttendanceRow[]>([])
   const [speakQueue, setSpeakQueue] = useState<SpeakQueueRow[]>([])
   const [speakBusy, setSpeakBusy] = useState<string | null>(null)
@@ -172,11 +161,6 @@ export function HostManage() {
   // "Shrunk from 8.2 MB to 640 KB" — worth saying, since the host picked a file
   // that would otherwise have been refused.
   const [docNote, setDocNote] = useState<string | null>(null)
-  const [closing, setClosing] = useState(false)
-  const [confirmClose, setConfirmClose] = useState(false)
-  // Closing destroys data on the free tier, so the host has to have taken their
-  // export first. Tracked rather than merely suggested — see the close card.
-  const [exported, setExported] = useState(false)
 
   const {
     order: panelOrder,
@@ -275,12 +259,6 @@ export function HostManage() {
         const regs = await listRegistrationsByToken(w.slug, token)
         if (!active) return
         setRegistrations(regs)
-        try {
-          const s = await getWebinarStatsByToken(w.slug, token)
-          if (active) setStats(s)
-        } catch {
-          // Non-fatal — the panel still works without the summary.
-        }
         try {
           const a = await getWebinarAttendanceByToken(w.slug, token)
           if (active) setAttendance(a)
@@ -512,7 +490,6 @@ export function HostManage() {
     // Walk-ups are worth exporting even if nobody pre-registered, so the guard
     // is "is there anyone at all", not "are there registrations".
     if (!webinar || (registrations.length === 0 && attendance.length === 0)) return
-    setExported(true)
     downloadCsv(
       buildRegistrationsCsv(registrations, savedQuestions, attendance),
       registrationsCsvFilename(webinar),
@@ -525,18 +502,24 @@ export function HostManage() {
       setVerifyOpen(true)
       return
     }
+    const ending = webinar.status === 'live'
     void patch(
       {
-        status: webinar.status === 'live' ? 'ended' : 'live',
+        status: ending ? 'ended' : 'live',
         started_at:
-          webinar.status !== 'live' && !webinar.started_at
+          !ending && !webinar.started_at
             ? new Date().toISOString()
             : webinar.started_at,
-        ended_at:
-          webinar.status === 'live' ? new Date().toISOString() : null,
+        ended_at: ending ? new Date().toISOString() : null,
       },
       'status',
-    )
+    ).then(() => {
+      // Ending hands the host straight to the wrap-up, which is where the
+      // recording link, the numbers, the export and the keep-or-close decision
+      // now live. Navigating rather than leaving them on a control page whose
+      // remaining cards all concern a session that just finished.
+      if (ending) navigate(`/host/w/${webinar.slug}/wrap`)
+    })
   }
 
   function handleVerified(next: WebinarRow) {
@@ -550,20 +533,6 @@ export function HostManage() {
       },
       'status',
     )
-  }
-
-  async function closeWebinar() {
-    if (!webinar || !token) return
-    setClosing(true)
-    try {
-      const next = await archiveWebinarByToken(webinar.slug, token)
-      setWebinar(next)
-      setConfirmClose(false)
-    } catch (err) {
-      setError(getErrorMessage(err, 'Could not close the webinar.'))
-    } finally {
-      setClosing(false)
-    }
   }
 
   async function copyOpenJoinLink() {
@@ -1217,39 +1186,6 @@ export function HostManage() {
             </PanelCard>
           ))}
 
-          {register('recording', (
-            <PanelCard
-              key="recording"
-              {...panelProps('recording')}
-              icon={<Video className="h-4 w-4 text-slate-500" />}
-              title="Recording"
-              description="Paste the link once it's up — it goes out in the follow-up email to everyone who registered, including the people who missed it."
-            >
-              <div className="flex items-center gap-2">
-                <Input
-                  type="url"
-                  placeholder="https://…"
-                  defaultValue={webinar.recording_url ?? ''}
-                  disabled={saving === 'recording_url'}
-                  aria-label="Recording link"
-                  onBlur={(e) => {
-                    const next = e.target.value.trim() || null
-                    if (next === (webinar.recording_url ?? null)) return
-                    void patch({ recording_url: next }, 'recording_url')
-                  }}
-                />
-                {saving === 'recording_url' && (
-                  <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
-                )}
-              </div>
-              {webinar.status !== 'ended' && (
-                <p className="mt-2 text-xs text-slate-500">
-                  The follow-up sends once the webinar has ended.
-                </p>
-              )}
-            </PanelCard>
-          ))}
-
           {/* Setup-time only. The questions ARE the registration form, so they
               belong in the create flow (HostNewForm has the same editor) and
               are still editable while sign-ups are open. Once the room goes
@@ -1295,37 +1231,6 @@ export function HostManage() {
                 </div>
               )}
             </div>
-            </PanelCard>
-          ))}
-
-          {register('stats', stats && (
-            <PanelCard
-              key="stats"
-              {...panelProps('stats')}
-              icon={<TrendingUp className="h-4 w-4 text-slate-500" />}
-              title="How it went"
-            >
-                <dl className="grid grid-cols-3 gap-3 text-center">
-                  {[
-                    { k: 'Registered', v: stats.registered },
-                    { k: 'Turned up', v: stats.attended },
-                    { k: 'No-shows', v: stats.no_show },
-                  ].map(({ k, v }) => (
-                    <div key={k} className="rounded-lg bg-slate-50 py-2">
-                      <dt className="text-[11px] uppercase tracking-wide text-slate-500">
-                        {k}
-                      </dt>
-                      <dd className="text-lg font-semibold text-slate-900">{v}</dd>
-                    </div>
-                  ))}
-                </dl>
-                {stats.registered > 0 && (
-                  <p className="mt-2 text-center text-xs text-slate-500">
-                    {Math.round((stats.attended / stats.registered) * 100)}% of
-                    registrants attended
-                    {stats.waitlisted > 0 && ` · ${stats.waitlisted} never got a seat`}
-                  </p>
-                )}
             </PanelCard>
           ))}
 
@@ -1594,99 +1499,23 @@ export function HostManage() {
             </PanelCard>
           ))}
 
-          {register('close', (
-            <PanelCard
-              key="close"
-              {...panelProps('close')}
-              icon={<Archive className="h-4 w-4 text-slate-500" />}
-              title={webinar.archived_at ? 'Closed' : 'Finished with this webinar?'}
-              description={
-                webinar.archived_at ? (
-                  webinar.purge_after ? (
-                    <>
-                      Closed, and your token is back. This webinar and its
-                      registrations are deleted on{' '}
-                      <strong>
-                        {formatWithZone(
-                          new Date(webinar.purge_after),
-                          localTimezone(),
-                        )}
-                      </strong>
-                      . Upgrade before then to keep the history.
-                    </>
-                  ) : (
-                    <>Closed, and your token is back. Your history is kept.</>
-                  )
-                ) : (
-                  <>
-                    Closing hands your token back so you can run another
-                    webinar. Take your registrant list first — on the free plan
-                    this webinar and everyone in it are deleted 30 days later.
-                  </>
-                )
-              }
-            >
-              <div className="space-y-3">
-                {registrations.length > 0 && !exported && (
-                  <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-                    You haven't exported your {registrations.length}{' '}
-                    {registrations.length === 1 ? 'registrant' : 'registrants'}{' '}
-                    yet. Use <strong>Export CSV</strong> above first — names,
-                    emails and answers all go with it.
-                  </div>
-                )}
-                {confirmClose ? (
-                  <div className="space-y-2 rounded-lg border border-red-200 bg-red-50 p-3">
-                    <p className="text-sm font-medium text-red-900">
-                      Close “{webinar.title}”?
-                    </p>
-                    <p className="text-xs text-red-800">
-                      Your token comes back straight away. The webinar stops
-                      accepting anyone and disappears from public view. This
-                      can't be undone.
-                    </p>
-                    <div className="flex gap-2 pt-1">
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        disabled={closing}
-                        onClick={() => void closeWebinar()}
-                      >
-                        {closing ? (
-                          <>
-                            <Loader2 className="h-4 w-4 animate-spin" /> Closing…
-                          </>
-                        ) : (
-                          'Yes, close it'
-                        )}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        disabled={closing}
-                        onClick={() => setConfirmClose(false)}
-                      >
-                        Keep it open
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    onClick={() => setConfirmClose(true)}
-                  >
-                    <Archive className="h-4 w-4" />
-                    Close &amp; free my token
-                  </Button>
-                )}
-              </div>
-            </PanelCard>
-          ))}
 
           {/* Everything above only registered itself. This is what renders. */}
           {panelOrder.map((id) => panelNodes[id])}
+
+          {/* The recording link, the numbers and the keep-or-close decision all
+              moved to the wrap-up page, which "End webinar" navigates to. This
+              link is how you get there any other time — including for a webinar
+              that never ran, where closing is the only way to get the token
+              back for a different one. */}
+          <Button asChild variant="outline" size="sm" className="w-full">
+            <Link to={`/host/w/${webinar.slug}/wrap`}>
+              <Archive className="h-4 w-4" />
+              {webinar.status === 'ended'
+                ? 'Wrap-up — recording, numbers & closing'
+                : 'Recording, numbers & closing'}
+            </Link>
+          </Button>
 
           <button
             type="button"
