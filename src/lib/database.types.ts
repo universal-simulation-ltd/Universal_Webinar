@@ -157,6 +157,16 @@ export interface RegistrationInsert {
   timezone?: string | null
 }
 
+// A pending speak request as the HOST sees it — the raw row is two ids, so the
+// token RPC joins the attendee on (migration 0097).
+export interface SpeakQueueRow {
+  request_id: string
+  attendee_id: string
+  name: string
+  email: string
+  requested_at: string
+}
+
 // What a manage-token host can learn about who turned up (migration 0096).
 // One row per PERSON rather than per attendee row — rejoining after a dropout
 // inserts a second row, and the RPC collapses those by lowercased email.
@@ -178,6 +188,10 @@ export interface AttendeeRow {
   email: string
   role: AttendeeRole
   muted_by_admin: boolean
+  // Host has stopped this person requesting to speak (migration 0097). NOT a
+  // ban — they keep watching and chatting. A trigger enforces it server-side,
+  // so hiding the button is a courtesy, not the control.
+  speak_blocked: boolean
   livekit_identity: string | null
   joined_at: string
   left_at: string | null

@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import {
   AlertTriangle,
   Archive,
+  Ban,
   BellRing,
   Camera,
   Check,
@@ -39,15 +40,20 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { OtpVerifyDialog } from '@/components/OtpVerifyDialog'
+import { PanelCard } from '@/components/PanelCard'
 import { cn } from '@/lib/utils'
+import { usePanelLayout } from '@/lib/usePanelLayout'
 import {
   archiveWebinarByToken,
+  denySpeakRequestByToken,
   getWebinarAttendanceByToken,
   getWebinarBySlug,
   getWebinarStatsByToken,
   listRegistrationsByToken,
+  listSpeakQueueByToken,
   sendRegistrationConfirmation,
   setRegistrationStatusByToken,
+  setSpeakBlockByToken,
   type WebinarStats,
 } from '@/lib/db'
 import {
@@ -72,9 +78,50 @@ import type {
   AttendanceRow,
   RegistrationRow,
   RegistrationStatus,
+  SpeakQueueRow,
   WebinarRow,
   WebinarUpdate,
 } from '@/lib/database.types'
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Right-column layout
+//
+// The host column had grown long, and which cards matter depends entirely on
+// where the webinar is in its life — questions and seats before, the speaker
+// queue during, stats and the export after. Rather than guess an order for
+// everyone, each card collapses and the column can be dragged into whatever
+// order this host works in, remembered per browser.
+//
+// ⚠️ Adding, removing or renaming an id here invalidates every stored layout
+// (usePanelLayout only honours a saved order holding exactly this set), so
+// existing hosts silently revert to this default. That is the intended trade:
+// far better than a stale layout hiding a new card.
+// ──────────────────────────────────────────────────────────────────────────────
+type PanelId =
+  | 'room'
+  | 'communication'
+  | 'openJoin'
+  | 'recording'
+  | 'questions'
+  | 'stats'
+  | 'registrations'
+  | 'close'
+
+const PANEL_DEFAULTS: PanelId[] = [
+  'room',
+  'communication',
+  'openJoin',
+  'recording',
+  'questions',
+  'stats',
+  'registrations',
+  'close',
+]
+
+const PANEL_STORAGE_KEY = 'unisim-webinar-host-panels'
+
+/** How often the speaker queue re-reads itself while a session is live. */
+const SPEAK_QUEUE_POLL_MS = 10_000
 
 export function HostManage() {
   const { slug = '' } = useParams()
@@ -104,11 +151,26 @@ export function HostManage() {
   const [statusSaving, setStatusSaving] = useState<string | null>(null)
   const [stats, setStats] = useState<WebinarStats | null>(null)
   const [attendance, setAttendance] = useState<AttendanceRow[]>([])
+  const [speakQueue, setSpeakQueue] = useState<SpeakQueueRow[]>([])
+  const [speakBusy, setSpeakBusy] = useState<string | null>(null)
   const [closing, setClosing] = useState(false)
   const [confirmClose, setConfirmClose] = useState(false)
   // Closing destroys data on the free tier, so the host has to have taken their
   // export first. Tracked rather than merely suggested — see the close card.
   const [exported, setExported] = useState(false)
+
+  const {
+    order: panelOrder,
+    isCollapsed,
+    toggleCollapsed,
+    reorder: reorderPanels,
+    resetLayout,
+  } = usePanelLayout<PanelId>(PANEL_STORAGE_KEY, PANEL_DEFAULTS)
+  const [dragging, setDragging] = useState<PanelId | null>(null)
+  const [dropTarget, setDropTarget] = useState<PanelId | null>(null)
+  // Only a press on the grip arms a drag. Without this every card is draggable
+  // from anywhere, and dragging a slider or a text field becomes a card move.
+  const armedGrip = useRef<PanelId | null>(null)
 
   // Sync the draft whenever the loaded webinar changes.
   const savedQuestions = useMemo(() => parseQuestions(webinar?.custom_questions), [webinar])
@@ -208,6 +270,12 @@ export function HostManage() {
           // databases, and a host who can't see who turned up should still get
           // their registrations list rather than an error page.
         }
+        try {
+          const q = await listSpeakQueueByToken(w.slug, token)
+          if (active) setSpeakQueue(q)
+        } catch {
+          // Same again — the queue card simply doesn't appear.
+        }
       } catch (err) {
         if (active) setError(getErrorMessage(err, 'Load failed.'))
       } finally {
@@ -218,6 +286,69 @@ export function HostManage() {
       active = false
     }
   }, [slug, token, params, setParams])
+
+  // Hands go up mid-session, and this page can't use realtime for them: the
+  // `speak_requests` policies are `to authenticated`, and a manage-token host
+  // is anon. So poll — but only while the room is actually live, since that is
+  // the only window in which the queue can change.
+  useEffect(() => {
+    if (!webinar || !token || webinar.status !== 'live') return
+    const slugNow = webinar.slug
+    let active = true
+    const id = setInterval(() => {
+      void listSpeakQueueByToken(slugNow, token)
+        .then((q) => {
+          if (active) setSpeakQueue(q)
+        })
+        .catch(() => {
+          // A dropped poll is nothing to report — the next one covers it.
+        })
+    }, SPEAK_QUEUE_POLL_MS)
+    return () => {
+      active = false
+      clearInterval(id)
+    }
+  }, [webinar, token])
+
+  async function refreshSpeakQueue() {
+    if (!webinar || !token) return
+    try {
+      setSpeakQueue(await listSpeakQueueByToken(webinar.slug, token))
+    } catch (err) {
+      setError(getErrorMessage(err, 'Could not refresh the speaker queue.'))
+    }
+  }
+
+  /** Turn this one request down. They can raise their hand again. */
+  async function cancelSpeakRequest(row: SpeakQueueRow) {
+    if (!webinar || !token) return
+    setSpeakBusy(row.request_id)
+    try {
+      await denySpeakRequestByToken(webinar.slug, token, row.request_id)
+      setSpeakQueue((prev) => prev.filter((r) => r.request_id !== row.request_id))
+    } catch (err) {
+      setError(getErrorMessage(err, 'Could not cancel that request.'))
+    } finally {
+      setSpeakBusy(null)
+    }
+  }
+
+  /** Stop them asking again for the rest of the session. Not a ban — they stay
+   *  in the room, keep watching and keep chatting. */
+  async function blockSpeaker(row: SpeakQueueRow) {
+    if (!webinar || !token) return
+    setSpeakBusy(row.request_id)
+    try {
+      await setSpeakBlockByToken(webinar.slug, token, row.attendee_id, true)
+      // The RPC denies their pending request too, so drop every row for that
+      // person rather than just this one.
+      setSpeakQueue((prev) => prev.filter((r) => r.attendee_id !== row.attendee_id))
+    } catch (err) {
+      setError(getErrorMessage(err, 'Could not stop that person asking.'))
+    } finally {
+      setSpeakBusy(null)
+    }
+  }
 
   async function patch(update: WebinarUpdate, label: string) {
     if (!webinar || !token) return
@@ -433,6 +564,70 @@ export function HostManage() {
     )
   }
 
+  // ── Right-column drag + collapse plumbing ──────────────────────────────────
+  // HTML5 drag and drop, matching Ergo Assess's panel reordering. Note it is
+  // pointer-only: touch devices don't fire these events, and there is no
+  // keyboard equivalent. Acceptable here because order is a preference, not
+  // functionality — every card stays reachable in any order, the column
+  // collapses to one stack on narrow screens anyway, and collapsing itself
+  // (the part that changes what you can see) is a plain button.
+  const panelDragProps = (id: PanelId) => ({
+    draggable: true as const,
+    onDragStart: (e: React.DragEvent) => {
+      if (armedGrip.current !== id) {
+        e.preventDefault()
+        return
+      }
+      e.dataTransfer.effectAllowed = 'move'
+      setDragging(id)
+    },
+    onDragOver: (e: React.DragEvent) => {
+      e.preventDefault()
+      setDropTarget(id)
+    },
+    onDrop: (e: React.DragEvent) => {
+      e.preventDefault()
+      if (dragging && dragging !== id) reorderPanels(dragging, id)
+      setDragging(null)
+      setDropTarget(null)
+    },
+    onDragEnd: () => {
+      armedGrip.current = null
+      setDragging(null)
+      setDropTarget(null)
+    },
+    className: cn(
+      'transition-opacity',
+      dragging === id && 'opacity-30',
+      dropTarget === id && dragging !== id && 'outline outline-2 outline-brand-500',
+    ),
+  })
+
+  const panelProps = (id: PanelId) => ({
+    collapsed: isCollapsed(id),
+    onToggle: () => toggleCollapsed(id),
+    dragProps: panelDragProps(id),
+    onGripDown: () => {
+      armedGrip.current = id
+    },
+    onGripUp: () => {
+      armedGrip.current = null
+    },
+  })
+
+  // Each card is declared in reading order below but rendered by the map at the
+  // bottom of the column, so the DOM order matches the host's saved order —
+  // tab order and screen-reader order follow the layout they actually see,
+  // which CSS-only reordering (flex `order`) would silently break.
+  //
+  // `register` returns null so a declaration renders nothing where it sits.
+  // A card with nothing to show registers null and is skipped.
+  const panelNodes: Partial<Record<PanelId, React.ReactNode>> = {}
+  const register = (id: PanelId, node: React.ReactNode) => {
+    panelNodes[id] = node
+    return null
+  }
+
   return (
     <div className="container py-8">
       <OtpVerifyDialog
@@ -537,33 +732,111 @@ export function HostManage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Hand className="h-4 w-4 text-slate-500" />
-                Speaker queue
-              </CardTitle>
-              <CardDescription>
-                Approve guests to share their camera and mic. (Phase 5.)
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-slate-500">
-                No pending requests yet.
-              </p>
-            </CardContent>
-          </Card>
+          {/* Hidden entirely when requests are switched off and nobody is
+              waiting — an empty card for a feature the host has turned off is
+              pure noise. A queue left over from before the toggle was flipped
+              still shows, so those people don't get silently stranded. */}
+          {(webinar.allow_speak_requests || speakQueue.length > 0) && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Hand className="h-4 w-4 text-slate-500" />
+                      Speaker queue
+                      {speakQueue.length > 0 && (
+                        <span className="rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700">
+                          {speakQueue.length}
+                        </span>
+                      )}
+                    </CardTitle>
+                    <CardDescription>
+                      {webinar.allow_speak_requests
+                        ? 'Guests raising a hand to join the conversation. Putting someone on air arrives with the live stage; until then you can clear the queue.'
+                        : 'Requests are switched off — these came in beforehand.'}
+                    </CardDescription>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void refreshSpeakQueue()}
+                    title="Refresh"
+                    className="mt-0.5 rounded-md p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                  </button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {speakQueue.length === 0 ? (
+                  <p className="text-sm text-slate-500">
+                    No one is waiting.
+                  </p>
+                ) : (
+                  <ul className="divide-y divide-slate-100 text-sm">
+                    {speakQueue.map((r) => (
+                      <li
+                        key={r.request_id}
+                        className="flex items-center justify-between gap-3 py-2"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate font-medium text-slate-900">
+                            {r.name}
+                          </p>
+                          <p className="truncate text-xs text-slate-500">
+                            {r.email}
+                          </p>
+                          <p className="text-xs text-slate-400">
+                            Asked{' '}
+                            {formatWithZone(
+                              new Date(r.requested_at),
+                              localTimezone(),
+                            )}
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-1">
+                          <button
+                            type="button"
+                            disabled={speakBusy === r.request_id}
+                            onClick={() => void cancelSpeakRequest(r)}
+                            title={`Turn down ${r.name}'s request — they can ask again`}
+                            aria-label={`Turn down ${r.name}'s request`}
+                            className="rounded-md p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
+                          >
+                            {speakBusy === r.request_id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <X className="h-4 w-4" />
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={speakBusy === r.request_id}
+                            onClick={() => void blockSpeaker(r)}
+                            title={`Stop ${r.name} asking for the rest of the session — they stay in the room`}
+                            aria-label={`Stop ${r.name} asking to speak`}
+                            className="rounded-md p-1.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                          >
+                            <Ban className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         <aside className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings2 className="h-4 w-4 text-slate-500" />
-                Room settings
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-1">
+          {register('room', (
+            <PanelCard
+              key="room"
+              {...panelProps('room')}
+              icon={<Settings2 className="h-4 w-4 text-slate-500" />}
+              title="Room settings"
+            >
+              <div className="space-y-1">
               <ToggleRow
                 icon={
                   webinar.show_guest_count ? (
@@ -594,16 +867,6 @@ export function HostManage() {
                 }
               />
               <ToggleRow
-                icon={<Mail className="h-4 w-4" />}
-                label="Email registrants a confirmation"
-                hint="Their own join link, plus a calendar invite when the session has a date."
-                checked={webinar.send_confirmation}
-                disabled={saving === 'send_confirmation'}
-                onChange={(next) =>
-                  patch({ send_confirmation: next }, 'send_confirmation')
-                }
-              />
-              <ToggleRow
                 icon={<UserCheck className="h-4 w-4" />}
                 label="Approve registrants yourself"
                 hint="New sign-ups wait for your OK before they get a join link."
@@ -614,30 +877,6 @@ export function HostManage() {
                 }
               />
               <ToggleRow
-                icon={<BellRing className="h-4 w-4" />}
-                label="Remind registrants before it starts"
-                hint={
-                  webinar.scheduled_at
-                    ? 'A nudge the day before and again an hour ahead.'
-                    : 'Set a date under Scheduled for — reminders need one.'
-                }
-                checked={webinar.send_reminders}
-                disabled={saving === 'send_reminders'}
-                onChange={(next) =>
-                  patch({ send_reminders: next }, 'send_reminders')
-                }
-              />
-              <ToggleRow
-                icon={<Mail className="h-4 w-4" />}
-                label="Email a follow-up afterwards"
-                hint="Thanks to those who came, and a catch-up to those who missed it."
-                checked={webinar.send_followup}
-                disabled={saving === 'send_followup'}
-                onChange={(next) =>
-                  patch({ send_followup: next }, 'send_followup')
-                }
-              />
-              <ToggleRow
                 icon={<Lock className="h-4 w-4" />}
                 label="PIN-lock the webinar"
                 hint="Lands in Phase 6."
@@ -645,22 +884,122 @@ export function HostManage() {
                 disabled
                 onChange={() => {}}
               />
-            </CardContent>
-          </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <DoorOpen className="h-4 w-4 text-slate-500" />
-                Open join link
-              </CardTitle>
-              <CardDescription>
-                Share this anywhere — a newsletter beforehand, or drop it in
-                chat during the session for people who never signed up. They
-                give a name and email at the door.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
+              {/* Seat limit lives here rather than in a card of its own: it is
+                  a room rule like the toggles above it, and one number did not
+                  justify its own panel. */}
+              <div className="border-t border-slate-100 pt-3">
+                <div className="flex items-start justify-between gap-3 p-2.5 pt-0">
+                  <div className="flex items-start gap-3">
+                    <span className="mt-0.5 text-slate-500">
+                      <Users className="h-4 w-4" />
+                    </span>
+                    <div>
+                      <p className="text-sm font-medium text-slate-900">Seat limit</p>
+                      <p className="text-xs text-slate-500">
+                        {seatsLeft === null
+                          ? 'Unlimited. Set a number to start a waitlist once it fills.'
+                          : seatsLeft > 0
+                            ? `${seatsLeft} of ${webinar.capacity} seat${webinar.capacity === 1 ? '' : 's'} left.`
+                            : `Full — new sign-ups join the waitlist${waitlistedCount > 0 ? ` (${waitlistedCount} waiting)` : ''}.`}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <Input
+                      type="number"
+                      min={1}
+                      placeholder="∞"
+                      defaultValue={webinar.capacity ?? ''}
+                      disabled={saving === 'capacity'}
+                      aria-label="Seat limit"
+                      onBlur={(e) => {
+                        const raw = e.target.value.trim()
+                        const next = raw === '' ? null : Number(raw)
+                        if (next !== null && (!Number.isFinite(next) || next < 1)) {
+                          e.target.value = String(webinar.capacity ?? '')
+                          return
+                        }
+                        if (next === webinar.capacity) return
+                        void patch({ capacity: next }, 'capacity')
+                      }}
+                      className="w-24"
+                    />
+                    {saving === 'capacity' && (
+                      <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
+                    )}
+                  </div>
+                </div>
+                <p className="px-2.5 text-xs text-slate-500">
+                  Only approved registrants take a seat. When one frees up, the
+                  longest-waiting person is let in automatically
+                  {webinar.require_approval ? ' — back into your approval queue' : ''}.
+                </p>
+              </div>
+              </div>
+            </PanelCard>
+          ))}
+
+          {/* The three emails that go out on the host's behalf, lifted out of
+              Room settings. They are the one group here with a consequence
+              outside the room — mail landing in a stranger's inbox — and they
+              were buried between "show attendee count" and a Phase 6 stub. */}
+          {register('communication', (
+            <PanelCard
+              key="communication"
+              {...panelProps('communication')}
+              icon={<Mail className="h-4 w-4 text-slate-500" />}
+              title="Communication"
+              description="What we send your registrants, and when."
+            >
+              <div className="space-y-1">
+                <ToggleRow
+                  icon={<Mail className="h-4 w-4" />}
+                  label="Email registrants a confirmation"
+                  hint="Their own join link, plus a calendar invite when the session has a date."
+                  checked={webinar.send_confirmation}
+                  disabled={saving === 'send_confirmation'}
+                  onChange={(next) =>
+                    patch({ send_confirmation: next }, 'send_confirmation')
+                  }
+                />
+                <ToggleRow
+                  icon={<BellRing className="h-4 w-4" />}
+                  label="Remind registrants before it starts"
+                  hint={
+                    webinar.scheduled_at
+                      ? 'A nudge the day before and again an hour ahead.'
+                      : 'Set a date under Scheduled for — reminders need one.'
+                  }
+                  checked={webinar.send_reminders}
+                  disabled={saving === 'send_reminders'}
+                  onChange={(next) =>
+                    patch({ send_reminders: next }, 'send_reminders')
+                  }
+                />
+                <ToggleRow
+                  icon={<MailCheck className="h-4 w-4" />}
+                  label="Email a follow-up afterwards"
+                  hint="Thanks to those who came, and a catch-up to those who missed it."
+                  checked={webinar.send_followup}
+                  disabled={saving === 'send_followup'}
+                  onChange={(next) =>
+                    patch({ send_followup: next }, 'send_followup')
+                  }
+                />
+              </div>
+            </PanelCard>
+          ))}
+
+          {register('openJoin', (
+            <PanelCard
+              key="openJoin"
+              {...panelProps('openJoin')}
+              icon={<DoorOpen className="h-4 w-4 text-slate-500" />}
+              title="Open join link"
+              description="Share this anywhere — a newsletter beforehand, or drop it in chat during the session for people who never signed up. They give a name and email at the door."
+            >
+            <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <code className="flex-1 truncate rounded-md bg-slate-50 px-2.5 py-2 text-xs text-slate-600">
                   {`${window.location.origin}/w/${webinar.slug}`}
@@ -703,21 +1042,18 @@ export function HostManage() {
                   regardless — they'll be asked to register first.
                 </p>
               )}
-            </CardContent>
-          </Card>
+            </div>
+            </PanelCard>
+          ))}
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Video className="h-4 w-4 text-slate-500" />
-                Recording
-              </CardTitle>
-              <CardDescription>
-                Paste the link once it's up — it goes out in the follow-up email
-                to everyone who registered, including the people who missed it.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+          {register('recording', (
+            <PanelCard
+              key="recording"
+              {...panelProps('recording')}
+              icon={<Video className="h-4 w-4 text-slate-500" />}
+              title="Recording"
+              description="Paste the link once it's up — it goes out in the follow-up email to everyone who registered, including the people who missed it."
+            >
               <div className="flex items-center gap-2">
                 <Input
                   type="url"
@@ -740,64 +1076,23 @@ export function HostManage() {
                   The follow-up sends once the webinar has ended.
                 </p>
               )}
-            </CardContent>
-          </Card>
+            </PanelCard>
+          ))}
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-slate-500" />
-                Seat limit
-              </CardTitle>
-              <CardDescription>
-                {seatsLeft === null
-                  ? 'Unlimited seats. Set a number to start a waitlist once it fills.'
-                  : seatsLeft > 0
-                    ? `${seatsLeft} of ${webinar.capacity} seat${webinar.capacity === 1 ? '' : 's'} left.`
-                    : `Full — new sign-ups join the waitlist${waitlistedCount > 0 ? ` (${waitlistedCount} waiting)` : ''}.`}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2">
-                <Input
-                  type="number"
-                  min={1}
-                  placeholder="Unlimited"
-                  defaultValue={webinar.capacity ?? ''}
-                  disabled={saving === 'capacity'}
-                  aria-label="Seat limit"
-                  onBlur={(e) => {
-                    const raw = e.target.value.trim()
-                    const next = raw === '' ? null : Number(raw)
-                    if (next !== null && (!Number.isFinite(next) || next < 1)) {
-                      e.target.value = String(webinar.capacity ?? '')
-                      return
-                    }
-                    if (next === webinar.capacity) return
-                    void patch({ capacity: next }, 'capacity')
-                  }}
-                  className="w-32"
-                />
-                {saving === 'capacity' && (
-                  <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
-                )}
-              </div>
-              <p className="mt-2 text-xs text-slate-500">
-                Only approved registrants take a seat. When one frees up, the
-                longest-waiting person is let in automatically
-                {webinar.require_approval ? ' — back into your approval queue' : ''}.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings2 className="h-4 w-4 text-slate-500" />
-                Registration questions
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
+          {/* Setup-time only. The questions ARE the registration form, so they
+              belong in the create flow (HostNewForm has the same editor) and
+              are still editable while sign-ups are open. Once the room goes
+              live or ends, nobody is filling that form in again — leaving the
+              editor on screen only invites edits that can't change anything. */}
+          {register('questions', webinar.status === 'scheduled' && (
+            <PanelCard
+              key="questions"
+              {...panelProps('questions')}
+              icon={<Settings2 className="h-4 w-4 text-slate-500" />}
+              title="Registration questions"
+              description="Asked when someone signs up. Set these before you go live."
+            >
+            <div className="space-y-3">
               <CustomQuestionsEditor
                 value={questionsDraft}
                 onChange={setQuestionsDraft}
@@ -828,18 +1123,17 @@ export function HostManage() {
                   </Button>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+            </PanelCard>
+          ))}
 
-          {stats && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-slate-500" />
-                  How it went
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
+          {register('stats', stats && (
+            <PanelCard
+              key="stats"
+              {...panelProps('stats')}
+              icon={<TrendingUp className="h-4 w-4 text-slate-500" />}
+              title="How it went"
+            >
                 <dl className="grid grid-cols-3 gap-3 text-center">
                   {[
                     { k: 'Registered', v: stats.registered },
@@ -861,53 +1155,52 @@ export function HostManage() {
                     {stats.waitlisted > 0 && ` · ${stats.waitlisted} never got a seat`}
                   </p>
                 )}
-              </CardContent>
-            </Card>
-          )}
+            </PanelCard>
+          ))}
 
-          <Card>
-            <CardHeader>
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-slate-500" />
-                    Registrations
-                  </CardTitle>
-                  <CardDescription>
-                    {registrations.length}{' '}
-                    {registrations.length === 1 ? 'person' : 'people'}{' '}
-                    pre-registered
-                    {pendingCount > 0 && (
-                      <span className="font-medium text-amber-700">
-                        {' '}· {pendingCount} awaiting you
-                      </span>
-                    )}
-                    {waitlistedCount > 0 && (
-                      <span className="text-slate-500">
-                        {' '}· {waitlistedCount} waitlisted
-                      </span>
-                    )}
-                    {walkUps.length > 0 && (
-                      <span className="text-slate-500">
-                        {' '}· {walkUps.length} walked up
-                      </span>
-                    )}
-                  </CardDescription>
-                </div>
+          {register('registrations', (
+            <PanelCard
+              key="registrations"
+              {...panelProps('registrations')}
+              icon={<Users className="h-4 w-4 text-slate-500" />}
+              title="Registrations"
+              description={
+                <>
+                  {registrations.length}{' '}
+                  {registrations.length === 1 ? 'person' : 'people'}{' '}
+                  pre-registered
+                  {pendingCount > 0 && (
+                    <span className="font-medium text-amber-700">
+                      {' '}· {pendingCount} awaiting you
+                    </span>
+                  )}
+                  {waitlistedCount > 0 && (
+                    <span className="text-slate-500">
+                      {' '}· {waitlistedCount} waitlisted
+                    </span>
+                  )}
+                  {walkUps.length > 0 && (
+                    <span className="text-slate-500">
+                      {' '}· {walkUps.length} walked up
+                    </span>
+                  )}
+                </>
+              }
+              actions={
                 <button
                   type="button"
                   onClick={reloadRegistrations}
                   disabled={refreshingRegs}
                   title="Refresh"
-                  className="mt-0.5 rounded-md p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 disabled:opacity-50"
+                  className="rounded-md p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 disabled:opacity-50"
                 >
                   <RefreshCw
                     className={cn('h-4 w-4', refreshingRegs && 'animate-spin')}
                   />
                 </button>
-              </div>
-            </CardHeader>
-            <CardContent>
+              }
+            >
+            <>
               {registrations.length === 0 ? (
                 <p className="text-sm text-slate-500">
                   No one has registered yet. Share the registration link
@@ -1126,16 +1419,18 @@ export function HostManage() {
                   Export CSV
                 </Button>
               )}
-            </CardContent>
-          </Card>
-          <Card className={cn(webinar.archived_at && 'border-slate-300 bg-slate-50')}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Archive className="h-4 w-4 text-slate-500" />
-                {webinar.archived_at ? 'Closed' : 'Finished with this webinar?'}
-              </CardTitle>
-              <CardDescription>
-                {webinar.archived_at ? (
+            </>
+            </PanelCard>
+          ))}
+
+          {register('close', (
+            <PanelCard
+              key="close"
+              {...panelProps('close')}
+              icon={<Archive className="h-4 w-4 text-slate-500" />}
+              title={webinar.archived_at ? 'Closed' : 'Finished with this webinar?'}
+              description={
+                webinar.archived_at ? (
                   webinar.purge_after ? (
                     <>
                       Closed, and your token is back. This webinar and its
@@ -1157,11 +1452,10 @@ export function HostManage() {
                     webinar. Take your registrant list first — on the free plan
                     this webinar and everyone in it are deleted 30 days later.
                   </>
-                )}
-              </CardDescription>
-            </CardHeader>
-            {!webinar.archived_at && (
-              <CardContent className="space-y-3">
+                )
+              }
+            >
+              <div className="space-y-3">
                 {registrations.length > 0 && !exported && (
                   <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
                     You haven't exported your {registrations.length}{' '}
@@ -1216,9 +1510,20 @@ export function HostManage() {
                     Close &amp; free my token
                   </Button>
                 )}
-              </CardContent>
-            )}
-          </Card>
+              </div>
+            </PanelCard>
+          ))}
+
+          {/* Everything above only registered itself. This is what renders. */}
+          {panelOrder.map((id) => panelNodes[id])}
+
+          <button
+            type="button"
+            onClick={resetLayout}
+            className="w-full pt-1 text-center text-xs text-slate-400 transition hover:text-slate-600"
+          >
+            Reset card order
+          </button>
         </aside>
       </div>
     </div>

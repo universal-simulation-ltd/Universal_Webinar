@@ -11,6 +11,7 @@ import type {
   RegistrationStatus,
   ReactionRow,
   RegistrationRow,
+  SpeakQueueRow,
   SpeakRequestInsert,
   SpeakRequestRow,
   SpeakRequestStatus,
@@ -269,6 +270,60 @@ export async function getWebinarAttendanceByToken(
   })
   if (error) throw error
   return (data ?? []) as AttendanceRow[]
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Speaker queue, for a manage-token host (migration 0097)
+//
+// The `speak_requests` policies are all `to authenticated`, so none of the
+// functions further down this file work for a host who only holds a manage
+// token. These three are their token-gated equivalents.
+// ──────────────────────────────────────────────────────────────────────────────
+
+export async function listSpeakQueueByToken(
+  slug: string,
+  token: string,
+): Promise<SpeakQueueRow[]> {
+  const { data, error } = await supabase.rpc('list_speak_requests_by_token', {
+    p_slug: slug,
+    p_token: token,
+  })
+  if (error) throw error
+  return (data ?? []) as SpeakQueueRow[]
+}
+
+/** Turn down one request. The guest can ask again — use the block for "stop". */
+export async function denySpeakRequestByToken(
+  slug: string,
+  token: string,
+  requestId: string,
+): Promise<void> {
+  const { error } = await supabase.rpc('deny_speak_request_by_token', {
+    p_slug: slug,
+    p_token: token,
+    p_request_id: requestId,
+  })
+  if (error) throw error
+}
+
+/**
+ * Stop (or let) this attendee ask to speak for the rest of the session.
+ * Blocking also clears anything they have pending. Reversible, and NOT a ban:
+ * they carry on watching and chatting.
+ */
+export async function setSpeakBlockByToken(
+  slug: string,
+  token: string,
+  attendeeId: string,
+  blocked: boolean,
+): Promise<void> {
+  const { error } = await supabase.rpc('set_speak_block_by_token', {
+    p_slug: slug,
+    p_token: token,
+    p_attendee_id: attendeeId,
+    p_blocked: blocked,
+  })
+  if (error) throw error
 }
 
 // Close the webinar: archives it and returns the host's token so they can run

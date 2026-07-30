@@ -442,13 +442,18 @@ export function Live() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {webinar.allow_speak_requests && !isSpeaker && (
-              <SpeakRequestButton
-                speakRequest={speakRequest}
-                loading={raisingHand}
-                onRaise={handleRaiseHand}
-              />
-            )}
+            {/* A host who has stopped this person asking doesn't get told
+                again — the button simply goes. The insert trigger from 0097
+                is the actual enforcement; hiding it is just manners. */}
+            {webinar.allow_speak_requests &&
+              !isSpeaker &&
+              !attendee?.speak_blocked && (
+                <SpeakRequestButton
+                  speakRequest={speakRequest}
+                  loading={raisingHand}
+                  onRaise={handleRaiseHand}
+                />
+              )}
             {isSpeaker && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-700">
                 <span className="h-1.5 w-1.5 rounded-full bg-green-600" />
