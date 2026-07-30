@@ -16,6 +16,7 @@ import {
   Loader2,
   Lock,
   Mail,
+  MailCheck,
   MonitorUp,
   Power,
   RefreshCw,
@@ -907,6 +908,15 @@ export function HostManage() {
                               >
                                 <BellRing className="h-3 w-3" />
                                 reminded
+                              </span>
+                            )}
+                            {r.followup_sent_at && (
+                              <span
+                                className="inline-flex items-center gap-1 text-emerald-600"
+                                title={`Post-session follow-up emailed ${new Date(r.followup_sent_at).toLocaleString()}`}
+                              >
+                                <MailCheck className="h-3 w-3" />
+                                followed up
                               </span>
                             )}
                           </span>

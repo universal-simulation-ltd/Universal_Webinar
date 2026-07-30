@@ -13,15 +13,23 @@ export function buildRegistrationsCsv(
   registrations: RegistrationRow[],
   questions: CustomQuestion[] = [],
 ): string {
+  // The three email stamps sit together so a host scanning the sheet can see
+  // the whole lifecycle of one registrant — invite, nudge, follow-up — on a
+  // single row. Reminders collapse to whichever slot fired last: the 24h and 1h
+  // nudges are the same email to the host's eye, and two more columns that are
+  // usually blank costs more than it tells them.
   const header = [
     'Name',
     'Email',
     'Registered at',
     'Confirmation emailed',
+    'Reminder emailed',
+    'Follow-up emailed',
     ...questions.map((q) => q.label),
   ]
   const rows = registrations.map((r) => {
     const ans = r.custom_answers ?? {}
+    const remindedAt = r.reminder_1h_sent_at ?? r.reminder_24h_sent_at
     return [
       r.name ?? '',
       r.email ?? '',
@@ -29,6 +37,8 @@ export function buildRegistrationsCsv(
       r.confirmation_sent_at
         ? new Date(r.confirmation_sent_at).toISOString()
         : '',
+      remindedAt ? new Date(remindedAt).toISOString() : '',
+      r.followup_sent_at ? new Date(r.followup_sent_at).toISOString() : '',
       ...questions.map((q) => ans[q.id] ?? ''),
     ]
       .map((v) => csvCell(String(v)))
