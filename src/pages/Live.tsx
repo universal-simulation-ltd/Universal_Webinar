@@ -9,9 +9,10 @@ import {
   AudioTrack,
 } from '@livekit/components-react'
 import { ConnectionState, Track } from 'livekit-client'
-import { AlertCircle, Hand, Heart, Loader2, MicOff, Users } from 'lucide-react'
+import { AlertCircle, FileText, Hand, Heart, Loader2, MicOff, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ChatPanel } from '@/components/ChatPanel'
+import { SharedDocViewer } from '@/components/SharedDocViewer'
 import {
   FloatingReactions,
   type FloatingReactionsHandle,
@@ -43,6 +44,9 @@ import type {
 } from '@/lib/database.types'
 
 const FLOATING_EMOJIS = ['❤️', '👏', '🎉', '🔥'] as const
+
+/** How often a guest re-reads the webinar row for host-side changes. */
+const WEBINAR_POLL_MS = 15_000
 
 // ── Video stage ────────────────────────────────────────────────────────────────
 // Renders the host's published tracks (video + audio) from a LiveKit room.
@@ -200,6 +204,36 @@ export function Live() {
       active = false
     }
   }, [slug, navigate])
+
+  // ── Pick up what the host changes mid-session ────────────────────────────
+  // Chiefly the shared document appearing, changing or being taken down.
+  //
+  // ⚠️ Deliberately a poll, NOT a realtime subscription, even though `webinars`
+  // is in the supabase_realtime publication. That table carries `manage_token`,
+  // which migrations 0067/0068 went to some trouble to make unreadable by
+  // anon and authenticated — a CDC payload for a `webinars` UPDATE would be a
+  // way back to it unless Realtime filters columns by grant, and that is not
+  // something to assume from a guest-facing page. `getWebinarBySlug` names its
+  // columns (WEBINAR_COLUMNS) and cannot return the token. See the backlog item
+  // about verifying the publication.
+  useEffect(() => {
+    if (!webinar) return
+    const slugNow = webinar.slug
+    let active = true
+    const id = setInterval(() => {
+      void getWebinarBySlug(slugNow)
+        .then((next) => {
+          if (active && next) setWebinar(next)
+        })
+        .catch(() => {
+          // A dropped poll fixes itself on the next tick.
+        })
+    }, WEBINAR_POLL_MS)
+    return () => {
+      active = false
+      clearInterval(id)
+    }
+  }, [webinar])
 
   // ── Fetch LiveKit token when webinar goes live ───────────────────────────
   useEffect(() => {
@@ -440,6 +474,36 @@ export function Live() {
               registerHandle={(h) => (floatingHandleRef.current = h)}
             />
           </div>
+
+          {/* Shown BELOW the video rather than replacing it: the host may be
+              talking over the document, and a guest who loses the speaker to
+              see a slide has lost the webinar. Scrolling, zooming and paging
+              are the browser's own — nothing here follows the host's page. */}
+          {webinar.shared_doc_url && (
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft">
+              <div className="flex items-center justify-between gap-2 border-b border-slate-200 px-4 py-2.5">
+                <span className="flex min-w-0 items-center gap-2 text-sm font-medium text-slate-900">
+                  <FileText className="h-4 w-4 shrink-0 text-slate-500" />
+                  <span className="truncate">
+                    {webinar.shared_doc_name ?? 'Shared document'}
+                  </span>
+                </span>
+                <a
+                  href={webinar.shared_doc_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="shrink-0 text-xs text-brand-700 underline underline-offset-2"
+                >
+                  Open ↗
+                </a>
+              </div>
+              <SharedDocViewer
+                url={webinar.shared_doc_url}
+                name={webinar.shared_doc_name ?? 'Shared document'}
+                className="h-[480px]"
+              />
+            </div>
+          )}
 
           <div className="flex flex-wrap items-center gap-2">
             {/* A host who has stopped this person asking doesn't get told

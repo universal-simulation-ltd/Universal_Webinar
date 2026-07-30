@@ -13,6 +13,8 @@ import {
   Download,
   Eye,
   EyeOff,
+  FileText,
+  FileUp,
   Hand,
   Loader2,
   Lock,
@@ -41,7 +43,13 @@ import {
 } from '@/components/ui/card'
 import { OtpVerifyDialog } from '@/components/OtpVerifyDialog'
 import { PanelCard } from '@/components/PanelCard'
+import { SharedDocViewer } from '@/components/SharedDocViewer'
 import { cn } from '@/lib/utils'
+import {
+  removeSharedDoc,
+  SHARED_DOC_TYPES,
+  uploadSharedDoc,
+} from '@/lib/sharedDoc'
 import { usePanelLayout } from '@/lib/usePanelLayout'
 import {
   archiveWebinarByToken,
@@ -123,6 +131,12 @@ const PANEL_STORAGE_KEY = 'unisim-webinar-host-panels'
 /** How often the speaker queue re-reads itself while a session is live. */
 const SPEAK_QUEUE_POLL_MS = 10_000
 
+function formatBytes(bytes: number): string {
+  return bytes >= 1024 * 1024
+    ? `${(bytes / 1024 / 1024).toFixed(1)} MB`
+    : `${Math.max(1, Math.round(bytes / 1024))} KB`
+}
+
 export function HostManage() {
   const { slug = '' } = useParams()
   const [params, setParams] = useSearchParams()
@@ -153,6 +167,11 @@ export function HostManage() {
   const [attendance, setAttendance] = useState<AttendanceRow[]>([])
   const [speakQueue, setSpeakQueue] = useState<SpeakQueueRow[]>([])
   const [speakBusy, setSpeakBusy] = useState<string | null>(null)
+  const [docBusy, setDocBusy] = useState(false)
+  const [docError, setDocError] = useState<string | null>(null)
+  // "Shrunk from 8.2 MB to 640 KB" — worth saying, since the host picked a file
+  // that would otherwise have been refused.
+  const [docNote, setDocNote] = useState<string | null>(null)
   const [closing, setClosing] = useState(false)
   const [confirmClose, setConfirmClose] = useState(false)
   // Closing destroys data on the free tier, so the host has to have taken their
@@ -347,6 +366,75 @@ export function HostManage() {
       setError(getErrorMessage(err, 'Could not stop that person asking.'))
     } finally {
       setSpeakBusy(null)
+    }
+  }
+
+  // ── Shared document ────────────────────────────────────────────────────────
+  // Two steps that must not half-happen: put the bytes in storage, then point
+  // the webinar at them. If the second fails the object is deleted again,
+  // otherwise every abandoned upload would sit in the bucket forever with
+  // nothing referencing it.
+  async function shareDocument(file: File) {
+    if (!webinar || !token) return
+    setDocError(null)
+    setDocNote(null)
+    setDocBusy(true)
+    const previous = webinar.shared_doc_url
+    try {
+      const uploaded = await uploadSharedDoc(webinar.id, file)
+      try {
+        await patchStrict(
+          { shared_doc_url: uploaded.url, shared_doc_name: uploaded.name },
+          'shared_doc',
+        )
+      } catch (err) {
+        await removeSharedDoc(uploaded.url)
+        throw err
+      }
+      // Replacing? The old one is now unreferenced.
+      if (previous) await removeSharedDoc(previous)
+      if (uploaded.size < uploaded.originalSize) {
+        setDocNote(
+          `Shrunk from ${formatBytes(uploaded.originalSize)} to ${formatBytes(uploaded.size)} before uploading.`,
+        )
+      }
+    } catch (err) {
+      setDocError(
+        getErrorMessage(err, "That didn't upload. Try again, or use a smaller file."),
+      )
+    } finally {
+      setDocBusy(false)
+    }
+  }
+
+  async function stopSharingDocument() {
+    if (!webinar || !token) return
+    const url = webinar.shared_doc_url
+    setDocError(null)
+    setDocNote(null)
+    setDocBusy(true)
+    try {
+      // Clear the reference first. If the delete then fails the host still has
+      // an empty stage, which is what they asked for — the orphan goes with the
+      // webinar at purge time.
+      await patchStrict({ shared_doc_url: null, shared_doc_name: null }, 'shared_doc')
+      if (url) await removeSharedDoc(url)
+    } catch (err) {
+      setDocError(getErrorMessage(err, 'Could not take that down.'))
+    } finally {
+      setDocBusy(false)
+    }
+  }
+
+  /** Like `patch`, but lets the failure through so a caller can undo its own
+   *  half-finished work (the shared-document upload is the reason this exists). */
+  async function patchStrict(update: WebinarUpdate, label: string) {
+    if (!webinar || !token) throw new Error('Not signed in to this webinar.')
+    setSaving(label)
+    try {
+      setWebinar(await updateWebinarByToken(webinar.slug, token, update))
+    } finally {
+      setSaving(null)
     }
   }
 
@@ -713,13 +801,40 @@ export function HostManage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="aspect-video rounded-xl bg-slate-900 grid place-items-center text-slate-300 text-sm">
-                <div className="text-center">
-                  <Camera className="mx-auto h-10 w-10 text-slate-500" />
-                  <p className="mt-2">Camera preview</p>
+              {/* A shared document takes over the stage area, because it IS
+                  what's on the stage — there is no camera feed to sit beside
+                  it yet, and once there is, the two need a real layout
+                  decision rather than a squeeze. */}
+              {webinar.shared_doc_url ? (
+                <div className="overflow-hidden rounded-xl border border-slate-200">
+                  <div className="flex items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2">
+                    <span className="flex min-w-0 items-center gap-2 text-sm text-slate-700">
+                      <FileText className="h-4 w-4 shrink-0 text-slate-500" />
+                      <span className="truncate">{webinar.shared_doc_name}</span>
+                    </span>
+                    <a
+                      href={webinar.shared_doc_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="shrink-0 text-xs text-brand-700 underline underline-offset-2"
+                    >
+                      Open ↗
+                    </a>
+                  </div>
+                  <SharedDocViewer
+                    url={webinar.shared_doc_url}
+                    name={webinar.shared_doc_name ?? 'Shared document'}
+                  />
                 </div>
-              </div>
-              <div className="mt-4 flex flex-wrap gap-2">
+              ) : (
+                <div className="aspect-video rounded-xl bg-slate-900 grid place-items-center text-slate-300 text-sm">
+                  <div className="text-center">
+                    <Camera className="mx-auto h-10 w-10 text-slate-500" />
+                    <p className="mt-2">Camera preview</p>
+                  </div>
+                </div>
+              )}
+              <div className="mt-4 flex flex-wrap items-center gap-2">
                 <Button variant="outline" disabled>
                   <Camera className="h-4 w-4" />
                   Test camera
@@ -728,7 +843,63 @@ export function HostManage() {
                   <MonitorUp className="h-4 w-4" />
                   Share screen
                 </Button>
+                <Button
+                  variant="outline"
+                  asChild={!docBusy}
+                  disabled={docBusy}
+                  title={
+                    webinar.host_verified
+                      ? undefined
+                      : 'Verify your email first — the same code you need to go live'
+                  }
+                >
+                  {docBusy ? (
+                    <span>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Uploading…
+                    </span>
+                  ) : (
+                    <label className="cursor-pointer">
+                      <FileUp className="h-4 w-4" />
+                      {webinar.shared_doc_url ? 'Replace document' : 'Share document'}
+                      <input
+                        type="file"
+                        accept={SHARED_DOC_TYPES.join(',')}
+                        className="sr-only"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0]
+                          e.target.value = ''
+                          if (f) void shareDocument(f)
+                        }}
+                      />
+                    </label>
+                  )}
+                </Button>
+                {webinar.shared_doc_url && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={docBusy}
+                    onClick={() => void stopSharingDocument()}
+                  >
+                    <X className="h-4 w-4" />
+                    Take it down
+                  </Button>
+                )}
               </div>
+              {docNote && (
+                <p className="mt-2 text-xs text-slate-500">{docNote}</p>
+              )}
+              {docError && (
+                <p className="mt-2 text-xs text-red-600">{docError}</p>
+              )}
+              {!webinar.shared_doc_url && !docError && (
+                <p className="mt-2 text-xs text-slate-500">
+                  PDF, PNG, JPG or WebP, up to 25 MB — everyone in the room sees
+                  it. Photos and screenshots are shrunk automatically. Anyone
+                  with the link can open it, so don't share anything private.
+                </p>
+              )}
             </CardContent>
           </Card>
 

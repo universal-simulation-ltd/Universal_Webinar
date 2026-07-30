@@ -50,6 +50,10 @@ export interface WebinarRow {
   // paying host), otherwise 30 days after closing.
   archived_at: string | null
   purge_after: string | null
+  // The document currently on the stage (migration 0098), or null for none.
+  // Uploaded to the public `webinar-docs` bucket by an OTP-verified host.
+  shared_doc_url: string | null
+  shared_doc_name: string | null
 }
 
 // `manage_token` is deliberately absent from WebinarRow. Migration 0067 revokes
@@ -107,6 +111,8 @@ export interface WebinarUpdate {
   capacity?: number | null
   send_followup?: boolean
   open_join?: boolean
+  shared_doc_url?: string | null
+  shared_doc_name?: string | null
 }
 
 export interface RegistrationRow {
