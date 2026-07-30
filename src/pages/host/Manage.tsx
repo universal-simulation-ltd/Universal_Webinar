@@ -20,7 +20,6 @@ import {
   Lock,
   Mail,
   MailCheck,
-  MonitorUp,
   Power,
   RefreshCw,
   Settings2,
@@ -40,6 +39,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { OtpVerifyDialog } from '@/components/OtpVerifyDialog'
+import { HostBroadcast } from '@/components/HostBroadcast'
 import { PanelCard } from '@/components/PanelCard'
 import { SharedDocViewer } from '@/components/SharedDocViewer'
 import { cn } from '@/lib/utils'
@@ -71,6 +71,7 @@ import {
   registrationsCsvFilename,
 } from '@/lib/csv'
 import { getErrorMessage } from '@/lib/errors'
+import { getLiveKitToken, isLiveKitConfigured } from '@/lib/livekit'
 import { formatWithZone, localTimezone } from '@/lib/time'
 import CustomQuestionsEditor from '@/components/CustomQuestionsEditor'
 import {
@@ -174,6 +175,10 @@ export function HostManage() {
   // token-gated responses. Keeping it off the shared type is what stops it
   // being rendered somewhere a guest can see.
   const [entryPin, setEntryPin] = useState<string | null>(null)
+  // Null until the host presses "Go on air" — see HostBroadcast for why this
+  // isn't fetched eagerly: connecting is what asks for the camera.
+  const [broadcast, setBroadcast] = useState<{ url: string; token: string } | null>(null)
+  const [goingOnAir, setGoingOnAir] = useState(false)
 
   const {
     order: panelOrder,
@@ -358,6 +363,27 @@ export function HostManage() {
       setError(getErrorMessage(err, 'Could not stop that person asking.'))
     } finally {
       setSpeakBusy(null)
+    }
+  }
+
+  async function goOnAir() {
+    if (!webinar || !token) return
+    setGoingOnAir(true)
+    setError(null)
+    try {
+      // The manage token is the credential: a host may have no session at all.
+      const { token: lkToken, url } = await getLiveKitToken(
+        webinar.id,
+        null,
+        'host',
+        token,
+      )
+      if (!url) throw new Error('Live video is not configured on the server.')
+      setBroadcast({ url, token: lkToken })
+    } catch (err) {
+      setError(getErrorMessage(err, 'Could not connect you to the stage.'))
+    } finally {
+      setGoingOnAir(false)
     }
   }
 
@@ -812,23 +838,48 @@ export function HostManage() {
                     name={webinar.shared_doc_name ?? 'Shared document'}
                   />
                 </div>
+              ) : broadcast ? (
+                <div className="aspect-video">
+                  <HostBroadcast
+                    serverUrl={broadcast.url}
+                    token={broadcast.token}
+                    onLeave={() => setBroadcast(null)}
+                  />
+                </div>
               ) : (
                 <div className="aspect-video rounded-xl bg-slate-900 grid place-items-center text-slate-300 text-sm">
                   <div className="text-center">
                     <Camera className="mx-auto h-10 w-10 text-slate-500" />
-                    <p className="mt-2">Camera preview</p>
+                    <p className="mt-2">
+                      {isLiveKitConfigured()
+                        ? 'Go on air to turn your camera on or share your screen.'
+                        : 'Live video isn’t switched on for this deployment.'}
+                    </p>
                   </div>
                 </div>
               )}
               <div className="mt-4 flex flex-wrap items-center gap-2">
-                <Button variant="outline" disabled>
-                  <Camera className="h-4 w-4" />
-                  Test camera
-                </Button>
-                <Button variant="outline" disabled>
-                  <MonitorUp className="h-4 w-4" />
-                  Share screen
-                </Button>
+                {isLiveKitConfigured() && !webinar.shared_doc_url && (
+                  broadcast ? (
+                    <Button variant="outline" onClick={() => setBroadcast(null)}>
+                      <Power className="h-4 w-4" />
+                      Leave the stage
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      disabled={goingOnAir}
+                      onClick={() => void goOnAir()}
+                    >
+                      {goingOnAir ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Camera className="h-4 w-4" />
+                      )}
+                      Go on air
+                    </Button>
+                  )
+                )}
                 <Button
                   variant="outline"
                   asChild={!docBusy}
@@ -873,6 +924,18 @@ export function HostManage() {
                   </Button>
                 )}
               </div>
+              {/* Two different meanings of "live", and a host can hit both in
+                  the wrong order. Being on the LiveKit stage publishes your
+                  camera; guests only connect once the WEBINAR is live. That
+                  gap is useful — it's how you check your camera beforehand —
+                  but it has to be said, or you're presenting to nobody. */}
+              {broadcast && webinar.status !== 'live' && (
+                <p className="mt-2 rounded-md bg-amber-50 px-2.5 py-2 text-xs text-amber-900">
+                  Nobody can see this yet — the webinar itself hasn't started.
+                  Good for checking your camera; press <strong>Go live</strong>{' '}
+                  at the top when you're ready for an audience.
+                </p>
+              )}
               {docNote && (
                 <p className="mt-2 text-xs text-slate-500">{docNote}</p>
               )}
