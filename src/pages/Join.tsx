@@ -154,7 +154,19 @@ export function Join() {
       // Translate its coded message into something a guest can act on rather
       // than surfacing a raw Postgres error.
       const raw = getErrorMessage(err, 'Could not join.')
-      if (raw.includes('pin_incorrect')) {
+      if (raw.includes('pin_throttled')) {
+        // Migration 0108. Checked before the PIN is compared, so this says
+        // nothing about whether the one just typed was right — and it is a
+        // wait, not a lock: the window rolls, and a correct PIN from anyone
+        // clears the room's count. It can arrive from either PIN call — the
+        // pre-check throws it, and so does the join RPC.
+        const mins = raw.match(/retry in (\d+)/)?.[1]
+        setError(
+          `Too many failed PIN attempts. Wait ${
+            mins ? `about ${mins} minute${mins === '1' ? '' : 's'}` : 'a few minutes'
+          } and try again — and check the PIN with whoever invited you before you do.`,
+        )
+      } else if (raw.includes('pin_incorrect')) {
         setError("That PIN isn't right. Check with whoever invited you.")
       } else if (raw.includes('pin_required')) {
         // The flag said no PIN but the door disagreed — the host locked the

@@ -498,6 +498,11 @@ export async function getMyAttendee(
  * the host's list and in the follow-up mailing.
  *
  * Returns true for a webinar with no PIN, so the caller can ask unconditionally.
+ *
+ * Rate-limited since 0108: eight failures from one session, or sixty across the
+ * whole webinar, inside a rolling fifteen minutes, and this throws
+ * `pin_throttled: … retry in N minute(s)` instead of answering. A correct PIN
+ * clears the count.
  */
 export async function webinarPinMatches(
   slug: string,
@@ -518,6 +523,16 @@ export async function webinarPinMatches(
  * refuses it unless this RPC has cleared the PIN in the same transaction, so a
  * PIN gate can't be walked around from the console. Idempotent: a reload gets
  * the existing attendee row back.
+ *
+ * ⚠️ Since 0108 a wrong PIN is not an error. It can't be: the function records
+ * the failed attempt that the rate limit counts, and raising would roll that
+ * row straight back, so the limit would never fire. The function returns SQL
+ * NULL instead — and the second half of that trap is that PostgREST does NOT
+ * render a null composite as JSON `null`. It sends a **fully-formed object with
+ * every column set to null**, which is truthy, so `if (!data)` sails straight
+ * past it and the caller navigates a guest into a room they were refused.
+ * Test the primary key, never the object. Being rate-limited still throws
+ * (`pin_throttled`).
  */
 export async function joinWebinarWithPin(
   slug: string,
@@ -532,6 +547,7 @@ export async function joinWebinarWithPin(
     p_email: email,
   })
   if (error) throw error
+  if (!(data as AttendeeRow | null)?.id) throw new Error('pin_incorrect')
   return data as AttendeeRow
 }
 
