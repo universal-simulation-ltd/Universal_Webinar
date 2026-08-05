@@ -26,7 +26,7 @@ import type {
 // no longer usable: PostgREST passes it through as a bare SQL `*`, which now
 // fails with "permission denied for column manage_token". Keep this list in
 // step with WebinarRow — a column missing here is simply absent at runtime.
-export const WEBINAR_COLUMNS = [
+export const WEBINAR_COLUMN_NAMES = [
   'id',
   'slug',
   'title',
@@ -62,7 +62,37 @@ export const WEBINAR_COLUMNS = [
   // authenticated (0102), so naming it here would fail the whole select the way
   // `select *` does with manage_token.
   'pin_required',
-].join(', ')
+] as const
+
+/** The same list as a PostgREST select string. */
+export const WEBINAR_COLUMNS = WEBINAR_COLUMN_NAMES.join(', ')
+
+/**
+ * Narrow a raw `webinars` row from a Realtime `postgres_changes` payload down
+ * to the columns this app actually reads.
+ *
+ * ⚠️ A CDC payload is **not** filtered by WEBINAR_COLUMNS. It carries every
+ * column the *database* grants the subscriber — which today happens to be
+ * exactly these 32, because migrations 0067/0068/0102 revoke `manage_token` and
+ * `entry_pin` and `sync_webinar_public_column_grants()` keeps the rest granted.
+ * The two lists are maintained by different things, though, so the next column
+ * added to the table arrives here whether or not anyone adds it to
+ * WEBINAR_COLUMN_NAMES. Picking rather than casting is what keeps a realtime
+ * row and a `select` row the same shape.
+ *
+ * Returns a Partial deliberately: merge it over the row you already have rather
+ * than replacing it, so a column that is absent from the payload (revoked, or
+ * an older database) leaves the last known value alone instead of blanking it.
+ */
+export function webinarRowFromRealtime(
+  row: Record<string, unknown>,
+): Partial<WebinarRow> {
+  const picked: Record<string, unknown> = {}
+  for (const name of WEBINAR_COLUMN_NAMES) {
+    if (name in row) picked[name] = row[name]
+  }
+  return picked as Partial<WebinarRow>
+}
 
 export async function listWebinars(): Promise<WebinarRow[]> {
   const { data, error } = await supabase

@@ -28,6 +28,7 @@ import {
   raiseSpeakRequest,
   removeReaction,
   sendMessage,
+  webinarRowFromRealtime,
 } from '@/lib/db'
 import { getErrorMessage } from '@/lib/errors'
 import { getLiveKitToken, isLiveKitConfigured } from '@/lib/livekit'
@@ -45,9 +46,6 @@ import type {
 } from '@/lib/database.types'
 
 const FLOATING_EMOJIS = ['❤️', '👏', '🎉', '🔥'] as const
-
-/** How often a guest re-reads the webinar row for host-side changes. */
-const WEBINAR_POLL_MS = 15_000
 
 // ── Video stage ────────────────────────────────────────────────────────────────
 // Renders the host's published tracks (video + audio) from a LiveKit room.
@@ -233,34 +231,45 @@ export function Live() {
   }, [slug, navigate])
 
   // ── Pick up what the host changes mid-session ────────────────────────────
-  // Chiefly the shared document appearing, changing or being taken down.
+  // Chiefly the shared document appearing, changing or being taken down, and
+  // the room going live or ending.
   //
-  // ⚠️ Deliberately a poll, NOT a realtime subscription, even though `webinars`
-  // is in the supabase_realtime publication. That table carries `manage_token`,
-  // which migrations 0067/0068 went to some trouble to make unreadable by
-  // anon and authenticated — a CDC payload for a `webinars` UPDATE would be a
-  // way back to it unless Realtime filters columns by grant, and that is not
-  // something to assume from a guest-facing page. `getWebinarBySlug` names its
-  // columns (WEBINAR_COLUMNS) and cannot return the token. See the backlog item
-  // about verifying the publication.
-  useEffect(() => {
-    if (!webinar) return
-    const slugNow = webinar.slug
-    let active = true
-    const id = setInterval(() => {
-      void getWebinarBySlug(slugNow)
-        .then((next) => {
-          if (active && next) setWebinar(next)
-        })
-        .catch(() => {
-          // A dropped poll fixes itself on the next tick.
-        })
-    }, WEBINAR_POLL_MS)
-    return () => {
-      active = false
-      clearInterval(id)
+  // This used to be a 15-second poll, written that way because nobody had
+  // established that a CDC payload for a `webinars` UPDATE couldn't carry
+  // `manage_token`. It can't: Realtime filters columns by the subscriber's
+  // grants, verified against prod on 2026-08-05 (SUPABASE.md). So the row now
+  // arrives on the channel this page already holds — see the onWebinarUpdate
+  // handler below — and this is only the fallback path for when it doesn't.
+  //
+  // ⚠️ A realtime payload is NOT filtered by WEBINAR_COLUMNS, so it is narrowed
+  // by `webinarRowFromRealtime` rather than trusted to match. A full refetch
+  // through `getWebinarBySlug` is by definition the right shape.
+  const refreshWebinar = useCallback(async () => {
+    try {
+      const next = await getWebinarBySlug(slug)
+      if (next) setWebinar(next)
+    } catch {
+      // Best-effort. The subscription is the primary path; a failed catch-up
+      // read shouldn't put an error on a room that is otherwise working.
     }
-  }, [webinar])
+  }, [slug])
+
+  // Fallback 2 of 2 (the other is the refetch on every (re)SUBSCRIBED). A tab
+  // that has been in the background — a phone with the screen off, most often —
+  // can have had its socket killed by the OS without the client noticing yet,
+  // so anything the host changed while it was away would never arrive. Reading
+  // once on the way back costs a single request at the moment somebody is
+  // actually looking, which is cheaper than any poll and covers the one case a
+  // reconnect can't.
+  const roomLoaded = webinar !== null
+  useEffect(() => {
+    if (!roomLoaded) return
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') void refreshWebinar()
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => document.removeEventListener('visibilitychange', onVisibility)
+  }, [roomLoaded, refreshWebinar])
 
   // ── Fetch LiveKit token when webinar goes live ───────────────────────────
   useEffect(() => {
@@ -281,11 +290,26 @@ export function Live() {
   }, [webinar, attendee, lkToken])
 
   // ── Realtime subscription ────────────────────────────────────────────────
+  // Identity of the room and of this guest, pulled out as primitives so the
+  // effect below does not depend on the `webinar` / `attendee` objects.
+  //
+  // ⚠️ Load-bearing now that host edits arrive on this channel. Depending on
+  // the webinar object meant every change to the row tore the channel down and
+  // rebuilt it — merely wasteful when the row only changed on a 15s poll (which
+  // dropped and re-tracked presence every 15 seconds), but with the webinars
+  // subscription in the same channel it is a loop: update → new object →
+  // rebuild → SUBSCRIBED → refetch → new object → rebuild.
+  const webinarId = webinar?.id ?? null
+  const webinarSlug = webinar?.slug ?? null
+  const attendeeId = attendee?.id ?? null
+  const attendeeName = attendee?.name ?? null
+  const attendeeRole = attendee?.role ?? null
+
   useEffect(() => {
-    if (!webinar || !attendee) return
+    if (!webinarId || !webinarSlug || !attendeeId || !attendeeName) return
     const channel = joinWebinarChannel(
-      webinar.id,
-      { attendeeId: attendee.id, name: attendee.name },
+      webinarId,
+      { attendeeId, name: attendeeName },
       {
         onMessageInsert: (row) => {
           if (knownMessageIds.current.has(row.id)) return
@@ -307,18 +331,35 @@ export function Live() {
           floatingHandleRef.current?.spawn(emoji)
         },
         onPresence: setViewerCount,
+        // The host changed the room under us. The payload is narrowed to the
+        // columns a `select` would have returned and MERGED over what we hold,
+        // so a column the database hasn't granted us leaves its last known
+        // value alone rather than blanking it — a replace would silently turn
+        // an unlisted column into `undefined` mid-session.
+        onWebinarUpdate: (row) => {
+          const patch = webinarRowFromRealtime(row)
+          setWebinar((prev) => (prev ? { ...prev, ...patch } : prev))
+        },
+        // Fallback 1 of 2. Runs on the first subscribe (harmless — the row was
+        // just loaded) and, crucially, again after every reconnect, so a
+        // dropped socket costs one stale window instead of the rest of the
+        // session. Without it, replacing the poll would have traded "15 seconds
+        // behind" for "never updates again".
+        onSubscribed: () => {
+          void refreshWebinar()
+        },
         onAttendeeUpdate: (row) => {
-          if (row.id !== attendee.id) return
+          if (row.id !== attendeeId) return
           if (row.role === 'banned') {
-            navigate(`/w/${webinar.slug}?banned=1`, { replace: true })
+            navigate(`/w/${webinarSlug}?banned=1`, { replace: true })
             return
           }
           if (row.left_at) {
-            navigate(`/w/${webinar.slug}?kicked=1`, { replace: true })
+            navigate(`/w/${webinarSlug}?kicked=1`, { replace: true })
             return
           }
-          const promoted = attendee.role !== 'speaker' && row.role === 'speaker'
-          const demoted = attendee.role === 'speaker' && row.role !== 'speaker'
+          const promoted = attendeeRole !== 'speaker' && row.role === 'speaker'
+          const demoted = attendeeRole === 'speaker' && row.role !== 'speaker'
           setAttendee(row)
           // A LiveKit token has `canPublish` baked in at mint time, so a role
           // change invalidates whichever one this browser is holding. Dropping
@@ -341,7 +382,7 @@ export function Live() {
           if (promoted) setOffAirNotice(false)
         },
         onSpeakRequestUpdate: (row) => {
-          if (row.attendee_id === attendee.id) {
+          if (row.attendee_id === attendeeId) {
             setSpeakRequest(row)
           }
         },
@@ -355,7 +396,15 @@ export function Live() {
     // `lkToken` is deliberately NOT a dependency: the handlers no longer read
     // it, and leaving it in tore the whole channel down and rebuilt it every
     // time a token arrived.
-  }, [webinar, attendee, navigate])
+  }, [
+    webinarId,
+    webinarSlug,
+    attendeeId,
+    attendeeName,
+    attendeeRole,
+    navigate,
+    refreshWebinar,
+  ])
 
   // Clear the off-air line on its own rather than leaving it up for the rest of
   // the session — by then it is telling someone something they worked out
