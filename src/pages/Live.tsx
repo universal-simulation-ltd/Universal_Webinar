@@ -9,7 +9,7 @@ import {
   AudioTrack,
 } from '@livekit/components-react'
 import { ConnectionState, Track } from 'livekit-client'
-import { AlertCircle, FileText, Hand, Heart, Loader2, MicOff, Users } from 'lucide-react'
+import { AlertCircle, FileText, Hand, Heart, Loader2, Mic, MicOff, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { CameraBubble } from '@/components/CameraBubble'
 import { ChatPanel } from '@/components/ChatPanel'
@@ -168,6 +168,11 @@ export function Live() {
   // Speak request state
   const [speakRequest, setSpeakRequest] = useState<SpeakRequestRow | null>(null)
   const [raisingHand, setRaisingHand] = useState(false)
+  // Shown for a few seconds after the host takes someone off air. Being on air
+  // is self-evident (your own camera appears); being taken off it is not —
+  // without this the stage just quietly changes back and you are left
+  // wondering whether you were cut off or something broke.
+  const [offAirNotice, setOffAirNotice] = useState(false)
 
   // LiveKit
   const [lkToken, setLkToken] = useState<string | null>(null)
@@ -312,16 +317,28 @@ export function Live() {
             navigate(`/w/${webinar.slug}?kicked=1`, { replace: true })
             return
           }
+          const promoted = attendee.role !== 'speaker' && row.role === 'speaker'
+          const demoted = attendee.role === 'speaker' && row.role !== 'speaker'
           setAttendee(row)
-          // If promoted to speaker, get a new speaker token.
-          if (row.role === 'speaker' && !lkToken && isLiveKitConfigured()) {
-            getLiveKitToken(webinar.id, row.id, 'speaker')
-              .then(({ token, url }) => {
-                setLkToken(token)
-                setLkUrl(url)
-              })
-              .catch(() => {})
+          // A LiveKit token has `canPublish` baked in at mint time, so a role
+          // change invalidates whichever one this browser is holding. Dropping
+          // it makes the fetch effect above mint a fresh one for the new role.
+          //
+          // ⚠️ This must NOT be conditional on there being no token yet, which
+          // is what it used to say. A guest in a live room ALWAYS already holds
+          // a viewer token — precisely the case where a promotion has to
+          // replace it — so being put on air swapped them onto the speaker
+          // stage still carrying `canPublish: false`, and their camera and mic
+          // buttons then failed for no visible reason.
+          if (promoted || demoted) setLkToken(null)
+          if (demoted) {
+            // Their request is spent. Clearing it is what puts the "Request to
+            // speak" button back, rather than leaving them on an 'approved'
+            // request that renders nothing at all.
+            setSpeakRequest(null)
+            setOffAirNotice(true)
           }
+          if (promoted) setOffAirNotice(false)
         },
         onSpeakRequestUpdate: (row) => {
           if (row.attendee_id === attendee.id) {
@@ -335,7 +352,19 @@ export function Live() {
       channelRef.current = null
       void leaveChannel(channel)
     }
-  }, [webinar, attendee, navigate, lkToken])
+    // `lkToken` is deliberately NOT a dependency: the handlers no longer read
+    // it, and leaving it in tore the whole channel down and rebuilt it every
+    // time a token arrived.
+  }, [webinar, attendee, navigate])
+
+  // Clear the off-air line on its own rather than leaving it up for the rest of
+  // the session — by then it is telling someone something they worked out
+  // several minutes ago.
+  useEffect(() => {
+    if (!offAirNotice) return
+    const id = setTimeout(() => setOffAirNotice(false), 10_000)
+    return () => clearTimeout(id)
+  }, [offAirNotice])
 
   const handleSend = useCallback(
     async (content: string) => {
@@ -463,6 +492,27 @@ export function Live() {
         </div>
       )}
 
+      {/* Being put on air changes the video panel from something you watch into
+          something you are in, which is a big enough surprise to say out loud —
+          and the camera and mic are NOT switched on for them, so somebody has
+          to mention where the buttons are. */}
+      {isSpeaker && (
+        <div className="mb-4 flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-2.5 text-sm text-green-900">
+          <Mic className="h-4 w-4 shrink-0" />
+          The host has put you on air. Use the camera and microphone buttons
+          under the video to join in — everyone in the room can see and hear
+          you.
+        </div>
+      )}
+
+      {offAirNotice && (
+        <div className="mb-4 flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-700">
+          <MicOff className="h-4 w-4 shrink-0" />
+          You're off air now — your camera and microphone are off. You can carry
+          on watching and chatting, and raise your hand again any time.
+        </div>
+      )}
+
       <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
         <div className="space-y-4">
           <div className="relative aspect-video overflow-hidden rounded-2xl border border-slate-200 bg-slate-900 shadow-soft">
@@ -543,7 +593,7 @@ export function Live() {
             {isSpeaker && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-700">
                 <span className="h-1.5 w-1.5 rounded-full bg-green-600" />
-                You're a speaker
+                You're on air
               </span>
             )}
             <div className="flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2 py-1 shadow-soft">
@@ -608,7 +658,11 @@ function SpeakRequestButton({
     )
   }
   if (speakRequest?.status === 'approved') {
-    return null // They're already a speaker; the speaker badge shows instead.
+    // They're on air (or a beat away from it — the two realtime events can
+    // arrive either way round); the "You're on air" badge is what shows. Being
+    // taken back off air clears the request, so this can't strand anyone
+    // buttonless afterwards.
+    return null
   }
   if (speakRequest?.status === 'denied') {
     return (

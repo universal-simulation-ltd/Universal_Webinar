@@ -20,6 +20,8 @@ import {
   Lock,
   Mail,
   MailCheck,
+  Mic,
+  MicOff,
   Power,
   RefreshCw,
   Settings2,
@@ -50,11 +52,14 @@ import {
 } from '@/lib/sharedDoc'
 import { usePanelLayout } from '@/lib/usePanelLayout'
 import {
+  approveSpeakRequestByToken,
   denySpeakRequestByToken,
   getWebinarAttendanceByToken,
   getWebinarBySlug,
   listRegistrationsByToken,
+  listSpeakersByToken,
   listSpeakQueueByToken,
+  revokeSpeakerByToken,
   sendRegistrationConfirmation,
   setRegistrationStatusByToken,
   setSpeakBlockByToken,
@@ -80,6 +85,7 @@ import {
 } from '@/lib/customQuestions'
 import type {
   AttendanceRow,
+  AttendeeRow,
   RegistrationRow,
   RegistrationStatus,
   SpeakQueueRow,
@@ -164,6 +170,13 @@ export function HostManage() {
   const [statusSaving, setStatusSaving] = useState<string | null>(null)
   const [attendance, setAttendance] = useState<AttendanceRow[]>([])
   const [speakQueue, setSpeakQueue] = useState<SpeakQueueRow[]>([])
+  // Who is on air. Read separately from the queue because the queue RPC returns
+  // pending requests only — once approved, a speaker leaves it entirely, and
+  // without this list the host loses their "take them off air" button on the
+  // next page reload.
+  const [speakers, setSpeakers] = useState<AttendeeRow[]>([])
+  // Keyed by request id for a queue row, attendee id for a speaker row. They
+  // are different id spaces, so one piece of state is safe for both.
   const [speakBusy, setSpeakBusy] = useState<string | null>(null)
   const [docBusy, setDocBusy] = useState(false)
   const [docError, setDocError] = useState<string | null>(null)
@@ -287,10 +300,18 @@ export function HostManage() {
           // their registrations list rather than an error page.
         }
         try {
-          const q = await listSpeakQueueByToken(w.slug, token)
-          if (active) setSpeakQueue(q)
+          const [q, s] = await Promise.all([
+            listSpeakQueueByToken(w.slug, token),
+            listSpeakersByToken(w.slug, token),
+          ])
+          if (active) {
+            setSpeakQueue(q)
+            setSpeakers(s)
+          }
         } catch {
-          // Same again — the queue card simply doesn't appear.
+          // Same again — the queue card simply doesn't appear. Both halves go
+          // together deliberately: a card showing hands up but not who is
+          // already on air would read as "nobody is speaking".
         }
       } catch (err) {
         if (active) setError(getErrorMessage(err, 'Load failed.'))
@@ -312,9 +333,16 @@ export function HostManage() {
     const slugNow = webinar.slug
     let active = true
     const id = setInterval(() => {
-      void listSpeakQueueByToken(slugNow, token)
-        .then((q) => {
-          if (active) setSpeakQueue(q)
+      void Promise.all([
+        listSpeakQueueByToken(slugNow, token),
+        listSpeakersByToken(slugNow, token),
+      ])
+        .then(([q, s]) => {
+          if (!active) return
+          setSpeakQueue(q)
+          // Picks up a speaker promoted from the admin control room, or from
+          // this host's other tab, rather than only what this page did itself.
+          setSpeakers(s)
         })
         .catch(() => {
           // A dropped poll is nothing to report — the next one covers it.
@@ -329,9 +357,59 @@ export function HostManage() {
   async function refreshSpeakQueue() {
     if (!webinar || !token) return
     try {
-      setSpeakQueue(await listSpeakQueueByToken(webinar.slug, token))
+      const [q, s] = await Promise.all([
+        listSpeakQueueByToken(webinar.slug, token),
+        listSpeakersByToken(webinar.slug, token),
+      ])
+      setSpeakQueue(q)
+      setSpeakers(s)
     } catch (err) {
       setError(getErrorMessage(err, 'Could not refresh the speaker queue.'))
+    }
+  }
+
+  /** Put this raised hand on air. Their LiveKit token is re-minted with publish
+   *  rights on the guest side, so the change is immediate — no rejoin. */
+  async function approveSpeaker(row: SpeakQueueRow) {
+    if (!webinar || !token) return
+    setSpeakBusy(row.request_id)
+    try {
+      const promoted = await approveSpeakRequestByToken(
+        webinar.slug,
+        token,
+        row.request_id,
+      )
+      // The RPC resolves every pending request from that person, so drop them
+      // from the queue entirely rather than just this row.
+      setSpeakQueue((prev) => prev.filter((r) => r.attendee_id !== row.attendee_id))
+      setSpeakers((prev) =>
+        prev.some((s) => s.id === promoted.id) ? prev : [...prev, promoted],
+      )
+    } catch (err) {
+      // Worth surfacing verbatim: the RPC refuses loudly when the request has
+      // already been dealt with, or the person is blocked, banned or gone, and
+      // each of those sentences tells the host something they can act on.
+      setError(getErrorMessage(err, 'Could not put that person on air.'))
+      // Whatever the reason, this page's idea of the queue is now stale.
+      void refreshSpeakQueue()
+    } finally {
+      setSpeakBusy(null)
+    }
+  }
+
+  /** Take a speaker back off air — down to a plain viewer. Not a block and not
+   *  a ban: they stay in the room and can raise their hand again. */
+  async function revokeSpeaker(person: AttendeeRow) {
+    if (!webinar || !token) return
+    setSpeakBusy(person.id)
+    try {
+      await revokeSpeakerByToken(webinar.slug, token, person.id)
+      setSpeakers((prev) => prev.filter((s) => s.id !== person.id))
+    } catch (err) {
+      setError(getErrorMessage(err, 'Could not take that person off air.'))
+      void refreshSpeakQueue()
+    } finally {
+      setSpeakBusy(null)
     }
   }
 
@@ -956,7 +1034,9 @@ export function HostManage() {
               waiting — an empty card for a feature the host has turned off is
               pure noise. A queue left over from before the toggle was flipped
               still shows, so those people don't get silently stranded. */}
-          {(webinar.allow_speak_requests || speakQueue.length > 0) && (
+          {(webinar.allow_speak_requests ||
+            speakQueue.length > 0 ||
+            speakers.length > 0) && (
             <Card>
               <CardHeader>
                 <div className="flex items-start justify-between gap-2">
@@ -972,7 +1052,7 @@ export function HostManage() {
                     </CardTitle>
                     <CardDescription>
                       {webinar.allow_speak_requests
-                        ? 'Guests raising a hand to join the conversation. Putting someone on air arrives with the live stage; until then you can clear the queue.'
+                        ? 'Guests raising a hand to join the conversation. Put one on air and they can turn their own camera and mic on; take them off again when they’re done.'
                         : 'Requests are switched off — these came in beforehand.'}
                     </CardDescription>
                   </div>
@@ -1014,6 +1094,23 @@ export function HostManage() {
                           </p>
                         </div>
                         <div className="flex shrink-0 items-center gap-1">
+                          {/* The one thing the host is actually here to do, so
+                              it is a labelled button rather than a third
+                              anonymous icon next to "turn down" and "stop". */}
+                          <Button
+                            size="sm"
+                            className="h-7 px-2 text-xs"
+                            disabled={speakBusy === r.request_id}
+                            onClick={() => void approveSpeaker(r)}
+                            title={`Put ${r.name} on air — they can turn their camera and mic on`}
+                          >
+                            {speakBusy === r.request_id ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Mic className="h-3 w-3" />
+                            )}
+                            On air
+                          </Button>
                           <button
                             type="button"
                             disabled={speakBusy === r.request_id}
@@ -1022,11 +1119,7 @@ export function HostManage() {
                             aria-label={`Turn down ${r.name}'s request`}
                             className="rounded-md p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
                           >
-                            {speakBusy === r.request_id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <X className="h-4 w-4" />
-                            )}
+                            <X className="h-4 w-4" />
                           </button>
                           <button
                             type="button"
@@ -1042,6 +1135,58 @@ export function HostManage() {
                       </li>
                     ))}
                   </ul>
+                )}
+
+                {/* Who is on air, and the only way back off it. Kept in this
+                    card rather than a new one because approving is what puts
+                    people here — and a host looking at a queue needs to see
+                    that three people are already speaking before they add a
+                    fourth. Survives a reload because it comes from its own
+                    RPC, not from what this page happened to click. */}
+                {speakers.length > 0 && (
+                  <div className="mt-4 border-t border-slate-100 pt-3">
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                      On air · {speakers.length}
+                    </p>
+                    <ul className="mt-1 divide-y divide-slate-100 text-sm">
+                      {speakers.map((s) => (
+                        <li
+                          key={s.id}
+                          className="flex items-center justify-between gap-3 py-2"
+                        >
+                          <div className="min-w-0">
+                            <p className="truncate font-medium text-slate-900">
+                              {s.name}
+                            </p>
+                            <p className="truncate text-xs text-slate-500">
+                              {s.email}
+                            </p>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 shrink-0 px-2 text-xs"
+                            disabled={speakBusy === s.id}
+                            onClick={() => void revokeSpeaker(s)}
+                            title={`Take ${s.name} off air — they stay in the room and can ask again`}
+                          >
+                            {speakBusy === s.id ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <MicOff className="h-3 w-3" />
+                            )}
+                            Take off air
+                          </Button>
+                        </li>
+                      ))}
+                    </ul>
+                    {webinar.status !== 'live' && (
+                      <p className="mt-1.5 text-xs text-slate-500">
+                        They go on air for real when the webinar does — nobody
+                        is connected to the stage yet.
+                      </p>
+                    )}
+                  </div>
                 )}
               </CardContent>
             </Card>

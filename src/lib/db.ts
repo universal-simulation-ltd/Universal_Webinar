@@ -296,11 +296,12 @@ export async function getWebinarAttendanceByToken(
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Speaker queue, for a manage-token host (migration 0097)
+// Speaker queue, for a manage-token host (migrations 0097 + 0105)
 //
 // The `speak_requests` policies are all `to authenticated`, so none of the
 // functions further down this file work for a host who only holds a manage
-// token. These three are their token-gated equivalents.
+// token. These are their token-gated equivalents: 0097 brought the queue,
+// cancel and block; 0105 added putting someone on air and taking them off it.
 // ──────────────────────────────────────────────────────────────────────────────
 
 export async function listSpeakQueueByToken(
@@ -327,6 +328,61 @@ export async function denySpeakRequestByToken(
     p_request_id: requestId,
   })
   if (error) throw error
+}
+
+/**
+ * Put this raised hand on air (migration 0105).
+ *
+ * Promotion is the whole mechanism: `livekit-token` mints a publish-capable
+ * token for an attendee whose role is 'speaker'. Returns the updated attendee
+ * row. Throws — loudly and with a sentence worth showing — when the request is
+ * already resolved, or the person is blocked, banned, or gone.
+ *
+ * Resolves every pending request from that person, not just this one, so the
+ * caller should drop the whole attendee from its queue.
+ */
+export async function approveSpeakRequestByToken(
+  slug: string,
+  token: string,
+  requestId: string,
+): Promise<AttendeeRow> {
+  const { data, error } = await supabase.rpc('approve_speak_request_by_token', {
+    p_slug: slug,
+    p_token: token,
+    p_request_id: requestId,
+  })
+  if (error) throw error
+  return data as AttendeeRow
+}
+
+/** Take a speaker back off air — down to a plain viewer, still in the room.
+ *  Does NOT block them from asking again; that is a separate control. */
+export async function revokeSpeakerByToken(
+  slug: string,
+  token: string,
+  attendeeId: string,
+): Promise<AttendeeRow> {
+  const { data, error } = await supabase.rpc('revoke_speaker_by_token', {
+    p_slug: slug,
+    p_token: token,
+    p_attendee_id: attendeeId,
+  })
+  if (error) throw error
+  return data as AttendeeRow
+}
+
+/** Who is on air right now. The queue RPC only returns *pending* requests, so
+ *  without this the host loses track of their speakers on a page reload. */
+export async function listSpeakersByToken(
+  slug: string,
+  token: string,
+): Promise<AttendeeRow[]> {
+  const { data, error } = await supabase.rpc('list_speakers_by_token', {
+    p_slug: slug,
+    p_token: token,
+  })
+  if (error) throw error
+  return (data ?? []) as AttendeeRow[]
 }
 
 /**
@@ -620,13 +676,30 @@ export async function raiseSpeakRequest(
   return data as SpeakRequestRow
 }
 
+/**
+ * The admin control room's approve / deny. Goes through migration 0004's
+ * `resolve_speak_request`, which resolves the request AND moves the attendee's
+ * role in one transaction.
+ *
+ * ⚠️ This used to be a plain `update` on `speak_requests`, which meant the
+ * admin room's **Approve button never actually promoted anybody** — it marked
+ * the request approved and left `attendees.role` as 'guest', so the person was
+ * never given a publish-capable LiveKit token. The RPC has existed in prod
+ * since Phase 4 (verified 2026-08-05); it simply wasn't being called. The
+ * host-side equivalent is `approveSpeakRequestByToken` (migration 0105).
+ *
+ * Admin-only by `is_admin()` inside the function — which is also why the old
+ * table update was doubly untrustworthy: PostgREST reports an RLS-denied
+ * UPDATE as a success with zero rows, so a denial would have looked identical
+ * to success. An RPC raises.
+ */
 export async function resolveSpeakRequest(
   requestId: string,
   status: SpeakRequestStatus,
 ): Promise<void> {
-  const { error } = await supabase
-    .from('speak_requests')
-    .update({ status, resolved_at: new Date().toISOString() })
-    .eq('id', requestId)
+  const { error } = await supabase.rpc('resolve_speak_request', {
+    p_request_id: requestId,
+    p_status: status,
+  })
   if (error) throw error
 }
