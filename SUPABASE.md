@@ -162,6 +162,11 @@ If all five steps work, Phase 2 is complete. 🎉
 **Realtime not working** (relevant in Phase 3+)
 > Confirm under **Database → Replication** that `webinars`, `messages`, `reactions`, `speak_requests`, `attendees` are in the `supabase_realtime` publication. The migration adds them, but you can re-toggle from the UI if anything looks off.
 
+**Is it safe for `webinars` to be in that publication, when the table holds `manage_token`?** — **Yes. Verified against prod on 2026-08-05, don't re-litigate it.**
+> Realtime honours **column-level grants**, not just row-level RLS. Two subscribers — one holding only the shipped anon key, one on an anonymous guest session — were subscribed to `postgres_changes` on `public.webinars` while a row was inserted and then updated through `update_webinar_by_token` (a `security definer` function, i.e. the write ran as the table owner). Both received **32 columns**, and **neither `manage_token` nor `entry_pin` was among them** — the revokes from migrations 0067/0068 and 0102 cover the replication path exactly as they cover PostgREST.
+>
+> Consequences: nothing needs dropping from the publication, and no token needs rotating. It also means a `postgres_changes` subscription on `webinars` **is** available for host-driven live updates (the shared document is the obvious first use) instead of the polling the guest page does today. Two caveats if you build on it: a subscriber only receives events for rows its RLS lets it read, and any column added to `webinars` is public over realtime the moment it exists unless `sync_webinar_public_column_grants()` revokes it — which is another reason that call is mandatory at the end of every migration touching this table.
+
 ---
 
 ## Phase 4 — LiveKit video setup

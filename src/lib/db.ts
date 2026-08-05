@@ -123,9 +123,19 @@ export async function updateWebinar(
   return data as unknown as WebinarRow
 }
 
-export async function deleteWebinar(id: string): Promise<void> {
-  const { error } = await supabase.from('webinars').delete().eq('id', id)
+// Returns how many rows were actually removed. PostgREST reports an RLS-denied
+// DELETE as a *success with zero rows*, not an error — so without reading the
+// count back, a caller cannot tell "removed" from "not allowed to remove", and
+// the rollback in HostNewForm would report success having done nothing. (Same
+// trap on UPDATE: an anon/guest session silently updates zero rows.)
+export async function deleteWebinar(id: string): Promise<number> {
+  const { data, error } = await supabase
+    .from('webinars')
+    .delete()
+    .eq('id', id)
+    .select('id')
   if (error) throw error
+  return data?.length ?? 0
 }
 
 export async function countRegistrations(webinarId: string): Promise<number> {

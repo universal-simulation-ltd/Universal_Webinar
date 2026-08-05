@@ -164,7 +164,15 @@ export function HostNewForm() {
           p_refundable: false,
         })
         if (tokErr && (tokErr.message.includes('token_in_use:') || tokErr.message.includes('no_credits'))) {
-          await deleteWebinar(created.id)
+          const removed = await deleteWebinar(created.id)
+          if (removed === 0) {
+            // Deliberately not thrown: the host needs to see the token error,
+            // not a rollback error. But a rollback that removed nothing has
+            // left an unrunnable webinar behind, and that must not be silent.
+            console.warn(
+              `Rollback did not remove webinar "${created.slug}" — it was created but no token was taken.`,
+            )
+          }
           setError(friendlyTokenError(tokErr.message))
           return
         }
