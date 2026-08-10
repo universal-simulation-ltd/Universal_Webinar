@@ -2,6 +2,7 @@
   "name": "universal-webinar",
   "private": true,
   "version": "0.1.0",
+  "license": "MIT",
   "type": "module",
   "description": "A modern, mobile-friendly webinar platform — host live Q&A with chat, reactions, and on-demand speakers.",
   "scripts": {
