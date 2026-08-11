@@ -31,6 +31,7 @@ import {
   UserX,
   X,
 } from 'lucide-react'
+import { useFileDrop } from '@unisim/sdk'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -470,6 +471,15 @@ export function HostManage() {
   // the webinar at them. If the second fails the object is deleted again,
   // otherwise every abandoned upload would sit in the bucket forever with
   // nothing referencing it.
+  // The button opens the picker; the SDK owns the input, so replacing a
+  // document with the same filename still registers.
+  const docPicker = useFileDrop({
+    onFiles: (files) => { if (files[0]) void shareDocument(files[0]) },
+    accept: SHARED_DOC_TYPES.join(','),
+    multiple: false,
+    clickToBrowse: false,
+  })
+
   async function shareDocument(file: File) {
     if (!webinar || !token) return
     setDocError(null)
@@ -960,8 +970,8 @@ export function HostManage() {
                 )}
                 <Button
                   variant="outline"
-                  asChild={!docBusy}
                   disabled={docBusy}
+                  onClick={docPicker.open}
                   title={
                     webinar.host_verified
                       ? undefined
@@ -969,27 +979,18 @@ export function HostManage() {
                   }
                 >
                   {docBusy ? (
-                    <span>
+                    <>
                       <Loader2 className="h-4 w-4 animate-spin" />
                       Uploading…
-                    </span>
+                    </>
                   ) : (
-                    <label className="cursor-pointer">
+                    <>
                       <FileUp className="h-4 w-4" />
                       {webinar.shared_doc_url ? 'Replace document' : 'Share document'}
-                      <input
-                        type="file"
-                        accept={SHARED_DOC_TYPES.join(',')}
-                        className="sr-only"
-                        onChange={(e) => {
-                          const f = e.target.files?.[0]
-                          e.target.value = ''
-                          if (f) void shareDocument(f)
-                        }}
-                      />
-                    </label>
+                    </>
                   )}
                 </Button>
+                <input {...docPicker.inputProps} className="hidden" />
                 {webinar.shared_doc_url && (
                   <Button
                     variant="ghost"

@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ArrowRight,
@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/card'
 import {
   useUniversal,
+  useFileDrop,
   useSubscription,
   useUser,
   useCurrentUserIdentity,
@@ -48,7 +49,15 @@ function friendlyTokenError(msg: string): string {
 
 export function HostNewForm() {
   const navigate = useNavigate()
-  const fileInput = useRef<HTMLInputElement | null>(null)
+  // Button-driven picker, SDK mechanics. Before this, a logo rejected for being
+  // over 1 MB could not be re-picked after shrinking it — same filename, same
+  // input value, no `change` event.
+  const logoPicker = useFileDrop({
+    onFiles: (files) => pickLogo(files[0] ?? null),
+    accept: 'image/*',
+    multiple: false,
+    clickToBrowse: false,
+  })
 
   // Universal ID session (separate from the webinar's email-OTP host flow).
   // Hosting now requires a (free) Universal ID account — that's where the one
@@ -416,21 +425,13 @@ export function HostNewForm() {
                           type="button"
                           variant="outline"
                           className="w-full"
-                          onClick={() => fileInput.current?.click()}
+                          onClick={logoPicker.open}
                         >
                           <ImagePlus className="h-4 w-4" />
                           Upload logo
                         </Button>
                       )}
-                      <input
-                        ref={fileInput}
-                        type="file"
-                        accept="image/*"
-                        hidden
-                        onChange={(e) =>
-                          pickLogo(e.target.files?.[0] ?? null)
-                        }
-                      />
+                      <input {...logoPicker.inputProps} hidden />
                       <p className="text-xs text-slate-500">
                         PNG / JPG / SVG, under 1 MB.
                       </p>
