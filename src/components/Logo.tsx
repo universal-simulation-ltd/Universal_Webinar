@@ -1,32 +1,25 @@
 import { cn } from '@/lib/utils'
+import ProductLogo from './ProductLogo'
 
 interface LogoProps {
   className?: string
   showWordmark?: boolean
 }
 
+// The mark itself is generated — see ProductLogo.tsx and the spec it comes
+// from. This component only adds the wordmark beside it, which is why Webinar
+// keeps its own Logo rather than passing ProductLogo straight to the SDK navbar
+// like the other apps do.
+//
+// It used to draw a white camera on a `brand-gradient` tile. Every other
+// surface in the suite — the favicon, the switcher glyph, the portal tile —
+// showed the same camera on a dark slate tile, so the app's own header was the
+// one place the mark looked like a different product.
 export function Logo({ className, showWordmark = true }: LogoProps) {
   return (
     <div className={cn('flex items-center gap-2.5', className)}>
-      <div className="relative grid h-9 w-9 place-items-center rounded-xl brand-gradient shadow-soft">
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-5 w-5 text-white"
-          aria-hidden
-        >
-          <path
-            d="M3 7.5C3 6.12 4.12 5 5.5 5h9C15.88 5 17 6.12 17 7.5v9C17 17.88 15.88 19 14.5 19h-9C4.12 19 3 17.88 3 16.5v-9Z"
-            fill="currentColor"
-            fillOpacity="0.95"
-          />
-          <path
-            d="M21 8.31a.7.7 0 0 0-1.06-.6L17 9.55v4.9l2.94 1.84a.7.7 0 0 0 1.06-.6V8.31Z"
-            fill="currentColor"
-            fillOpacity="0.95"
-          />
-        </svg>
+      <div className="relative grid h-9 w-9 place-items-center [&_span]:h-9 [&_span]:w-9 [&_svg]:h-9 [&_svg]:w-9">
+        <ProductLogo />
       </div>
       {showWordmark && (
         <div className="flex flex-col leading-none">
