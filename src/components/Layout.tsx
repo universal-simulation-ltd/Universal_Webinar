@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from 'react-router-dom'
-import { UniversalAppsNavBar, UniversalNavBar } from '@unisim/sdk'
+import { UniversalAppsNavBar, UniversalNavBar, UpdateNotice } from '@unisim/sdk'
 import { HeaderBrandMark } from './HeaderBrandMark'
 import { Logo } from './Logo'
 import { cn } from '@/lib/utils'
@@ -29,6 +29,14 @@ export function PublicLayout() {
         suiteSwitcherIconSrc="/unisim-icon.png"
         contentClassName="container"
       />
+      {/* Renders nothing until this tab is genuinely running superseded code.
+          See the SDK's useAppUpdate: an autoUpdate PWA hands the new worker
+          control but leaves the running page on its old JavaScript. The spacing
+          is inline because "container" here is this app's own CSS class, not a
+          Tailwind utility, so a `pt-4` beside it would do nothing. */}
+      <div className="container">
+        <UpdateNotice style={{ marginTop: '16px' }} />
+      </div>
       <main className="flex-1">
         <Outlet />
       </main>
