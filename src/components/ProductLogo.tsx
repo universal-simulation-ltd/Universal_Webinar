@@ -28,9 +28,15 @@ export default function ProductLogo() {
     >
       <style>{CSS}</style>
       <svg viewBox="0 0 64 64" className="h-6 w-6" aria-hidden="true">
-        <rect x="0" y="0" width="64" height="64" rx="14" fill="#0f172a" />
+        <defs>
+          <linearGradient id="uam-nav-webinar-tile" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stopColor="#fe8c01" />
+            <stop offset="1" stopColor="#e05504" />
+          </linearGradient>
+        </defs>
+        <rect width="64" height="64" rx="14" fill="url(#uam-nav-webinar-tile)" />
         <path d="M14 22.5C14 19.46 16.46 17 19.5 17h17C39.54 17 42 19.46 42 22.5v19C42 44.54 39.54 47 36.5 47h-17C16.46 47 14 44.54 14 41.5v-19Z" fill="#ffffff" />
-        <path d="M52 24.5a1.5 1.5 0 0 0-2.32-1.25L44 26.9v10.2l5.68 3.65A1.5 1.5 0 0 0 52 39.5V24.5Z" fill="#fe8c01" className="uam-webinar-lens" />
+        <path d="M52 24.5a1.5 1.5 0 0 0-2.32-1.25L44 26.9v10.2l5.68 3.65A1.5 1.5 0 0 0 52 39.5V24.5Z" fill="#ffffff" className="uam-webinar-lens" />
       </svg>
     </span>
   )
