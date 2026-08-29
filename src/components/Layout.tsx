@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from 'react-router-dom'
-import { UniversalAppsNavBar, UniversalNavBar, UpdateNotice } from '@unisim/sdk'
+import { AdvancedMenu, UniversalAppsNavBar, UniversalNavBar, UpdateNotice } from '@unisim/sdk'
 import { HeaderBrandMark } from './HeaderBrandMark'
 import { Logo } from './Logo'
 import { cn } from '@/lib/utils'
@@ -27,6 +27,18 @@ export function PublicLayout() {
       <UniversalAppsNavBar
         product="webinar"
         productLogo={<ProductLogo />}
+        actions={
+          /* Advanced — the SDK's own category, so every app in the suite has
+             one in the same place, and whatever goes in it next is one change
+             rather than nineteen. "About this app" is always its last row. */
+          <AdvancedMenu
+            about={{
+              repo:    'https://github.com/universal-simulation-ltd/Universal_Webinar',
+              // Server-backed: the local-first claim is not true here.
+              privacy: false,
+            }}
+          />
+        }
         productHomeHref="/"
         suiteSwitcherIconSrc="/unisim-icon.png"
         contentClassName="container"
