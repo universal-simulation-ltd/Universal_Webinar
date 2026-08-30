@@ -39,8 +39,14 @@ export function PublicLayout() {
             }}
           />
         }
-        productHomeHref="/"
-        suiteSwitcherIconSrc="/unisim-icon.png"
+        // ⚠️ Both of these go through BASE_URL, as every sibling app's do. The
+        // app is served under `/webinar/` in production, so a root-absolute
+        // `/unisim-icon.png` is a 404 — the suite switcher was a broken image
+        // — and a root-absolute home href walks out of the app entirely.
+        // BASE_URL is `/webinar/` in a production build and `/` in dev, and it
+        // already carries its trailing slash.
+        productHomeHref={import.meta.env.BASE_URL}
+        suiteSwitcherIconSrc={`${import.meta.env.BASE_URL}unisim-icon.png`}
         contentClassName="container"
       />
       {/* Renders nothing until this tab is genuinely running superseded code.
@@ -72,7 +78,8 @@ export function AdminLayout() {
         product="webinar"
         productLogo={<ProductLogo />}
         newAssessmentHref={null}
-        suiteSwitcherIconSrc="/unisim-icon.png"
+        // BASE_URL, not `/` — see the note in PublicLayout.
+        suiteSwitcherIconSrc={`${import.meta.env.BASE_URL}unisim-icon.png`}
       />
       <div className="border-b border-slate-200 bg-white">
         <div className="container flex h-10 items-center gap-1">
