@@ -18,7 +18,7 @@
     "@radix-ui/react-label": "^2.1.1",
     "@radix-ui/react-slot": "^1.1.1",
     "@supabase/supabase-js": "^2.47.10",
-    "@unisim/sdk": "^0.122.2",
+    "@unisim/sdk": "^0.123.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "livekit-client": "^2.19.1",
