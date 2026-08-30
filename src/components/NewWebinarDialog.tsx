@@ -5,8 +5,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
@@ -82,85 +84,91 @@ export function NewWebinarDialog({ open, onOpenChange, onCreated }: Props) {
           </DialogDescription>
         </DialogHeader>
 
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          <div className="space-y-1.5">
-            <Label htmlFor="title">Title</Label>
-            <Input
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Product walkthrough — Q4"
-              required
-              autoFocus
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="description">Description (optional)</Label>
-            <Input
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="A short blurb shown on the join page."
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="scheduledAt">Scheduled for (optional)</Label>
-            <Input
-              id="scheduledAt"
-              type="datetime-local"
-              value={scheduledAt}
-              onChange={(e) => setScheduledAt(e.target.value)}
-            />
-            <p className="text-xs text-slate-500">
-              You can leave this blank and start it whenever.
-            </p>
-          </div>
-
-          <fieldset className="rounded-lg border border-slate-200 p-3">
-            <legend className="px-1 text-xs font-medium text-slate-500">
-              Default settings (you can change later)
-            </legend>
-            <label className="flex items-start gap-3 py-1.5">
-              <input
-                type="checkbox"
-                checked={showGuestCount}
-                onChange={(e) => setShowGuestCount(e.target.checked)}
-                className="mt-1 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+        {/* The form is the flex column below the header: the fields scroll and
+            the Cancel/Create row stays pinned. This form is tall enough to
+            overrun a 390x844 screen on its own, and before the split it took
+            the dialog title off the top with it. */}
+        <form className="flex min-h-0 flex-1 flex-col gap-4" onSubmit={handleSubmit}>
+          <DialogBody className="space-y-4 py-1">
+            <div className="space-y-1.5">
+              <Label htmlFor="title">Title</Label>
+              <Input
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Product walkthrough — Q4"
+                required
+                autoFocus
               />
-              <span className="text-sm">
-                <span className="font-medium text-slate-900">
-                  Show attendee count to guests
-                </span>
-                <span className="block text-xs text-slate-500">
-                  Guests see how many people are watching.
-                </span>
-              </span>
-            </label>
-            <label className="flex items-start gap-3 py-1.5">
-              <input
-                type="checkbox"
-                checked={allowSpeakRequests}
-                onChange={(e) => setAllowSpeakRequests(e.target.checked)}
-                className="mt-1 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="description">Description (optional)</Label>
+              <Input
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="A short blurb shown on the join page."
               />
-              <span className="text-sm">
-                <span className="font-medium text-slate-900">
-                  Allow guests to request to speak
-                </span>
-                <span className="block text-xs text-slate-500">
-                  Off by default. Toggle on during a live Q&A.
-                </span>
-              </span>
-            </label>
-          </fieldset>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="scheduledAt">Scheduled for (optional)</Label>
+              <Input
+                id="scheduledAt"
+                type="datetime-local"
+                value={scheduledAt}
+                onChange={(e) => setScheduledAt(e.target.value)}
+              />
+              <p className="text-xs text-slate-500">
+                You can leave this blank and start it whenever.
+              </p>
+            </div>
 
-          {error && (
-            <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-              {error}
-            </p>
-          )}
+            <fieldset className="rounded-lg border border-slate-200 p-3">
+              <legend className="px-1 text-xs font-medium text-slate-500">
+                Default settings (you can change later)
+              </legend>
+              <label className="flex items-start gap-3 py-1.5">
+                <input
+                  type="checkbox"
+                  checked={showGuestCount}
+                  onChange={(e) => setShowGuestCount(e.target.checked)}
+                  className="mt-1 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                />
+                <span className="text-sm">
+                  <span className="font-medium text-slate-900">
+                    Show attendee count to guests
+                  </span>
+                  <span className="block text-xs text-slate-500">
+                    Guests see how many people are watching.
+                  </span>
+                </span>
+              </label>
+              <label className="flex items-start gap-3 py-1.5">
+                <input
+                  type="checkbox"
+                  checked={allowSpeakRequests}
+                  onChange={(e) => setAllowSpeakRequests(e.target.checked)}
+                  className="mt-1 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                />
+                <span className="text-sm">
+                  <span className="font-medium text-slate-900">
+                    Allow guests to request to speak
+                  </span>
+                  <span className="block text-xs text-slate-500">
+                    Off by default. Toggle on during a live Q&A.
+                  </span>
+                </span>
+              </label>
+            </fieldset>
 
-          <div className="flex justify-end gap-2">
+            {error && (
+              <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+                {error}
+              </p>
+            )}
+          </DialogBody>
+
+          <DialogFooter>
             <Button
               type="button"
               variant="outline"
@@ -179,7 +187,7 @@ export function NewWebinarDialog({ open, onOpenChange, onCreated }: Props) {
                 'Create webinar'
               )}
             </Button>
-          </div>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>

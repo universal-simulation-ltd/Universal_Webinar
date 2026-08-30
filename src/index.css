@@ -79,3 +79,34 @@
     opacity: 0;
   }
 }
+
+/* ── iOS: stop a focused field zooming the whole page ──────────────────────
+   Safari and every iOS WKWebView zoom the page in when a control smaller than
+   16px takes focus, and they do not zoom back out. The shared <Input /> is
+   already `text-base`, but plenty of fields are not — the custom-question
+   editor's <select>, its text and textarea rows, the timezone search box and
+   the registration form's own answer fields are all 14px or 12px, and tapping
+   any of them left the page zoomed with the nav bar wider than the screen.
+
+   ⚠️ The usual "fix", `maximum-scale=1, user-scalable=no` on the viewport, is
+   not an option: pinch-zoom is an accessibility feature and taking it away to
+   dodge this is a worse bug than the one being fixed. The fields grow instead,
+   scoped to coarse pointers so the desktop type scale is untouched.
+
+   Checkboxes, radios, ranges, colour swatches and file inputs are excluded —
+   they render no text, and a font-size on them changes their box size.
+
+   ⚠️ `!important` is load-bearing, and it is here because of the SDK, not this
+   app. <SignInDialog />'s email and password fields carry `fontSize: 14` as an
+   inline style on the element itself, and an inline declaration outranks any
+   author rule that is not important. Without the flag, signing in from a phone
+   focuses the autofocused 14px email field and zooms the page anyway.
+   (@unisim/sdk 0.123.1 fixed its language <select>; the sign-in fields are
+   still inline 14px, so this cannot go yet.) */
+@media (pointer: coarse) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):not([type='file']),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
