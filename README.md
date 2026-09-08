@@ -115,4 +115,4 @@ public/
 
 ## License
 
-MIT
+[AGPL-3.0-or-later](LICENSE), with an added permission for app-store distribution.
