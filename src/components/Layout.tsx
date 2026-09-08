@@ -1,5 +1,10 @@
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { AdvancedMenu, UniversalAppsNavBar, UniversalNavBar, UpdateNotice } from '@unisim/sdk'
+// Generated — `npm run credits` after any dependency change. Never edit it by
+// hand: it is read off the installed tree, so a hand-kept list drifts from the
+// lockfile the first time anyone upgrades anything, and a credits list naming a
+// package we removed is worse than no list at all.
+import credits from '../generated/credits.json'
 import { HeaderBrandMark } from './HeaderBrandMark'
 import { Logo } from './Logo'
 import { cn } from '@/lib/utils'
@@ -36,6 +41,8 @@ export function PublicLayout() {
               repo:    'https://github.com/universal-simulation-ltd/Universal_Webinar',
               // Server-backed: the local-first claim is not true here.
               privacy: false,
+              credits,
+              noticesHref: 'https://github.com/universal-simulation-ltd/Universal_Webinar/blob/main/THIRD-PARTY-NOTICES.md',
             }}
           />
         }
