@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useId, type ReactNode } from 'react'
 import { ChevronDown, GripVertical } from 'lucide-react'
 import {
   Card,
@@ -47,6 +47,7 @@ export function PanelCard({
   onGripUp,
   children,
 }: PanelCardProps) {
+  const panelId = useId()
   return (
     <Card {...dragProps}>
       <CardHeader className={cn(collapsed && 'py-4')}>
@@ -70,6 +71,7 @@ export function PanelCard({
             type="button"
             onClick={onToggle}
             aria-expanded={!collapsed}
+            aria-controls={panelId}
             className="flex min-w-0 flex-1 items-center gap-2 text-left"
           >
             <CardTitle className="flex min-w-0 items-center gap-2">
@@ -89,7 +91,7 @@ export function PanelCard({
           <CardDescription>{description}</CardDescription>
         )}
       </CardHeader>
-      {!collapsed && <CardContent>{children}</CardContent>}
+      {!collapsed && <CardContent id={panelId}>{children}</CardContent>}
     </Card>
   )
 }
