@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { UniversalProvider } from '@unisim/sdk'
 import App from './App'
-import UsageTracker from './UsageTracker'
+import { UsageTracker } from '@unisim/sdk'
 import { AuthProvider } from './lib/auth'
 import './index.css'
 
