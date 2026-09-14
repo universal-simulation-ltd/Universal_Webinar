@@ -61,7 +61,7 @@ export default function TimezonePicker({
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 h-9 text-sm text-slate-700 hover:border-slate-400 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none"
+        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 h-9 text-sm text-slate-700 dark:text-slate-300 hover:border-slate-400 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] outline-none"
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 text-slate-400" aria-hidden="true">
           <circle cx="12" cy="12" r="9" />
@@ -76,15 +76,15 @@ export default function TimezonePicker({
       </button>
 
       {open && (
-        <div className="absolute left-0 z-40 mt-1.5 w-72 max-w-[85vw] rounded-lg bg-white shadow-lg ring-1 ring-slate-200 pop-in">
-          <div className="p-2 border-b border-slate-100">
+        <div className="absolute left-0 z-40 mt-1.5 w-72 max-w-[85vw] rounded-lg bg-white dark:bg-slate-900 shadow-lg ring-1 ring-slate-200 dark:ring-slate-700 pop-in">
+          <div className="p-2 border-b border-slate-100 dark:border-slate-800">
             <input
               ref={inputRef}
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search time zones…"
-              className="w-full h-9 rounded-md border border-slate-300 px-2.5 text-sm text-slate-900 focus:border-[var(--accent)] outline-none"
+              className="w-full h-9 rounded-md border border-slate-300 dark:border-slate-700 px-2.5 text-sm text-slate-900 dark:text-slate-100 focus:border-[var(--accent)] outline-none"
             />
           </div>
           <ul role="listbox" className="max-h-64 overflow-y-auto py-1">
@@ -100,7 +100,7 @@ export default function TimezonePicker({
                       role="option"
                       aria-selected={selected}
                       onClick={() => pick(z)}
-                      className={`flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-sm hover:bg-slate-50 ${selected ? 'font-semibold text-[var(--accent-text)]' : 'text-slate-700'}`}
+                      className={`flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-800 ${selected ? 'font-semibold text-[var(--accent-text)]' : 'text-slate-700 dark:text-slate-300'}`}
                     >
                       <span className="min-w-0 truncate">{z}</span>
                       <span className="shrink-0 text-xs text-slate-400">{tzAbbrev(z, at)}</span>

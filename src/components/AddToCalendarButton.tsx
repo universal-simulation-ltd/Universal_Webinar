@@ -57,18 +57,18 @@ export function AddToCalendarButton({ webinar, joinUrl, className }: Props) {
             className="fixed inset-0 z-30 cursor-default"
             onClick={() => setOpen(false)}
           />
-          <div className="absolute left-0 right-0 z-40 mt-1 rounded-lg border border-slate-200 bg-white p-1 shadow-md">
+          <div className="absolute left-0 right-0 z-40 mt-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-1 shadow-md">
             <button
               type="button"
               onClick={handleGoogle}
-              className="block w-full rounded-md px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+              className="block w-full rounded-md px-3 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
             >
               Google Calendar
             </button>
             <button
               type="button"
               onClick={handleIcs}
-              className="block w-full rounded-md px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+              className="block w-full rounded-md px-3 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
             >
               Apple Calendar / Outlook (.ics)
             </button>

@@ -22,8 +22,8 @@ export function AdminSettings() {
   return (
     <div className="container max-w-2xl py-10 space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold text-slate-900">Settings</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">Settings</h1>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
           Your admin account and session.
         </p>
       </div>
@@ -31,7 +31,7 @@ export function AdminSettings() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4 text-brand-600" />
+            <ShieldCheck className="h-4 w-4 text-brand-600 dark:text-brand-400" />
             Admin account
           </CardTitle>
           <CardDescription>
@@ -40,9 +40,9 @@ export function AdminSettings() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="flex items-center gap-2 rounded-md bg-slate-50 px-3 py-2 text-sm">
-            <Mail className="h-4 w-4 text-slate-500" />
-            <span className="text-slate-900">
+          <div className="flex items-center gap-2 rounded-md bg-slate-50 dark:bg-slate-950 px-3 py-2 text-sm">
+            <Mail className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+            <span className="text-slate-900 dark:text-slate-100">
               {user?.email ?? 'Not signed in'}
             </span>
           </div>

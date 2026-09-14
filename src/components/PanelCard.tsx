@@ -61,7 +61,7 @@ export function PanelCard({
               onMouseDown={onGripDown}
               onMouseUp={onGripUp}
               onMouseLeave={onGripUp}
-              className="-ml-1.5 shrink-0 cursor-grab text-slate-300 transition-colors hover:text-slate-500 active:cursor-grabbing"
+              className="-ml-1.5 shrink-0 cursor-grab text-slate-300 transition-colors hover:text-slate-500 dark:hover:text-slate-400 active:cursor-grabbing"
               title="Drag to reorder"
             >
               <GripVertical className="h-4 w-4" />

@@ -102,7 +102,7 @@ export function ChatPanel({
         )}
       </div>
       {!readOnly && onSend && (
-        <form className="border-t border-slate-200 p-2.5" onSubmit={handleSend}>
+        <form className="border-t border-slate-200 dark:border-slate-800 p-2.5" onSubmit={handleSend}>
           <div className="flex gap-2">
             <Input
               value={draft}
@@ -187,7 +187,7 @@ function ChatBubble({
   if (deleted) {
     return (
       <div className={mine ? 'text-right' : ''}>
-        <span className="inline-block max-w-[85%] rounded-xl bg-slate-50 px-3 py-1.5 text-xs italic text-slate-400">
+        <span className="inline-block max-w-[85%] rounded-xl bg-slate-50 dark:bg-slate-950 px-3 py-1.5 text-xs italic text-slate-400">
           message removed
         </span>
       </div>
@@ -199,7 +199,7 @@ function ChatBubble({
       <div
         className={cn(
           'mb-0.5 flex items-center gap-2 text-[11px] font-medium',
-          mine ? 'justify-end text-slate-500' : 'text-slate-500',
+          mine ? 'justify-end text-slate-500 dark:text-slate-400' : 'text-slate-500 dark:text-slate-400',
         )}
       >
         <span className="truncate max-w-[180px]">
@@ -210,7 +210,7 @@ function ChatBubble({
         <div
           className={cn(
             'inline-block max-w-[85%] rounded-xl px-3 py-1.5 text-left text-[13px] leading-snug break-words',
-            mine ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-800',
+            mine ? 'bg-brand-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200',
           )}
         >
           {message.content}
@@ -219,7 +219,7 @@ function ChatBubble({
           <button
             type="button"
             onClick={onTogglePicker}
-            className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+            className="rounded-full p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-300"
             title="React"
           >
             <Smile className="h-3.5 w-3.5" />
@@ -228,7 +228,7 @@ function ChatBubble({
             <button
               type="button"
               onClick={() => onDeleteMessage(message.id)}
-              className="rounded-full p-1 text-slate-400 hover:bg-red-50 hover:text-red-600"
+              className="rounded-full p-1 text-slate-400 hover:bg-red-50 dark:hover:bg-red-900/50 hover:text-red-600 dark:hover:text-red-400"
               title="Delete (admin)"
             >
               <Trash2 className="h-3.5 w-3.5" />
@@ -237,7 +237,7 @@ function ChatBubble({
           {pickerOpen && (
             <div
               className={cn(
-                'absolute z-20 flex gap-1 rounded-full border border-slate-200 bg-white px-2 py-1 shadow-md',
+                'absolute z-20 flex gap-1 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2 py-1 shadow-md',
                 mine ? 'right-full mr-1' : 'left-full ml-1',
                 'top-1/2 -translate-y-1/2',
               )}
@@ -272,8 +272,8 @@ function ChatBubble({
               className={cn(
                 'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 transition',
                 isMine
-                  ? 'border-brand-200 bg-brand-50 text-brand-700'
-                  : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50',
+                  ? 'border-brand-200 dark:border-brand-900 bg-brand-50 dark:bg-brand-950/40 text-brand-700 dark:text-brand-400'
+                  : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800',
               )}
             >
               <span>{emoji}</span>

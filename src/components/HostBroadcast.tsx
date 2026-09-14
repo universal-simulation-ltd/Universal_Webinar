@@ -121,16 +121,16 @@ function HostBroadcastInner() {
             <div>
               {connecting ? (
                 <>
-                  <Loader2 className="mx-auto h-8 w-8 animate-spin text-slate-500" />
+                  <Loader2 className="mx-auto h-8 w-8 animate-spin text-slate-500 dark:text-slate-400" />
                   <p className="mt-2">Connecting…</p>
                 </>
               ) : (
                 <>
-                  <Camera className="mx-auto h-8 w-8 text-slate-500" />
+                  <Camera className="mx-auto h-8 w-8 text-slate-500 dark:text-slate-400" />
                   <p className="mt-2">
                     You're on air. Turn your camera on, or share your screen.
                   </p>
-                  <p className="mt-1 text-xs text-slate-500">
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                     Nobody sees or hears anything until you do.
                   </p>
                 </>
@@ -140,7 +140,7 @@ function HostBroadcastInner() {
         )}
         {connectionState === ConnectionState.Connected && (
           <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-red-600/90 px-2.5 py-1 text-xs font-medium text-white">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white dark:bg-slate-900" />
             On air
           </span>
         )}
@@ -201,7 +201,7 @@ function HostBroadcastInner() {
             'ml-auto text-xs',
             connectionState === ConnectionState.Connected
               ? 'text-slate-400'
-              : 'text-amber-700',
+              : 'text-amber-700 dark:text-amber-400',
           )}
         >
           {connectionState === ConnectionState.Connected
@@ -213,7 +213,7 @@ function HostBroadcastInner() {
       </div>
 
       {deviceError && (
-        <p className="mt-2 text-xs text-red-600">{deviceError}</p>
+        <p className="mt-2 text-xs text-red-600 dark:text-red-400">{deviceError}</p>
       )}
     </div>
   )

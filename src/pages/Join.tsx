@@ -212,7 +212,7 @@ export function Join() {
       <div className="container py-16">
         <div className="mx-auto max-w-md text-center">
           <h1 className="text-2xl font-semibold">We couldn't find that webinar.</h1>
-          <p className="mt-2 text-slate-500">
+          <p className="mt-2 text-slate-500 dark:text-slate-400">
             The link might be wrong or the room may have ended.
           </p>
           <Button asChild className="mt-6">
@@ -228,7 +228,7 @@ export function Join() {
       <div className="mx-auto max-w-md">
         <HostedBy webinar={webinar} />
         <div className="mb-6 text-center">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 dark:bg-brand-950/40 px-3 py-1 text-xs font-medium text-brand-700 dark:text-brand-400">
             <ShieldCheck className="h-3.5 w-3.5" />
             Hosted on Universal Webinar
           </span>
@@ -247,7 +247,7 @@ export function Join() {
           </CardHeader>
           <CardContent>
             {!configured && (
-              <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+              <div className="mb-4 rounded-lg border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 p-3 text-sm text-amber-900 dark:text-amber-200">
                 Supabase isn't connected yet. The host needs to finish setup.
               </div>
             )}
@@ -278,7 +278,7 @@ export function Join() {
                   maxLength={200}
                   disabled={submitting || !configured}
                 />
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   We share this only with the host.
                 </p>
               </div>
@@ -300,14 +300,14 @@ export function Join() {
                     maxLength={16}
                     disabled={submitting || !configured}
                   />
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     The host will have shared this with you separately.
                   </p>
                 </div>
               )}
 
               {error && (
-                <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+                <p className="rounded-md bg-red-50 dark:bg-red-950/40 px-3 py-2 text-sm text-red-700 dark:text-red-400">
                   {error}
                 </p>
               )}
@@ -333,7 +333,7 @@ export function Join() {
           </CardContent>
         </Card>
 
-        <p className="mt-4 text-center text-xs text-slate-500">
+        <p className="mt-4 text-center text-xs text-slate-500 dark:text-slate-400">
           By joining, you agree to be visible to the host and may be invited to
           speak.
         </p>

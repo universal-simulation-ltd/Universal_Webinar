@@ -308,7 +308,7 @@ export function AdminControl() {
       <div className="container py-12">
         <Card>
           <CardContent className="p-6">
-            <p className="text-sm text-red-700">{error}</p>
+            <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
             <Button asChild className="mt-4" variant="outline">
               <Link to="/admin">Back to dashboard</Link>
             </Button>
@@ -324,18 +324,18 @@ export function AdminControl() {
     <div className="container py-8">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
             Control room
           </p>
-          <h1 className="text-2xl font-semibold text-slate-900">
+          <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
             {webinar.title}{' '}
             <span className="text-slate-400">·</span>{' '}
-            <span className="text-slate-500 text-base font-mono">
+            <span className="text-slate-500 dark:text-slate-400 text-base font-mono">
               /{webinar.slug}
             </span>
           </h1>
           {webinar.description && (
-            <p className="mt-1 max-w-2xl text-sm text-slate-500">
+            <p className="mt-1 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
               {webinar.description}
             </p>
           )}
@@ -366,7 +366,7 @@ export function AdminControl() {
           </Link>
         </Button>
         {viewerCount > 0 && (
-          <span className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-600 shadow-soft">
+          <span className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-white dark:bg-slate-900 px-3 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 shadow-soft">
             <Users className="h-3.5 w-3.5" />
             {viewerCount} watching now
           </span>
@@ -404,10 +404,10 @@ export function AdminControl() {
                   <div className="flex h-full items-center justify-center text-slate-300">
                     <div className="text-center">
                       {lkFetching ? (
-                        <Loader2 className="mx-auto h-8 w-8 animate-spin text-slate-500" />
+                        <Loader2 className="mx-auto h-8 w-8 animate-spin text-slate-500 dark:text-slate-400" />
                       ) : (
                         <>
-                          <Camera className="mx-auto h-10 w-10 text-slate-500" />
+                          <Camera className="mx-auto h-10 w-10 text-slate-500 dark:text-slate-400" />
                           <p className="mt-2 text-sm">
                             {isLiveKitConfigured()
                               ? 'Camera preview starts when you go live.'
@@ -438,7 +438,7 @@ export function AdminControl() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Hand className="h-4 w-4 text-slate-500" />
+                <Hand className="h-4 w-4 text-slate-500 dark:text-slate-400" />
                 Speaker queue
                 {speakRequests.length > 0 && (
                   <span className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-brand-600 text-[10px] font-bold text-white">
@@ -452,12 +452,12 @@ export function AdminControl() {
             </CardHeader>
             <CardContent>
               {speakRequests.length === 0 ? (
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-slate-500 dark:text-slate-400">
                   No pending requests. Raise-hand requests appear here in
                   realtime.
                 </p>
               ) : (
-                <ul className="divide-y divide-slate-100">
+                <ul className="divide-y divide-slate-100 dark:divide-slate-800">
                   {speakRequests.map((req) => {
                     const att = attendees.find((a) => a.id === req.attendee_id)
                     return (
@@ -465,7 +465,7 @@ export function AdminControl() {
                         key={req.id}
                         className="flex items-center justify-between gap-3 py-2.5"
                       >
-                        <span className="text-sm font-medium text-slate-900">
+                        <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
                           {att?.name ?? 'Guest'}
                         </span>
                         <div className="flex gap-2">
@@ -495,14 +495,14 @@ export function AdminControl() {
           <Card className="flex h-[480px] flex-col">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <MessageSquare className="h-4 w-4 text-slate-500" />
+                <MessageSquare className="h-4 w-4 text-slate-500 dark:text-slate-400" />
                 Live chat
               </CardTitle>
               <CardDescription>
                 Hover any message to delete it.
               </CardDescription>
             </CardHeader>
-            <div className="flex-1 min-h-0 border-t border-slate-100">
+            <div className="flex-1 min-h-0 border-t border-slate-100 dark:border-slate-800">
               <ChatPanel
                 messages={messages}
                 reactions={reactions}
@@ -520,7 +520,7 @@ export function AdminControl() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Settings2 className="h-4 w-4 text-slate-500" />
+                <Settings2 className="h-4 w-4 text-slate-500 dark:text-slate-400" />
                 Room settings
               </CardTitle>
             </CardHeader>
@@ -569,7 +569,7 @@ export function AdminControl() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-slate-500" />
+                <Users className="h-4 w-4 text-slate-500 dark:text-slate-400" />
                 In the room
               </CardTitle>
               <CardDescription>
@@ -581,11 +581,11 @@ export function AdminControl() {
             </CardHeader>
             <CardContent>
               {attendees.length === 0 ? (
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-slate-500 dark:text-slate-400">
                   Nobody's joined yet. Share the registration link.
                 </p>
               ) : (
-                <ul className="divide-y divide-slate-100 text-sm">
+                <ul className="divide-y divide-slate-100 dark:divide-slate-800 text-sm">
                   {attendees.map((att) => (
                     <AttendeeRow
                       key={att.id}
@@ -604,7 +604,7 @@ export function AdminControl() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-slate-500" />
+                <Users className="h-4 w-4 text-slate-500 dark:text-slate-400" />
                 Registrations
               </CardTitle>
               <CardDescription>
@@ -613,18 +613,18 @@ export function AdminControl() {
             </CardHeader>
             <CardContent>
               {registrations.length === 0 ? (
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-slate-500 dark:text-slate-400">
                   No one has registered yet.
                 </p>
               ) : (
                 <>
-                  <ul className="max-h-80 divide-y divide-slate-100 overflow-y-auto text-sm">
+                  <ul className="max-h-80 divide-y divide-slate-100 dark:divide-slate-800 overflow-y-auto text-sm">
                     {registrations.map((r) => (
                       <li key={r.id} className="flex flex-col py-2">
-                        <span className="font-medium text-slate-900">
+                        <span className="font-medium text-slate-900 dark:text-slate-100">
                           {r.name}
                         </span>
-                        <span className="text-xs text-slate-500">
+                        <span className="text-xs text-slate-500 dark:text-slate-400">
                           {r.email}
                         </span>
                         <span className="text-xs text-slate-400">
@@ -674,16 +674,16 @@ function AttendeeRow({
   return (
     <li className="flex items-center justify-between gap-2 py-2">
       <div className="min-w-0">
-        <p className="truncate text-sm font-medium text-slate-900">
+        <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">
           {attendee.name}
           {attendee.role === 'speaker' && (
-            <span className="ml-1.5 rounded-full bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700">
+            <span className="ml-1.5 rounded-full bg-green-100 dark:bg-green-950/40 px-1.5 py-0.5 text-[10px] font-medium text-green-700 dark:text-green-400">
               speaker
             </span>
           )}
         </p>
         {attendee.muted_by_admin && (
-          <p className="text-[11px] text-amber-600">muted</p>
+          <p className="text-[11px] text-amber-600 dark:text-amber-400">muted</p>
         )}
       </div>
       <div className="flex shrink-0 gap-1">
@@ -692,10 +692,10 @@ function AttendeeRow({
           title={attendee.muted_by_admin ? 'Unmute' : 'Mute'}
           onClick={() => onMute(attendee.id, !attendee.muted_by_admin)}
           className={cn(
-            'rounded p-1 transition hover:bg-slate-100',
+            'rounded p-1 transition hover:bg-slate-100 dark:hover:bg-slate-800',
             attendee.muted_by_admin
-              ? 'text-amber-600'
-              : 'text-slate-400 hover:text-slate-700',
+              ? 'text-amber-600 dark:text-amber-400'
+              : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-300',
           )}
         >
           {attendee.muted_by_admin ? (
@@ -708,7 +708,7 @@ function AttendeeRow({
           type="button"
           title="Kick (remove for this session)"
           onClick={() => onKick(attendee.id)}
-          className="rounded p-1 text-slate-400 transition hover:bg-slate-100 hover:text-red-600"
+          className="rounded p-1 text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-red-600 dark:hover:text-red-400"
         >
           <X className="h-3.5 w-3.5" />
         </button>
@@ -716,7 +716,7 @@ function AttendeeRow({
           type="button"
           title="Ban permanently"
           onClick={() => onBan(attendee.id)}
-          className="rounded p-1 text-slate-400 transition hover:bg-red-50 hover:text-red-700"
+          className="rounded p-1 text-slate-400 transition hover:bg-red-50 dark:hover:bg-red-900/50 hover:text-red-700 dark:hover:text-red-400"
         >
           <Lock className="h-3.5 w-3.5" />
         </button>
@@ -748,26 +748,26 @@ function ToggleRow({
       disabled={disabled}
       className={cn(
         'group flex w-full items-start justify-between gap-3 rounded-lg p-2.5 text-left transition',
-        disabled ? 'opacity-60' : 'hover:bg-slate-50',
+        disabled ? 'opacity-60' : 'hover:bg-slate-50 dark:hover:bg-slate-800',
       )}
     >
       <div className="flex items-start gap-3">
-        <span className="mt-0.5 text-slate-500">{icon}</span>
+        <span className="mt-0.5 text-slate-500 dark:text-slate-400">{icon}</span>
         <div>
-          <p className="text-sm font-medium text-slate-900">{label}</p>
-          <p className="text-xs text-slate-500">{hint}</p>
+          <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{label}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">{hint}</p>
         </div>
       </div>
       <span
         className={cn(
           'mt-0.5 relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors',
-          checked ? 'bg-brand-600' : 'bg-slate-300',
+          checked ? 'bg-brand-600' : 'bg-slate-300 dark:bg-slate-600',
         )}
         aria-hidden
       >
         <span
           className={cn(
-            'inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform',
+            'inline-block h-5 w-5 transform rounded-full bg-white dark:bg-slate-900 shadow transition-transform',
             checked ? 'translate-x-5' : 'translate-x-0.5',
           )}
         />

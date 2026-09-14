@@ -306,7 +306,7 @@ export function Register() {
       <div className="container py-16">
         <div className="mx-auto max-w-md text-center">
           <h1 className="text-2xl font-semibold">We couldn't find that webinar.</h1>
-          <p className="mt-2 text-slate-500">
+          <p className="mt-2 text-slate-500 dark:text-slate-400">
             The link might be wrong or the room may have been removed.
           </p>
           <Button asChild className="mt-6">
@@ -322,7 +322,7 @@ export function Register() {
       <div className="mx-auto max-w-md">
         <HostedBy webinar={webinar} />
         <div className="mb-6 text-center">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 dark:bg-brand-950/40 px-3 py-1 text-xs font-medium text-brand-700 dark:text-brand-400">
             <ShieldCheck className="h-3.5 w-3.5" />
             {!registered
               ? 'Save your seat'
@@ -343,7 +343,7 @@ export function Register() {
           // don't have.
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-amber-700">
+              <CardTitle className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
                 <ShieldCheck className="h-5 w-5" />
                 {regStatus === 'declined'
                   ? 'Not approved this time'
@@ -372,7 +372,7 @@ export function Register() {
                   </p>
                 )}
                 {scheduleInfo?.isFuture && regStatus !== 'declined' && (
-                  <p className="flex items-center gap-1.5 text-slate-500">
+                  <p className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
                     <Calendar className="h-3.5 w-3.5" />
                     {scheduleInfo.label}
                   </p>
@@ -383,7 +383,7 @@ export function Register() {
         ) : registered ? (
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-emerald-700">
+              <CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
                 <CheckCircle2 className="h-5 w-5" />
                 You're in.
               </CardTitle>
@@ -392,19 +392,19 @@ export function Register() {
                   We saved your spot for <strong>{webinar.title}</strong>.
                 </p>
                 {scheduleInfo?.isFuture && (
-                  <p className="flex items-center gap-1.5 text-slate-500">
+                  <p className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
                     <Calendar className="h-3.5 w-3.5" />
                     {scheduleInfo.label}
                   </p>
                 )}
                 {webinar.status === 'live' && (
-                  <p className="flex items-center gap-1.5 font-medium text-red-700">
+                  <p className="flex items-center gap-1.5 font-medium text-red-700 dark:text-red-400">
                     <Radio className="h-3.5 w-3.5" />
                     Happening right now.
                   </p>
                 )}
                 {confirmationSent && (
-                  <p className="flex items-start gap-1.5 text-slate-500">
+                  <p className="flex items-start gap-1.5 text-slate-500 dark:text-slate-400">
                     <Mail className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
                     <span>
                       We've emailed <strong>{email}</strong> your join link
@@ -414,7 +414,7 @@ export function Register() {
                   </p>
                 )}
                 {webinar.send_reminders && scheduleInfo?.isFuture && (
-                  <p className="flex items-start gap-1.5 text-slate-500">
+                  <p className="flex items-start gap-1.5 text-slate-500 dark:text-slate-400">
                     <BellRing className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
                     <span>
                       We'll nudge you the day before and again an hour before it
@@ -444,7 +444,7 @@ export function Register() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full text-slate-500"
+                className="w-full text-slate-500 dark:text-slate-400"
                 onClick={async () => {
                   await supabase.auth.signOut()
                   setRegistered(false)
@@ -467,13 +467,13 @@ export function Register() {
               <CardDescription className="space-y-1.5">
                 {webinar.description && <p>{webinar.description}</p>}
                 {scheduleInfo && (
-                  <p className="flex items-center gap-1.5 text-slate-500">
+                  <p className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
                     <Calendar className="h-3.5 w-3.5" />
                     {scheduleInfo.label}
                   </p>
                 )}
                 {webinar.status === 'live' && (
-                  <p className="flex items-center gap-1.5 font-medium text-red-700">
+                  <p className="flex items-center gap-1.5 font-medium text-red-700 dark:text-red-400">
                     <Radio className="h-3.5 w-3.5" />
                     Happening right now — register to join in.
                   </p>
@@ -482,14 +482,14 @@ export function Register() {
             </CardHeader>
             <CardContent>
               {roomFull && (
-                <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+                <div className="mb-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-3 text-sm text-slate-700 dark:text-slate-300">
                   <strong>This session is full.</strong> You can still sign up —
                   you'll join the waitlist, and we'll email you if a place opens
                   up.
                 </div>
               )}
               {!configured && (
-                <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                <div className="mb-4 rounded-lg border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 p-3 text-sm text-amber-900 dark:text-amber-200">
                   Supabase isn't connected yet. The host needs to finish setup.
                 </div>
               )}
@@ -520,7 +520,7 @@ export function Register() {
                     maxLength={200}
                     disabled={submitting || !configured}
                   />
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     {webinar.send_confirmation
                       ? 'We email your join link here, and share it only with the host.'
                       : 'We share this only with the host.'}
@@ -548,7 +548,7 @@ export function Register() {
                           rows={3}
                           maxLength={500}
                           disabled={submitting || !configured}
-                          className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-base text-slate-900 placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 disabled:opacity-50"
+                          className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-base text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 disabled:opacity-50"
                         />
                       ) : q.type === 'select' ? (
                         <select
@@ -556,7 +556,7 @@ export function Register() {
                           value={val}
                           onChange={(e) => setVal(e.target.value)}
                           disabled={submitting || !configured}
-                          className="flex h-11 w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-base text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 disabled:opacity-50"
+                          className="flex h-11 w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-base text-slate-900 dark:text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 disabled:opacity-50"
                         >
                           <option value="">Choose…</option>
                           {(q.options ?? []).map((o) => (
@@ -572,13 +572,13 @@ export function Register() {
                           disabled={submitting || !configured}
                         />
                       )}
-                      {qErr && <p className="text-xs text-red-600">{qErr}</p>}
+                      {qErr && <p className="text-xs text-red-600 dark:text-red-400">{qErr}</p>}
                     </div>
                   )
                 })}
 
                 {error && (
-                  <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+                  <p className="rounded-md bg-red-50 dark:bg-red-950/40 px-3 py-2 text-sm text-red-700 dark:text-red-400">
                     {error}
                   </p>
                 )}
@@ -615,7 +615,7 @@ export function Register() {
           </div>
         )}
 
-        <p className="mt-4 text-center text-xs text-slate-500">
+        <p className="mt-4 text-center text-xs text-slate-500 dark:text-slate-400">
           {!registered
             ? 'By joining, you agree to be visible to the host.'
             : regStatus === 'approved'

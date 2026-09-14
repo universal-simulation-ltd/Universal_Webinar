@@ -166,7 +166,7 @@ export function HostWrapUp() {
       <div className="container py-12">
         <Card>
           <CardContent className="p-6">
-            <p className="text-sm text-red-700">{error}</p>
+            <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
             <Button asChild className="mt-4" variant="outline">
               <Link to={`/host/w/${slug}`}>Back to the webinar</Link>
             </Button>
@@ -182,13 +182,13 @@ export function HostWrapUp() {
   return (
     <div className="container max-w-2xl py-8">
       <div className="mb-6">
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+        <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
           {webinar.company_name ?? 'Wrap-up'}
         </p>
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
           {webinar.title}
         </h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
           {webinar.ended_at
             ? `Ended ${formatWithZone(new Date(webinar.ended_at), localTimezone())}.`
             : 'That’s a wrap.'}{' '}
@@ -207,7 +207,7 @@ export function HostWrapUp() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-slate-500" />
+                <TrendingUp className="h-4 w-4 text-slate-500 dark:text-slate-400" />
                 How it went
               </CardTitle>
             </CardHeader>
@@ -218,16 +218,16 @@ export function HostWrapUp() {
                   { k: 'Turned up', v: stats.attended },
                   { k: 'No-shows', v: stats.no_show },
                 ].map(({ k, v }) => (
-                  <div key={k} className="rounded-lg bg-slate-50 py-3">
-                    <dt className="text-[11px] uppercase tracking-wide text-slate-500">
+                  <div key={k} className="rounded-lg bg-slate-50 dark:bg-slate-950 py-3">
+                    <dt className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
                       {k}
                     </dt>
-                    <dd className="text-xl font-semibold text-slate-900">{v}</dd>
+                    <dd className="text-xl font-semibold text-slate-900 dark:text-slate-100">{v}</dd>
                   </div>
                 ))}
               </dl>
               {stats.registered > 0 && (
-                <p className="mt-3 text-center text-xs text-slate-500">
+                <p className="mt-3 text-center text-xs text-slate-500 dark:text-slate-400">
                   {Math.round((stats.attended / stats.registered) * 100)}% of
                   registrants attended
                   {stats.waitlisted > 0 &&
@@ -242,7 +242,7 @@ export function HostWrapUp() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Video className="h-4 w-4 text-slate-500" />
+              <Video className="h-4 w-4 text-slate-500 dark:text-slate-400" />
               Recording
             </CardTitle>
             <CardDescription>
@@ -270,7 +270,7 @@ export function HostWrapUp() {
               )}
             </div>
             {!webinar.send_followup && (
-              <p className="mt-2 text-xs text-amber-700">
+              <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">
                 Follow-up emails are switched off, so this link won't reach
                 anyone. Turn them back on under Communication.
               </p>
@@ -282,7 +282,7 @@ export function HostWrapUp() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Download className="h-4 w-4 text-slate-500" />
+              <Download className="h-4 w-4 text-slate-500 dark:text-slate-400" />
               Take your list
             </CardTitle>
             <CardDescription>
@@ -308,10 +308,10 @@ export function HostWrapUp() {
         </Card>
 
         {/* What happens to it now ------------------------------------------- */}
-        <Card className={closed ? 'border-slate-300 bg-slate-50' : undefined}>
+        <Card className={closed ? 'border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950' : undefined}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Archive className="h-4 w-4 text-slate-500" />
+              <Archive className="h-4 w-4 text-slate-500 dark:text-slate-400" />
               Finished with this webinar?
             </CardTitle>
             <CardDescription>
@@ -343,9 +343,9 @@ export function HostWrapUp() {
           {!closed && (
             <CardContent className="space-y-3">
               {kept ? (
-                <div className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3">
-                  <CloudUpload className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700" />
-                  <div className="text-xs text-emerald-900">
+                <div className="flex items-start gap-2 rounded-lg border border-emerald-200 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-950/40 p-3">
+                  <CloudUpload className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-400" />
+                  <div className="text-xs text-emerald-900 dark:text-emerald-200">
                     <p className="font-medium">
                       Saved to the cloud
                       {webinar.kept_at &&
@@ -378,7 +378,7 @@ export function HostWrapUp() {
               )}
 
               {!kept && (
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   Keeping it holds onto your webinar token, so you won't be able
                   to run another until you release it. Nothing is deleted while
                   it's saved.
@@ -386,7 +386,7 @@ export function HostWrapUp() {
               )}
 
               {registrations.length > 0 && !exported && !kept && (
-                <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                <div className="flex items-start gap-2 rounded-md border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 px-3 py-2 text-xs text-amber-900 dark:text-amber-200">
                   <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                   <span>
                     You haven't exported your {registrations.length}{' '}
@@ -398,11 +398,11 @@ export function HostWrapUp() {
               )}
 
               {confirmClose ? (
-                <div className="space-y-2 rounded-lg border border-red-200 bg-red-50 p-3">
-                  <p className="text-sm font-medium text-red-900">
+                <div className="space-y-2 rounded-lg border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 p-3">
+                  <p className="text-sm font-medium text-red-900 dark:text-red-200">
                     Close “{webinar.title}”?
                   </p>
-                  <p className="text-xs text-red-800">
+                  <p className="text-xs text-red-800 dark:text-red-200">
                     Your token comes back straight away. On the free plan this
                     webinar and everyone in it are deleted 30 days later. This
                     can't be undone.

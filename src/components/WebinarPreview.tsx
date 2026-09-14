@@ -9,14 +9,14 @@ export function WebinarPreview() {
     <div className="relative mx-auto w-full max-w-4xl">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-8 -inset-y-4 -z-10 rounded-[2rem] bg-gradient-to-br from-brand-200/40 via-amber-100/30 to-transparent blur-3xl"
+        className="pointer-events-none absolute inset-x-8 -inset-y-4 -z-10 rounded-[2rem] bg-gradient-to-br from-brand-200/40 via-amber-100/30 dark:via-amber-950/30 to-transparent blur-3xl"
       />
       <svg
         viewBox="0 0 800 480"
         xmlns="http://www.w3.org/2000/svg"
         role="img"
         aria-label="Preview of the live webinar room with a host on camera waving, a chat panel, and floating reactions"
-        className="block w-full rounded-2xl border border-slate-200 bg-white shadow-soft"
+        className="block w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-soft"
       >
         <defs>
           <linearGradient id="videoBg" x1="0" y1="0" x2="1" y2="1">
@@ -42,11 +42,29 @@ export function WebinarPreview() {
           @media (prefers-reduced-motion: reduce) {
             .preview-host-zoom { animation: none; }
           }
+          /* Dark theme. The picture is of the app's chrome, so it follows
+             the theme like the chrome does — but ONLY the elements tagged
+             wp-*: the host figure reuses #0f172a for its eyes and smile, so
+             a blanket swap by colour would black them out. A CSS fill beats
+             the presentation attribute, which is what keeps light untouched:
+             these rules match nothing until <html> carries .dark. */
+          .dark .wp-ink { fill: #f1f5f9; }
+          .dark .wp-muted { fill: #94a3b8; }
+          .dark .wp-faint { fill: #64748b; }
+          .dark .wp-line { stroke: #1e293b; }
+          .dark .wp-panel { fill: #020617; stroke: #1e293b; }
+          .dark .wp-bubble { fill: #1e293b; }
+          .dark .wp-bubble-text { fill: #cbd5e1; }
+          .dark .wp-input { fill: #0f172a; stroke: #1e293b; }
+          .dark .wp-live { fill: #fca5a5; }
+          .dark .wp-chip { fill: #020617; stroke: #9a3412; }
+          .dark .wp-chip-text { fill: #fdba74; }
         `}</style>
 
         {/* Header strip */}
-        <line x1="0" y1="56" x2="800" y2="56" stroke="#e2e8f0" />
+        <line className="wp-line" x1="0" y1="56" x2="800" y2="56" stroke="#e2e8f0" />
         <text
+          className="wp-ink"
           x="32"
           y="36"
           fontFamily="Inter, system-ui, sans-serif"
@@ -57,6 +75,7 @@ export function WebinarPreview() {
           Q4 welcome session
         </text>
         <text
+          className="wp-muted"
           x="32"
           y="50"
           fontFamily="Inter, system-ui, sans-serif"
@@ -74,6 +93,7 @@ export function WebinarPreview() {
           />
         </circle>
         <text
+          className="wp-live"
           x="716"
           y="38"
           fontFamily="Inter, system-ui, sans-serif"
@@ -84,6 +104,7 @@ export function WebinarPreview() {
           LIVE
         </text>
         <text
+          className="wp-muted"
           x="748"
           y="38"
           fontFamily="Inter, system-ui, sans-serif"
@@ -198,9 +219,10 @@ export function WebinarPreview() {
         </g>
 
         {/* Chat panel */}
-        <rect x="544" y="80" width="232" height="320" rx="16" fill="white" stroke="#e2e8f0" />
-        <line x1="544" y1="116" x2="776" y2="116" stroke="#e2e8f0" />
+        <rect className="wp-panel" x="544" y="80" width="232" height="320" rx="16" fill="white" stroke="#e2e8f0" />
+        <line className="wp-line" x1="544" y1="116" x2="776" y2="116" stroke="#e2e8f0" />
         <text
+          className="wp-ink"
           x="560"
           y="104"
           fontFamily="Inter, system-ui, sans-serif"
@@ -211,6 +233,7 @@ export function WebinarPreview() {
           Chat
         </text>
         <text
+          className="wp-muted"
           x="760"
           y="104"
           fontFamily="Inter, system-ui, sans-serif"
@@ -227,8 +250,9 @@ export function WebinarPreview() {
         <ChatRow x={560} y={190} author="Marco" body="Excited for this!" />
         {/* Reaction chip under Marco */}
         <g transform="translate(560, 222)">
-          <rect width="42" height="16" rx="8" fill="white" stroke="#fbd0a8" />
+          <rect className="wp-chip" width="42" height="16" rx="8" fill="white" stroke="#fbd0a8" />
           <text
+            className="wp-chip-text"
             x="6"
             y="12"
             fontSize="9"
@@ -241,6 +265,7 @@ export function WebinarPreview() {
 
         {/* You (right-aligned) */}
         <text
+          className="wp-muted"
           x="758"
           y="265"
           textAnchor="end"
@@ -267,6 +292,7 @@ export function WebinarPreview() {
 
         {/* Chat input */}
         <rect
+          className="wp-input"
           x="560"
           y="368"
           width="200"
@@ -276,6 +302,7 @@ export function WebinarPreview() {
           stroke="#e2e8f0"
         />
         <text
+          className="wp-faint"
           x="568"
           y="383"
           fontFamily="Inter, system-ui, sans-serif"
@@ -287,6 +314,7 @@ export function WebinarPreview() {
 
         {/* Footer strip under the room */}
         <text
+          className="wp-muted"
           x="32"
           y="438"
           fontFamily="Inter, system-ui, sans-serif"
@@ -296,6 +324,7 @@ export function WebinarPreview() {
           42 watching
         </text>
         <text
+          className="wp-faint"
           x="120"
           y="438"
           fontFamily="Inter, system-ui, sans-serif"
@@ -368,6 +397,7 @@ function ChatRow({ x, y, author, body }: ChatRowProps) {
   return (
     <g>
       <text
+        className="wp-muted"
         x={x}
         y={y}
         fontFamily="Inter, system-ui, sans-serif"
@@ -378,6 +408,7 @@ function ChatRow({ x, y, author, body }: ChatRowProps) {
         {author}
       </text>
       <rect
+        className="wp-bubble"
         x={x}
         y={y + 6}
         width={Math.max(80, body.length * 6.5)}
@@ -386,6 +417,7 @@ function ChatRow({ x, y, author, body }: ChatRowProps) {
         fill="#f1f5f9"
       />
       <text
+        className="wp-bubble-text"
         x={x + 10}
         y={y + 21}
         fontFamily="Inter, system-ui, sans-serif"

@@ -26,19 +26,19 @@ export function SharedDocViewer({
 
   if (!isPdf) {
     return (
-      <div className={`grid place-items-center overflow-auto bg-slate-50 ${className}`}>
+      <div className={`grid place-items-center overflow-auto bg-slate-50 dark:bg-slate-950 ${className}`}>
         <img src={url} alt={name} className="max-h-full max-w-full object-contain" />
       </div>
     )
   }
 
   return (
-    <div className={`relative bg-slate-50 ${className}`}>
+    <div className={`relative bg-slate-50 dark:bg-slate-950 ${className}`}>
       <iframe src={url} title={name} className="h-full w-full" />
       <noscript>
         <a href={url}>{name}</a>
       </noscript>
-      <p className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-center gap-1.5 bg-gradient-to-t from-slate-50 to-transparent py-1 text-[11px] text-slate-500">
+      <p className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-center gap-1.5 bg-gradient-to-t from-slate-50 dark:from-slate-950 to-transparent py-1 text-[11px] text-slate-500 dark:text-slate-400">
         <FileText className="h-3 w-3" />
         Can't see it?{' '}
         <a

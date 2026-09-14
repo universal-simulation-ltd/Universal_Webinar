@@ -23,7 +23,7 @@ export function Logo({ className, showWordmark = true }: LogoProps) {
       </div>
       {showWordmark && (
         <div className="flex flex-col leading-none">
-          <span className="text-base font-semibold tracking-tight text-slate-900">
+          <span className="text-base font-semibold tracking-tight text-slate-900 dark:text-slate-100">
             Universal Webinar
           </span>
         </div>

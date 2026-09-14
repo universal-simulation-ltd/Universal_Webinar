@@ -16,7 +16,7 @@ export function HostedBy({ webinar, className }: Props) {
   return (
     <div
       className={
-        'mb-6 flex items-center justify-center gap-3 text-sm text-slate-500 ' +
+        'mb-6 flex items-center justify-center gap-3 text-sm text-slate-500 dark:text-slate-400 ' +
         (className ?? '')
       }
     >
@@ -24,12 +24,12 @@ export function HostedBy({ webinar, className }: Props) {
         <img
           src={logo}
           alt={company ?? 'Host logo'}
-          className="h-8 w-8 rounded-md border border-slate-200 bg-white object-contain p-1"
+          className="h-8 w-8 rounded-md border border-slate-200 dark:border-slate-800 bg-white object-contain p-1"
         />
       )}
       {company && (
         <span>
-          Hosted by <span className="font-medium text-slate-900">{company}</span>
+          Hosted by <span className="font-medium text-slate-900 dark:text-slate-100">{company}</span>
         </span>
       )}
     </div>

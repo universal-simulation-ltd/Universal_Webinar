@@ -28,7 +28,7 @@ export function AdminLogin() {
   }, [loading, session, returnTo])
 
   return (
-    <div className="flex min-h-full items-center justify-center text-slate-500">
+    <div className="flex min-h-full items-center justify-center text-slate-500 dark:text-slate-400">
       <Loader2 className="h-5 w-5 animate-spin" />
     </div>
   )

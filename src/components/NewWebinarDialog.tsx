@@ -118,13 +118,13 @@ export function NewWebinarDialog({ open, onOpenChange, onCreated }: Props) {
                 value={scheduledAt}
                 onChange={(e) => setScheduledAt(e.target.value)}
               />
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 You can leave this blank and start it whenever.
               </p>
             </div>
 
-            <fieldset className="rounded-lg border border-slate-200 p-3">
-              <legend className="px-1 text-xs font-medium text-slate-500">
+            <fieldset className="rounded-lg border border-slate-200 dark:border-slate-800 p-3">
+              <legend className="px-1 text-xs font-medium text-slate-500 dark:text-slate-400">
                 Default settings (you can change later)
               </legend>
               <label className="flex items-start gap-3 py-1.5">
@@ -132,13 +132,13 @@ export function NewWebinarDialog({ open, onOpenChange, onCreated }: Props) {
                   type="checkbox"
                   checked={showGuestCount}
                   onChange={(e) => setShowGuestCount(e.target.checked)}
-                  className="mt-1 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                  className="mt-1 h-4 w-4 rounded border-slate-300 dark:border-slate-700 text-brand-600 dark:text-brand-400 focus:ring-brand-500"
                 />
                 <span className="text-sm">
-                  <span className="font-medium text-slate-900">
+                  <span className="font-medium text-slate-900 dark:text-slate-100">
                     Show attendee count to guests
                   </span>
-                  <span className="block text-xs text-slate-500">
+                  <span className="block text-xs text-slate-500 dark:text-slate-400">
                     Guests see how many people are watching.
                   </span>
                 </span>
@@ -148,13 +148,13 @@ export function NewWebinarDialog({ open, onOpenChange, onCreated }: Props) {
                   type="checkbox"
                   checked={allowSpeakRequests}
                   onChange={(e) => setAllowSpeakRequests(e.target.checked)}
-                  className="mt-1 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                  className="mt-1 h-4 w-4 rounded border-slate-300 dark:border-slate-700 text-brand-600 dark:text-brand-400 focus:ring-brand-500"
                 />
                 <span className="text-sm">
-                  <span className="font-medium text-slate-900">
+                  <span className="font-medium text-slate-900 dark:text-slate-100">
                     Allow guests to request to speak
                   </span>
-                  <span className="block text-xs text-slate-500">
+                  <span className="block text-xs text-slate-500 dark:text-slate-400">
                     Off by default. Toggle on during a live Q&A.
                   </span>
                 </span>
@@ -162,7 +162,7 @@ export function NewWebinarDialog({ open, onOpenChange, onCreated }: Props) {
             </fieldset>
 
             {error && (
-              <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+              <p className="rounded-md bg-red-50 dark:bg-red-950/40 px-3 py-2 text-sm text-red-700 dark:text-red-400">
                 {error}
               </p>
             )}

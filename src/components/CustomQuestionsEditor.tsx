@@ -29,7 +29,7 @@ const TYPE_LABELS: Record<CustomQuestionType, string> = {
 }
 
 const selectClass =
-  'flex h-11 w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-base text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition'
+  'flex h-11 w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-base text-slate-900 dark:text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition'
 
 export default function CustomQuestionsEditor({ value, onChange, disabled }: Props) {
   const update = (id: string, patch: Partial<CustomQuestion>) =>
@@ -53,8 +53,8 @@ export default function CustomQuestionsEditor({ value, onChange, disabled }: Pro
   return (
     <div className="space-y-3">
       <div>
-        <p className="text-sm font-medium text-slate-700">Registration questions</p>
-        <p className="mt-0.5 text-xs text-slate-500">
+        <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Registration questions</p>
+        <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
           Ask registrants a few extra questions when they sign up. Their answers appear in your
           registrations list.
         </p>
@@ -63,7 +63,7 @@ export default function CustomQuestionsEditor({ value, onChange, disabled }: Pro
       {value.length > 0 && (
         <ul className="space-y-3">
           {value.map((q, i) => (
-            <li key={q.id} className="rounded-lg border border-slate-200 bg-slate-50/60 p-3">
+            <li key={q.id} className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 p-3">
               <div className="flex items-start gap-2">
                 <div className="flex flex-col pt-2 text-slate-300">
                   <button
@@ -71,7 +71,7 @@ export default function CustomQuestionsEditor({ value, onChange, disabled }: Pro
                     aria-label="Move up"
                     disabled={disabled || i === 0}
                     onClick={() => move(i, -1)}
-                    className="disabled:opacity-30 hover:text-slate-500"
+                    className="disabled:opacity-30 hover:text-slate-500 dark:hover:text-slate-400"
                   >
                     <GripVertical className="h-4 w-4" />
                   </button>
@@ -97,13 +97,13 @@ export default function CustomQuestionsEditor({ value, onChange, disabled }: Pro
                         <option key={t} value={t}>{TYPE_LABELS[t]}</option>
                       ))}
                     </select>
-                    <label className="flex items-center gap-1.5 text-sm text-slate-600">
+                    <label className="flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-300">
                       <input
                         type="checkbox"
                         checked={q.required}
                         disabled={disabled}
                         onChange={(e) => update(q.id, { required: e.target.checked })}
-                        className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-600"
+                        className="h-4 w-4 rounded border-slate-300 dark:border-slate-700 text-brand-600 dark:text-brand-400 focus:ring-brand-600"
                       />
                       Required
                     </label>
@@ -111,14 +111,14 @@ export default function CustomQuestionsEditor({ value, onChange, disabled }: Pro
                       type="button"
                       disabled={disabled}
                       onClick={() => remove(q.id)}
-                      className="ml-auto inline-flex items-center gap-1 text-sm text-red-600 hover:text-red-700 disabled:opacity-50"
+                      className="ml-auto inline-flex items-center gap-1 text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-400 disabled:opacity-50"
                     >
                       <Trash2 className="h-3.5 w-3.5" /> Remove
                     </button>
                   </div>
                   {q.type === 'select' && (
                     <div className="space-y-1">
-                      <Label className="text-xs text-slate-500">Options (one per line)</Label>
+                      <Label className="text-xs text-slate-500 dark:text-slate-400">Options (one per line)</Label>
                       <textarea
                         aria-label={`Question ${i + 1} options`}
                         value={(q.options ?? []).join('\n')}
@@ -130,7 +130,7 @@ export default function CustomQuestionsEditor({ value, onChange, disabled }: Pro
                         }
                         rows={3}
                         placeholder={'Option one\nOption two'}
-                        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 disabled:opacity-50"
+                        className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 disabled:opacity-50"
                       />
                     </div>
                   )}

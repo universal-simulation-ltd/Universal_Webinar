@@ -41,10 +41,10 @@ export function AdminDashboard() {
     <div className="container py-10">
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">
+          <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
             Your webinars
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             Schedule a new room, or jump back into one that's live.
           </p>
         </div>
@@ -55,7 +55,7 @@ export function AdminDashboard() {
       </div>
 
       {error && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+        <div className="mb-4 rounded-lg border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 p-3 text-sm text-red-700 dark:text-red-400">
           {error}
         </div>
       )}
@@ -105,7 +105,7 @@ function WebinarCard({ webinar }: { webinar: WebinarRow }) {
             <CardTitle>{webinar.title}</CardTitle>
             <CardDescription className="mt-1 flex items-center gap-1.5">
               {webinar.status === 'live' ? (
-                <Radio className="h-3.5 w-3.5 text-red-600" />
+                <Radio className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
               ) : (
                 <Calendar className="h-3.5 w-3.5" />
               )}
@@ -113,7 +113,7 @@ function WebinarCard({ webinar }: { webinar: WebinarRow }) {
             </CardDescription>
           </div>
           {webinar.status === 'live' && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 dark:bg-red-950/40 px-2.5 py-1 text-xs font-medium text-red-700 dark:text-red-400">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-600" />
               LIVE
             </span>
@@ -121,7 +121,7 @@ function WebinarCard({ webinar }: { webinar: WebinarRow }) {
         </div>
       </CardHeader>
       <CardContent className="flex items-center justify-between">
-        <p className="text-xs text-slate-500 font-mono">/{webinar.slug}</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">/{webinar.slug}</p>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={copyShareLink}>
             {copied ? (
@@ -144,12 +144,12 @@ function WebinarCard({ webinar }: { webinar: WebinarRow }) {
 
 function EmptyState({ onCreate }: { onCreate: () => void }) {
   return (
-    <div className="grid place-items-center rounded-2xl border border-dashed border-slate-300 bg-white py-16 text-center">
+    <div className="grid place-items-center rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 py-16 text-center">
       <div>
-        <p className="text-base font-medium text-slate-900">
+        <p className="text-base font-medium text-slate-900 dark:text-slate-100">
           No webinars yet.
         </p>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
           Create your first room to share with your audience.
         </p>
         <Button className="mt-6" onClick={onCreate}>

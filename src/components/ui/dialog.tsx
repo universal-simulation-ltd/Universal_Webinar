@@ -46,7 +46,7 @@ const DialogContent = React.forwardRef<
         // stops a tall form scrolling its own title off the top on a phone.
         // Vertical padding takes the safe-area insets once the dialog is tall
         // enough to reach the notch; max() keeps the normal 1.5rem otherwise.
-        'fixed left-1/2 top-1/2 z-[1100] flex w-[calc(100%-2rem)] max-w-lg max-h-[min(100%,100dvh)] -translate-x-1/2 -translate-y-1/2 flex-col gap-4 overflow-hidden border border-slate-200 bg-white px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))] shadow-xl rounded-2xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
+        'fixed left-1/2 top-1/2 z-[1100] flex w-[calc(100%-2rem)] max-w-lg max-h-[min(100%,100dvh)] -translate-x-1/2 -translate-y-1/2 flex-col gap-4 overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))] shadow-xl rounded-2xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
         className,
       )}
       {...props}
@@ -54,7 +54,7 @@ const DialogContent = React.forwardRef<
       {children}
       {/* Pinned to the dialog frame, not to the scrolling body — and its `top`
           clears the notch on the same terms as the content padding. */}
-      <DialogPrimitive.Close className="absolute right-4 top-[max(1rem,env(safe-area-inset-top))] rounded-md p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-600">
+      <DialogPrimitive.Close className="absolute right-4 top-[max(1rem,env(safe-area-inset-top))] rounded-md p-1 text-slate-400 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-600">
         <X className="h-4 w-4" />
         <span className="sr-only">Close</span>
       </DialogPrimitive.Close>
@@ -119,7 +119,7 @@ const DialogDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Description
     ref={ref}
-    className={cn('text-sm text-slate-500', className)}
+    className={cn('text-sm text-slate-500 dark:text-slate-400', className)}
     {...props}
   />
 ))

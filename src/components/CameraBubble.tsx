@@ -137,7 +137,7 @@ export function CameraBubble({
         'absolute z-10 h-24 w-24 touch-none overflow-hidden rounded-full sm:h-32 sm:w-32',
         // The frame does real work: against a light slide a pale face has no
         // edge, and the shadow lifts it off the content behind it.
-        'shadow-lg ring-2 ring-white/80',
+        'shadow-lg ring-2 ring-white/80 dark:ring-slate-900/80',
         'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-400',
         dragging ? 'cursor-grabbing' : 'cursor-grab',
       ].join(' ')}

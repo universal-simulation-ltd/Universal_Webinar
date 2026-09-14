@@ -697,7 +697,7 @@ export function HostManage() {
         <div className="mx-auto max-w-md">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-amber-700">
+              <CardTitle className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
                 <AlertTriangle className="h-5 w-5" />
                 We need your manage link
               </CardTitle>
@@ -724,7 +724,7 @@ export function HostManage() {
                   name="token"
                   type="text"
                   placeholder="paste-your-manage-token"
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-mono"
+                  className="w-full rounded-lg border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm font-mono"
                 />
                 <Button type="submit" className="w-full">
                   Open management view
@@ -742,7 +742,7 @@ export function HostManage() {
       <div className="container py-12">
         <Card>
           <CardContent className="p-6">
-            <p className="text-sm text-red-700">{error}</p>
+            <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
             <Button asChild className="mt-4" variant="outline">
               <Link to="/">Back home</Link>
             </Button>
@@ -831,17 +831,17 @@ export function HostManage() {
             <img
               src={webinar.logo_url}
               alt={webinar.company_name ?? ''}
-              className="h-12 w-12 rounded-lg border border-slate-200 bg-white object-contain p-1"
+              className="h-12 w-12 rounded-lg border border-slate-200 dark:border-slate-800 bg-white object-contain p-1"
             />
           )}
           <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
               {webinar.company_name ?? 'Host control'}
             </p>
-            <h1 className="text-2xl font-semibold text-slate-900">
+            <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
               {webinar.title}{' '}
               <span className="text-slate-400">·</span>{' '}
-              <span className="text-slate-500 text-base font-mono">
+              <span className="text-slate-500 dark:text-slate-400 text-base font-mono">
                 /{webinar.slug}
               </span>
             </h1>
@@ -863,7 +863,7 @@ export function HostManage() {
       </div>
 
       {!webinar.host_verified && (
-        <div className="mb-4 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+        <div className="mb-4 flex items-start gap-3 rounded-lg border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 p-3 text-sm text-amber-900 dark:text-amber-200">
           <ShieldCheck className="mt-0.5 h-4 w-4 flex-shrink-0" />
           <p>
             Your email isn't verified yet. You can edit the webinar and share
@@ -906,17 +906,17 @@ export function HostManage() {
                   it yet, and once there is, the two need a real layout
                   decision rather than a squeeze. */}
               {webinar.shared_doc_url ? (
-                <div className="overflow-hidden rounded-xl border border-slate-200">
-                  <div className="flex items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2">
-                    <span className="flex min-w-0 items-center gap-2 text-sm text-slate-700">
-                      <FileText className="h-4 w-4 shrink-0 text-slate-500" />
+                <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
+                  <div className="flex items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-3 py-2">
+                    <span className="flex min-w-0 items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                      <FileText className="h-4 w-4 shrink-0 text-slate-500 dark:text-slate-400" />
                       <span className="truncate">{webinar.shared_doc_name}</span>
                     </span>
                     <a
                       href={webinar.shared_doc_url}
                       target="_blank"
                       rel="noreferrer"
-                      className="shrink-0 text-xs text-brand-700 underline underline-offset-2"
+                      className="shrink-0 text-xs text-brand-700 dark:text-brand-400 underline underline-offset-2"
                     >
                       Open ↗
                     </a>
@@ -937,7 +937,7 @@ export function HostManage() {
               ) : (
                 <div className="aspect-video rounded-xl bg-slate-900 grid place-items-center text-slate-300 text-sm">
                   <div className="text-center">
-                    <Camera className="mx-auto h-10 w-10 text-slate-500" />
+                    <Camera className="mx-auto h-10 w-10 text-slate-500 dark:text-slate-400" />
                     <p className="mt-2">
                       {isLiveKitConfigured()
                         ? 'Go on air to turn your camera on or share your screen.'
@@ -1009,20 +1009,20 @@ export function HostManage() {
                   gap is useful — it's how you check your camera beforehand —
                   but it has to be said, or you're presenting to nobody. */}
               {broadcast && webinar.status !== 'live' && (
-                <p className="mt-2 rounded-md bg-amber-50 px-2.5 py-2 text-xs text-amber-900">
+                <p className="mt-2 rounded-md bg-amber-50 dark:bg-amber-950/40 px-2.5 py-2 text-xs text-amber-900 dark:text-amber-200">
                   Nobody can see this yet — the webinar itself hasn't started.
                   Good for checking your camera; press <strong>Go live</strong>{' '}
                   at the top when you're ready for an audience.
                 </p>
               )}
               {docNote && (
-                <p className="mt-2 text-xs text-slate-500">{docNote}</p>
+                <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{docNote}</p>
               )}
               {docError && (
-                <p className="mt-2 text-xs text-red-600">{docError}</p>
+                <p className="mt-2 text-xs text-red-600 dark:text-red-400">{docError}</p>
               )}
               {!webinar.shared_doc_url && !docError && (
-                <p className="mt-2 text-xs text-slate-500">
+                <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                   PDF, PNG, JPG or WebP, up to 25 MB — everyone in the room sees
                   it. Photos and screenshots are shrunk automatically. Anyone
                   with the link can open it, so don't share anything private.
@@ -1043,10 +1043,10 @@ export function HostManage() {
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <CardTitle className="flex items-center gap-2">
-                      <Hand className="h-4 w-4 text-slate-500" />
+                      <Hand className="h-4 w-4 text-slate-500 dark:text-slate-400" />
                       Speaker queue
                       {speakQueue.length > 0 && (
-                        <span className="rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700">
+                        <span className="rounded-full bg-brand-50 dark:bg-brand-950/40 px-2 py-0.5 text-xs font-medium text-brand-700 dark:text-brand-400">
                           {speakQueue.length}
                         </span>
                       )}
@@ -1061,7 +1061,7 @@ export function HostManage() {
                     type="button"
                     onClick={() => void refreshSpeakQueue()}
                     title="Refresh"
-                    className="mt-0.5 rounded-md p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                    className="mt-0.5 rounded-md p-1.5 text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-300"
                   >
                     <RefreshCw className="h-4 w-4" />
                   </button>
@@ -1069,21 +1069,21 @@ export function HostManage() {
               </CardHeader>
               <CardContent>
                 {speakQueue.length === 0 ? (
-                  <p className="text-sm text-slate-500">
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
                     No one is waiting.
                   </p>
                 ) : (
-                  <ul className="divide-y divide-slate-100 text-sm">
+                  <ul className="divide-y divide-slate-100 dark:divide-slate-800 text-sm">
                     {speakQueue.map((r) => (
                       <li
                         key={r.request_id}
                         className="flex items-center justify-between gap-3 py-2"
                       >
                         <div className="min-w-0">
-                          <p className="truncate font-medium text-slate-900">
+                          <p className="truncate font-medium text-slate-900 dark:text-slate-100">
                             {r.name}
                           </p>
-                          <p className="truncate text-xs text-slate-500">
+                          <p className="truncate text-xs text-slate-500 dark:text-slate-400">
                             {r.email}
                           </p>
                           <p className="text-xs text-slate-400">
@@ -1118,7 +1118,7 @@ export function HostManage() {
                             onClick={() => void cancelSpeakRequest(r)}
                             title={`Turn down ${r.name}'s request — they can ask again`}
                             aria-label={`Turn down ${r.name}'s request`}
-                            className="rounded-md p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
+                            className="rounded-md p-1.5 text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-300 disabled:opacity-50"
                           >
                             <X className="h-4 w-4" />
                           </button>
@@ -1128,7 +1128,7 @@ export function HostManage() {
                             onClick={() => void blockSpeaker(r)}
                             title={`Stop ${r.name} asking for the rest of the session — they stay in the room`}
                             aria-label={`Stop ${r.name} asking to speak`}
-                            className="rounded-md p-1.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                            className="rounded-md p-1.5 text-slate-400 transition hover:bg-red-50 dark:hover:bg-red-900/50 hover:text-red-600 dark:hover:text-red-400 disabled:opacity-50"
                           >
                             <Ban className="h-4 w-4" />
                           </button>
@@ -1145,21 +1145,21 @@ export function HostManage() {
                     fourth. Survives a reload because it comes from its own
                     RPC, not from what this page happened to click. */}
                 {speakers.length > 0 && (
-                  <div className="mt-4 border-t border-slate-100 pt-3">
+                  <div className="mt-4 border-t border-slate-100 dark:border-slate-800 pt-3">
                     <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
                       On air · {speakers.length}
                     </p>
-                    <ul className="mt-1 divide-y divide-slate-100 text-sm">
+                    <ul className="mt-1 divide-y divide-slate-100 dark:divide-slate-800 text-sm">
                       {speakers.map((s) => (
                         <li
                           key={s.id}
                           className="flex items-center justify-between gap-3 py-2"
                         >
                           <div className="min-w-0">
-                            <p className="truncate font-medium text-slate-900">
+                            <p className="truncate font-medium text-slate-900 dark:text-slate-100">
                               {s.name}
                             </p>
-                            <p className="truncate text-xs text-slate-500">
+                            <p className="truncate text-xs text-slate-500 dark:text-slate-400">
                               {s.email}
                             </p>
                           </div>
@@ -1182,7 +1182,7 @@ export function HostManage() {
                       ))}
                     </ul>
                     {webinar.status !== 'live' && (
-                      <p className="mt-1.5 text-xs text-slate-500">
+                      <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
                         They go on air for real when the webinar does — nobody
                         is connected to the stage yet.
                       </p>
@@ -1199,7 +1199,7 @@ export function HostManage() {
             <PanelCard
               key="room"
               {...panelProps('room')}
-              icon={<Settings2 className="h-4 w-4 text-slate-500" />}
+              icon={<Settings2 className="h-4 w-4 text-slate-500 dark:text-slate-400" />}
               title="Room settings"
             >
               <div className="space-y-1">
@@ -1261,10 +1261,10 @@ export function HostManage() {
               />
 
               {webinar.pin_required && (
-                <div className="rounded-lg bg-slate-50 p-2.5">
+                <div className="rounded-lg bg-slate-50 dark:bg-slate-950 p-2.5">
                   <label
                     htmlFor="entry-pin"
-                    className="text-xs font-medium text-slate-700"
+                    className="text-xs font-medium text-slate-700 dark:text-slate-300"
                   >
                     Room PIN
                   </label>
@@ -1300,7 +1300,7 @@ export function HostManage() {
                       New PIN
                     </Button>
                   </div>
-                  <p className="mt-1.5 text-[11px] text-slate-500">
+                  <p className="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">
                     Tell your guests this separately — anyone with the join link
                     still needs it. Changing it locks out anyone who hasn't
                     joined yet, which is the point of a fresh one per session.
@@ -1311,15 +1311,15 @@ export function HostManage() {
               {/* Seat limit lives here rather than in a card of its own: it is
                   a room rule like the toggles above it, and one number did not
                   justify its own panel. */}
-              <div className="border-t border-slate-100 pt-3">
+              <div className="border-t border-slate-100 dark:border-slate-800 pt-3">
                 <div className="flex items-start justify-between gap-3 p-2.5 pt-0">
                   <div className="flex items-start gap-3">
-                    <span className="mt-0.5 text-slate-500">
+                    <span className="mt-0.5 text-slate-500 dark:text-slate-400">
                       <Users className="h-4 w-4" />
                     </span>
                     <div>
-                      <p className="text-sm font-medium text-slate-900">Seat limit</p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Seat limit</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
                         {seatsLeft === null
                           ? 'Unlimited. Set a number to start a waitlist once it fills.'
                           : seatsLeft > 0
@@ -1353,7 +1353,7 @@ export function HostManage() {
                     )}
                   </div>
                 </div>
-                <p className="px-2.5 text-xs text-slate-500">
+                <p className="px-2.5 text-xs text-slate-500 dark:text-slate-400">
                   Only approved registrants take a seat. When one frees up, the
                   longest-waiting person is let in automatically
                   {webinar.require_approval ? ' — back into your approval queue' : ''}.
@@ -1371,7 +1371,7 @@ export function HostManage() {
             <PanelCard
               key="communication"
               {...panelProps('communication')}
-              icon={<Mail className="h-4 w-4 text-slate-500" />}
+              icon={<Mail className="h-4 w-4 text-slate-500 dark:text-slate-400" />}
               title="Communication"
               description="What we send your registrants, and when."
             >
@@ -1418,13 +1418,13 @@ export function HostManage() {
             <PanelCard
               key="openJoin"
               {...panelProps('openJoin')}
-              icon={<DoorOpen className="h-4 w-4 text-slate-500" />}
+              icon={<DoorOpen className="h-4 w-4 text-slate-500 dark:text-slate-400" />}
               title="Open join link"
               description="Share this anywhere — a newsletter beforehand, or drop it in chat during the session for people who never signed up. They give a name and email at the door."
             >
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <code className="flex-1 truncate rounded-md bg-slate-50 px-2.5 py-2 text-xs text-slate-600">
+                <code className="flex-1 truncate rounded-md bg-slate-50 dark:bg-slate-950 px-2.5 py-2 text-xs text-slate-600 dark:text-slate-300">
                   {`${window.location.origin}/w/${webinar.slug}`}
                 </code>
                 <Button
@@ -1460,7 +1460,7 @@ export function HostManage() {
                 onChange={(next) => patch({ open_join: next }, 'open_join')}
               />
               {webinar.require_approval && webinar.open_join && (
-                <p className="rounded-md bg-amber-50 px-2.5 py-2 text-xs text-amber-800">
+                <p className="rounded-md bg-amber-50 dark:bg-amber-950/40 px-2.5 py-2 text-xs text-amber-800 dark:text-amber-200">
                   You're approving registrants, so walk-ups are turned away
                   regardless — they'll be asked to register first.
                 </p>
@@ -1478,7 +1478,7 @@ export function HostManage() {
             <PanelCard
               key="questions"
               {...panelProps('questions')}
-              icon={<Settings2 className="h-4 w-4 text-slate-500" />}
+              icon={<Settings2 className="h-4 w-4 text-slate-500 dark:text-slate-400" />}
               title="Registration questions"
               description="Asked when someone signs up. Set these before you go live."
             >
@@ -1521,7 +1521,7 @@ export function HostManage() {
             <PanelCard
               key="registrations"
               {...panelProps('registrations')}
-              icon={<Users className="h-4 w-4 text-slate-500" />}
+              icon={<Users className="h-4 w-4 text-slate-500 dark:text-slate-400" />}
               title="Registrations"
               description={
                 <>
@@ -1529,17 +1529,17 @@ export function HostManage() {
                   {registrations.length === 1 ? 'person' : 'people'}{' '}
                   pre-registered
                   {pendingCount > 0 && (
-                    <span className="font-medium text-amber-700">
+                    <span className="font-medium text-amber-700 dark:text-amber-400">
                       {' '}· {pendingCount} awaiting you
                     </span>
                   )}
                   {waitlistedCount > 0 && (
-                    <span className="text-slate-500">
+                    <span className="text-slate-500 dark:text-slate-400">
                       {' '}· {waitlistedCount} waitlisted
                     </span>
                   )}
                   {walkUps.length > 0 && (
-                    <span className="text-slate-500">
+                    <span className="text-slate-500 dark:text-slate-400">
                       {' '}· {walkUps.length} walked up
                     </span>
                   )}
@@ -1551,7 +1551,7 @@ export function HostManage() {
                   onClick={reloadRegistrations}
                   disabled={refreshingRegs}
                   title="Refresh"
-                  className="rounded-md p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 disabled:opacity-50"
+                  className="rounded-md p-1.5 text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-300 disabled:opacity-50"
                 >
                   <RefreshCw
                     className={cn('h-4 w-4', refreshingRegs && 'animate-spin')}
@@ -1561,13 +1561,13 @@ export function HostManage() {
             >
             <>
               {registrations.length === 0 ? (
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-slate-500 dark:text-slate-400">
                   No one has registered yet. Share the registration link
                   above.
                 </p>
               ) : (
                 <>
-                  <ul className="max-h-80 divide-y divide-slate-100 overflow-y-auto text-sm">
+                  <ul className="max-h-80 divide-y divide-slate-100 dark:divide-slate-800 overflow-y-auto text-sm">
                     {registrations.map((r) => {
                       const ans = r.custom_answers ?? {}
                       const answered = savedQuestions.filter((q) => (ans[q.id] ?? '').trim())
@@ -1576,10 +1576,10 @@ export function HostManage() {
                         showNoShows && !attended && r.status === 'approved'
                       return (
                         <li key={r.id} className="flex flex-col py-2">
-                          <span className="font-medium text-slate-900">
+                          <span className="font-medium text-slate-900 dark:text-slate-100">
                             {r.name}
                           </span>
-                          <span className="text-xs text-slate-500">
+                          <span className="text-xs text-slate-500 dark:text-slate-400">
                             {r.email}
                           </span>
                           <span className="flex items-center gap-1.5 text-xs text-slate-400">
@@ -1589,7 +1589,7 @@ export function HostManage() {
                             )}
                             {r.confirmation_sent_at && (
                               <span
-                                className="inline-flex items-center gap-1 text-emerald-600"
+                                className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400"
                                 title={`Confirmation emailed ${new Date(r.confirmation_sent_at).toLocaleString()}`}
                               >
                                 <Mail className="h-3 w-3" />
@@ -1598,7 +1598,7 @@ export function HostManage() {
                             )}
                             {(r.reminder_24h_sent_at || r.reminder_1h_sent_at) && (
                               <span
-                                className="inline-flex items-center gap-1 text-emerald-600"
+                                className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400"
                                 title={[
                                   r.reminder_24h_sent_at &&
                                     `Day-before reminder ${new Date(r.reminder_24h_sent_at).toLocaleString()}`,
@@ -1614,7 +1614,7 @@ export function HostManage() {
                             )}
                             {r.followup_sent_at && (
                               <span
-                                className="inline-flex items-center gap-1 text-emerald-600"
+                                className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400"
                                 title={`Post-session follow-up emailed ${new Date(r.followup_sent_at).toLocaleString()}`}
                               >
                                 <MailCheck className="h-3 w-3" />
@@ -1630,8 +1630,8 @@ export function HostManage() {
                               className={cn(
                                 'mt-1 inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium',
                                 attended
-                                  ? 'bg-emerald-50 text-emerald-700'
-                                  : 'bg-slate-100 text-slate-600',
+                                  ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400'
+                                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300',
                               )}
                               title={
                                 attended
@@ -1660,9 +1660,9 @@ export function HostManage() {
                             <span
                               className={cn(
                                 'mt-1 inline-flex w-fit items-center rounded-full px-2 py-0.5 text-[11px] font-medium',
-                                r.status === 'pending' && 'bg-amber-50 text-amber-800',
-                                r.status === 'waitlisted' && 'bg-slate-100 text-slate-700',
-                                r.status === 'declined' && 'bg-red-50 text-red-700',
+                                r.status === 'pending' && 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200',
+                                r.status === 'waitlisted' && 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300',
+                                r.status === 'declined' && 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400',
                               )}
                             >
                               {r.status === 'pending'
@@ -1694,7 +1694,7 @@ export function HostManage() {
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  className="h-7 px-2 text-xs text-slate-500"
+                                  className="h-7 px-2 text-xs text-slate-500 dark:text-slate-400"
                                   disabled={statusSaving === r.id}
                                   onClick={() => void changeStatus(r, 'waitlisted')}
                                 >
@@ -1705,7 +1705,7 @@ export function HostManage() {
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  className="h-7 px-2 text-xs text-red-600"
+                                  className="h-7 px-2 text-xs text-red-600 dark:text-red-400"
                                   disabled={statusSaving === r.id}
                                   onClick={() => void changeStatus(r, 'declined')}
                                 >
@@ -1716,13 +1716,13 @@ export function HostManage() {
                             </div>
                           )}
                           {answered.length > 0 && (
-                            <dl className="mt-1.5 space-y-1 border-l-2 border-slate-100 pl-2">
+                            <dl className="mt-1.5 space-y-1 border-l-2 border-slate-100 dark:border-slate-800 pl-2">
                               {answered.map((q) => (
                                 <div key={q.id}>
                                   <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
                                     {q.label}
                                   </dt>
-                                  <dd className="whitespace-pre-wrap text-xs text-slate-600">
+                                  <dd className="whitespace-pre-wrap text-xs text-slate-600 dark:text-slate-300">
                                     {ans[q.id]}
                                   </dd>
                                 </div>
@@ -1741,19 +1741,19 @@ export function HostManage() {
                   webinar with nothing but walk-ups must still show them rather
                   than only "no one has registered yet". */}
               {walkUps.length > 0 && (
-                <div className="mt-4 border-t border-slate-100 pt-3">
+                <div className="mt-4 border-t border-slate-100 dark:border-slate-800 pt-3">
                   <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
                     Walk-ups · {walkUps.length}
                   </p>
-                  <p className="mt-0.5 text-xs text-slate-500">
+                  <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                     Joined without registering — a forwarded link or your
                     newsletter, rather than the registration form.
                   </p>
-                  <ul className="mt-2 max-h-48 divide-y divide-slate-100 overflow-y-auto text-sm">
+                  <ul className="mt-2 max-h-48 divide-y divide-slate-100 dark:divide-slate-800 overflow-y-auto text-sm">
                     {walkUps.map((a) => (
                       <li key={a.email} className="flex flex-col py-2">
-                        <span className="font-medium text-slate-900">{a.name}</span>
-                        <span className="text-xs text-slate-500">{a.email}</span>
+                        <span className="font-medium text-slate-900 dark:text-slate-100">{a.name}</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">{a.email}</span>
                         <span className="text-xs text-slate-400">
                           Joined{' '}
                           {formatWithZone(
@@ -1804,7 +1804,7 @@ export function HostManage() {
           <button
             type="button"
             onClick={resetLayout}
-            className="w-full pt-1 text-center text-xs text-slate-400 transition hover:text-slate-600"
+            className="w-full pt-1 text-center text-xs text-slate-400 transition hover:text-slate-600 dark:hover:text-slate-300"
           >
             Reset card order
           </button>
@@ -1836,26 +1836,26 @@ function ToggleRow({
       disabled={disabled}
       className={cn(
         'group flex w-full items-start justify-between gap-3 rounded-lg p-2.5 text-left transition',
-        disabled ? 'opacity-60' : 'hover:bg-slate-50',
+        disabled ? 'opacity-60' : 'hover:bg-slate-50 dark:hover:bg-slate-800',
       )}
     >
       <div className="flex items-start gap-3">
-        <span className="mt-0.5 text-slate-500">{icon}</span>
+        <span className="mt-0.5 text-slate-500 dark:text-slate-400">{icon}</span>
         <div>
-          <p className="text-sm font-medium text-slate-900">{label}</p>
-          <p className="text-xs text-slate-500">{hint}</p>
+          <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{label}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">{hint}</p>
         </div>
       </div>
       <span
         className={cn(
           'mt-0.5 relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors',
-          checked ? 'bg-brand-600' : 'bg-slate-300',
+          checked ? 'bg-brand-600' : 'bg-slate-300 dark:bg-slate-600',
         )}
         aria-hidden
       >
         <span
           className={cn(
-            'inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform',
+            'inline-block h-5 w-5 transform rounded-full bg-white dark:bg-slate-900 shadow transition-transform',
             checked ? 'translate-x-5' : 'translate-x-0.5',
           )}
         />

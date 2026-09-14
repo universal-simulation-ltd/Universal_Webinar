@@ -83,7 +83,7 @@ export function OtpVerifyDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <ShieldCheck className="h-5 w-5 text-brand-600" />
+            <ShieldCheck className="h-5 w-5 text-brand-600 dark:text-brand-400" />
             Verify your email
           </DialogTitle>
           <DialogDescription>
@@ -95,7 +95,7 @@ export function OtpVerifyDialog({
         {step === 'send' ? (
           <div className="flex min-h-0 flex-1 flex-col gap-4">
             <DialogBody className="space-y-4 py-1">
-              <div className="flex items-start gap-3 rounded-lg border border-brand-200 bg-brand-50 p-3 text-sm text-brand-900">
+              <div className="flex items-start gap-3 rounded-lg border border-brand-200 dark:border-brand-900 bg-brand-50 dark:bg-brand-950/40 p-3 text-sm text-brand-900 dark:text-brand-200">
                 <MailCheck className="mt-0.5 h-4 w-4 flex-shrink-0" />
                 <p>
                   Click below to send the code. It usually arrives in under a
@@ -103,7 +103,7 @@ export function OtpVerifyDialog({
                 </p>
               </div>
               {error && (
-                <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+                <p className="rounded-md bg-red-50 dark:bg-red-950/40 px-3 py-2 text-sm text-red-700 dark:text-red-400">
                   {error}
                 </p>
               )}
@@ -149,7 +149,7 @@ export function OtpVerifyDialog({
                   className="text-center text-lg tracking-[0.4em] font-semibold"
                   required
                 />
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   Didn't get it?{' '}
                   <button
                     type="button"
@@ -157,14 +157,14 @@ export function OtpVerifyDialog({
                       setStep('send')
                       setCode('')
                     }}
-                    className="font-medium text-brand-700 hover:underline"
+                    className="font-medium text-brand-700 dark:text-brand-400 hover:underline"
                   >
                     Send again
                   </button>
                 </p>
               </div>
               {error && (
-                <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+                <p className="rounded-md bg-red-50 dark:bg-red-950/40 px-3 py-2 text-sm text-red-700 dark:text-red-400">
                   {error}
                 </p>
               )}

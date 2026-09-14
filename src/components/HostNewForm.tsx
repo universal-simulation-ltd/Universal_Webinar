@@ -264,8 +264,8 @@ export function HostNewForm() {
           {needsAccount ? (
             // Not signed in → collect an email so we can send a verification
             // code (which creates their Universal ID) when they go live.
-            <div className="border-t border-slate-100 pt-4">
-              <p className="mb-3 text-xs font-medium uppercase tracking-wide text-slate-500">
+            <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
+              <p className="mb-3 text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 About you
               </p>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -293,7 +293,7 @@ export function HostNewForm() {
                   />
                 </div>
               </div>
-              <p className="mt-1.5 text-xs text-slate-500">
+              <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
                 We'll send a 6-digit code here when you click <strong>Go
                 live</strong>.
               </p>
@@ -301,10 +301,10 @@ export function HostNewForm() {
           ) : (
             // Signed in → we already have their verified details; don't ask again.
             !suiteLoading && (
-              <div className="border-t border-slate-100 pt-4">
-                <p className="text-xs text-slate-500">
+              <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   Hosting as{' '}
-                  <strong className="text-slate-700">
+                  <strong className="text-slate-700 dark:text-slate-300">
                     {signedInName || signedInEmail}
                   </strong>
                   {signedInName && signedInEmail && (
@@ -316,15 +316,15 @@ export function HostNewForm() {
             )
           )}
 
-          <div className="border-t border-slate-100 pt-4">
+          <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
             <button
               type="button"
               onClick={() => setOptionalOpen((v) => !v)}
               aria-expanded={optionalOpen ? 'true' : 'false'}
               aria-controls="optional-details"
-              className="flex w-full items-center justify-between rounded-md py-1 text-left transition-colors hover:text-slate-900"
+              className="flex w-full items-center justify-between rounded-md py-1 text-left transition-colors hover:text-slate-900 dark:hover:text-slate-100"
             >
-              <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
+              <span className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 Optional details
               </span>
               <ChevronDown
@@ -365,7 +365,7 @@ export function HostNewForm() {
                     onChange={(e) => setCapacity(e.target.value)}
                     placeholder="Unlimited"
                   />
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     Leave blank for unlimited. Once it's full, new sign-ups join
                     a waitlist and are let in automatically if someone drops out.
                   </p>
@@ -380,7 +380,7 @@ export function HostNewForm() {
                 </div>
 
                 <div className="pt-2">
-                  <p className="mb-3 text-xs font-medium uppercase tracking-wide text-slate-500">
+                  <p className="mb-3 text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
                     Branding
                   </p>
                   <div className="grid gap-4 sm:grid-cols-2">
@@ -402,19 +402,19 @@ export function HostNewForm() {
                     <div className="space-y-1.5">
                       <Label>Logo</Label>
                       {logoPreview ? (
-                        <div className="flex items-center gap-3 rounded-lg border border-slate-200 p-2">
+                        <div className="flex items-center gap-3 rounded-lg border border-slate-200 dark:border-slate-800 p-2">
                           <img
                             src={logoPreview}
                             alt="logo preview"
                             className="h-10 w-10 rounded object-contain"
                           />
-                          <span className="flex-1 truncate text-xs text-slate-500">
+                          <span className="flex-1 truncate text-xs text-slate-500 dark:text-slate-400">
                             {logoFile?.name}
                           </span>
                           <button
                             type="button"
                             onClick={() => pickLogo(null)}
-                            className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                            className="rounded-md p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-300"
                             aria-label="Remove logo"
                           >
                             <X className="h-4 w-4" />
@@ -432,15 +432,15 @@ export function HostNewForm() {
                         </Button>
                       )}
                       <input {...logoPicker.inputProps} hidden />
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
                         PNG / JPG / SVG, under 1 MB.
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <fieldset className="rounded-lg border border-slate-200 p-3">
-                  <legend className="px-1 text-xs font-medium text-slate-500">
+                <fieldset className="rounded-lg border border-slate-200 dark:border-slate-800 p-3">
+                  <legend className="px-1 text-xs font-medium text-slate-500 dark:text-slate-400">
                     Default settings (you can change later)
                   </legend>
                   <label className="flex items-start gap-3 py-1.5">
@@ -448,10 +448,10 @@ export function HostNewForm() {
                       type="checkbox"
                       checked={showGuestCount}
                       onChange={(e) => setShowGuestCount(e.target.checked)}
-                      className="mt-1 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                      className="mt-1 h-4 w-4 rounded border-slate-300 dark:border-slate-700 text-brand-600 dark:text-brand-400 focus:ring-brand-500"
                     />
                     <span className="text-sm">
-                      <span className="font-medium text-slate-900">
+                      <span className="font-medium text-slate-900 dark:text-slate-100">
                         Show attendee count to guests
                       </span>
                     </span>
@@ -463,10 +463,10 @@ export function HostNewForm() {
                       onChange={(e) =>
                         setAllowSpeakRequests(e.target.checked)
                       }
-                      className="mt-1 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                      className="mt-1 h-4 w-4 rounded border-slate-300 dark:border-slate-700 text-brand-600 dark:text-brand-400 focus:ring-brand-500"
                     />
                     <span className="text-sm">
-                      <span className="font-medium text-slate-900">
+                      <span className="font-medium text-slate-900 dark:text-slate-100">
                         Allow guests to request to speak
                       </span>
                     </span>
@@ -476,13 +476,13 @@ export function HostNewForm() {
                       type="checkbox"
                       checked={sendConfirmation}
                       onChange={(e) => setSendConfirmation(e.target.checked)}
-                      className="mt-1 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                      className="mt-1 h-4 w-4 rounded border-slate-300 dark:border-slate-700 text-brand-600 dark:text-brand-400 focus:ring-brand-500"
                     />
                     <span className="text-sm">
-                      <span className="font-medium text-slate-900">
+                      <span className="font-medium text-slate-900 dark:text-slate-100">
                         Email registrants a confirmation
                       </span>
-                      <span className="block text-xs text-slate-500">
+                      <span className="block text-xs text-slate-500 dark:text-slate-400">
                         Their own join link, plus a calendar invite when the
                         session has a date.
                       </span>
@@ -493,13 +493,13 @@ export function HostNewForm() {
                       type="checkbox"
                       checked={sendReminders}
                       onChange={(e) => setSendReminders(e.target.checked)}
-                      className="mt-1 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                      className="mt-1 h-4 w-4 rounded border-slate-300 dark:border-slate-700 text-brand-600 dark:text-brand-400 focus:ring-brand-500"
                     />
                     <span className="text-sm">
-                      <span className="font-medium text-slate-900">
+                      <span className="font-medium text-slate-900 dark:text-slate-100">
                         Remind registrants before it starts
                       </span>
-                      <span className="block text-xs text-slate-500">
+                      <span className="block text-xs text-slate-500 dark:text-slate-400">
                         A nudge the day before and again an hour ahead. Needs a
                         scheduled date.
                       </span>
@@ -510,13 +510,13 @@ export function HostNewForm() {
                       type="checkbox"
                       checked={sendFollowup}
                       onChange={(e) => setSendFollowup(e.target.checked)}
-                      className="mt-1 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                      className="mt-1 h-4 w-4 rounded border-slate-300 dark:border-slate-700 text-brand-600 dark:text-brand-400 focus:ring-brand-500"
                     />
                     <span className="text-sm">
-                      <span className="font-medium text-slate-900">
+                      <span className="font-medium text-slate-900 dark:text-slate-100">
                         Email a follow-up afterwards
                       </span>
-                      <span className="block text-xs text-slate-500">
+                      <span className="block text-xs text-slate-500 dark:text-slate-400">
                         Thanks to those who came, a catch-up link to those who
                         missed it.
                       </span>
@@ -528,9 +528,9 @@ export function HostNewForm() {
           </div>
 
           {freeTier && (
-            <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
+            <div className="rounded-md border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 px-3 py-2.5 text-sm text-amber-800 dark:text-amber-200">
               <p className="font-medium">Hosting uses your free Webinar token.</p>
-              <p className="mt-0.5 text-xs text-amber-700">
+              <p className="mt-0.5 text-xs text-amber-700 dark:text-amber-400">
                 Every Universal app comes with one free token; conducting a webinar spends this app&apos;s,
                 and it <strong>won't be returned</strong> — live hosting costs us money to run.
                 You have {tokenCount} purchased token{tokenCount === 1 ? '' : 's'}.
@@ -539,15 +539,15 @@ export function HostNewForm() {
           )}
 
           {error && (
-            <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+            <p className="rounded-md bg-red-50 dark:bg-red-950/40 px-3 py-2 text-sm text-red-700 dark:text-red-400">
               {error}
             </p>
           )}
 
           {otpStep ? (
-            <div className="space-y-2 rounded-lg border border-brand-200 bg-brand-50 p-4">
-              <p className="text-sm font-semibold text-slate-900">Check your email</p>
-              <p className="text-xs text-slate-600">
+            <div className="space-y-2 rounded-lg border border-brand-200 dark:border-brand-900 bg-brand-50 dark:bg-brand-950/40 p-4">
+              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Check your email</p>
+              <p className="text-xs text-slate-600 dark:text-slate-300">
                 We sent a 6-digit code to <strong>{hostEmail.trim().toLowerCase()}</strong>. Enter it to create your
                 account and {isScheduled ? 'schedule' : 'start'} your webinar.
               </p>
@@ -565,7 +565,7 @@ export function HostNewForm() {
                   {verifying ? <><Loader2 className="h-4 w-4 animate-spin" /> Verifying…</> : <>Verify &amp; {isScheduled ? 'schedule' : 'go live'}</>}
                 </Button>
               </div>
-              <button type="button" onClick={() => { setOtpStep(false); setError(null) }} className="text-xs text-slate-500 underline-offset-2 hover:underline">
+              <button type="button" onClick={() => { setOtpStep(false); setError(null) }} className="text-xs text-slate-500 dark:text-slate-400 underline-offset-2 hover:underline">
                 Use a different email
               </button>
             </div>

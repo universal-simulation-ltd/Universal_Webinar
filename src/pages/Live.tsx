@@ -88,7 +88,7 @@ function HostStageInner() {
     return (
       <div className="absolute inset-0 grid place-items-center text-slate-300">
         <div className="text-center">
-          <Loader2 className="mx-auto h-8 w-8 animate-spin text-slate-500" />
+          <Loader2 className="mx-auto h-8 w-8 animate-spin text-slate-500 dark:text-slate-400" />
           <p className="mt-2 text-sm">Connecting to live video…</p>
         </div>
       </div>
@@ -500,14 +500,14 @@ export function Live() {
             <img
               src={webinar.logo_url}
               alt={webinar.company_name ?? ''}
-              className="h-10 w-10 rounded-lg border border-slate-200 bg-white object-contain p-1"
+              className="h-10 w-10 rounded-lg border border-slate-200 dark:border-slate-800 bg-white object-contain p-1"
             />
           )}
           <div>
-            <h1 className="text-lg font-semibold text-slate-900">
+            <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
               {webinar.title}
             </h1>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               {webinar.company_name ? `${webinar.company_name} · ` : ''}
               Welcome{attendee ? `, ${attendee.name.split(' ')[0]}` : ''} —
               enjoy the show.
@@ -516,18 +516,18 @@ export function Live() {
         </div>
         <div className="flex items-center gap-2">
           {webinar.show_guest_count && viewerCount > 0 && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-600 shadow-soft">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white dark:bg-slate-900 px-3 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 shadow-soft">
               <Users className="h-3.5 w-3.5" />
               {viewerCount} watching
             </span>
           )}
           {webinar.status === 'live' ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-xs font-medium text-red-700">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 dark:bg-red-950/40 px-3 py-1 text-xs font-medium text-red-700 dark:text-red-400">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-600" />
               LIVE
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 dark:bg-slate-800 px-3 py-1 text-xs font-medium text-slate-600 dark:text-slate-300">
               Waiting to start
             </span>
           )}
@@ -535,7 +535,7 @@ export function Live() {
       </div>
 
       {attendee?.muted_by_admin && (
-        <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900">
+        <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 px-4 py-2.5 text-sm text-amber-900 dark:text-amber-200">
           <MicOff className="h-4 w-4 shrink-0" />
           The host has muted you. You can still read the chat.
         </div>
@@ -546,7 +546,7 @@ export function Live() {
           and the camera and mic are NOT switched on for them, so somebody has
           to mention where the buttons are. */}
       {isSpeaker && (
-        <div className="mb-4 flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-2.5 text-sm text-green-900">
+        <div className="mb-4 flex items-center gap-2 rounded-lg border border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-950/40 px-4 py-2.5 text-sm text-green-900 dark:text-green-200">
           <Mic className="h-4 w-4 shrink-0" />
           The host has put you on air. Use the camera and microphone buttons
           under the video to join in — everyone in the room can see and hear
@@ -555,7 +555,7 @@ export function Live() {
       )}
 
       {offAirNotice && (
-        <div className="mb-4 flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-700">
+        <div className="mb-4 flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300">
           <MicOff className="h-4 w-4 shrink-0" />
           You're off air now — your camera and microphone are off. You can carry
           on watching and chatting, and raise your hand again any time.
@@ -564,7 +564,7 @@ export function Live() {
 
       <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
         <div className="space-y-4">
-          <div className="relative aspect-video overflow-hidden rounded-2xl border border-slate-200 bg-slate-900 shadow-soft">
+          <div className="relative aspect-video overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-900 shadow-soft">
             {isSpeaker && lkReady ? (
               <SpeakerConferenceStage serverUrl={lkUrl} token={lkToken!} />
             ) : lkReady ? (
@@ -573,10 +573,10 @@ export function Live() {
               <div className="absolute inset-0 grid place-items-center text-center text-slate-300">
                 <div>
                   {lkFetching ? (
-                    <Loader2 className="mx-auto h-8 w-8 animate-spin text-slate-500" />
+                    <Loader2 className="mx-auto h-8 w-8 animate-spin text-slate-500 dark:text-slate-400" />
                   ) : webinar.status === 'live' ? (
                     <>
-                      <AlertCircle className="mx-auto h-8 w-8 text-slate-500" />
+                      <AlertCircle className="mx-auto h-8 w-8 text-slate-500 dark:text-slate-400" />
                       <p className="mt-2 text-sm">
                         {isLiveKitConfigured()
                           ? 'Could not connect to video stream.'
@@ -601,10 +601,10 @@ export function Live() {
               see a slide has lost the webinar. Scrolling, zooming and paging
               are the browser's own — nothing here follows the host's page. */}
           {webinar.shared_doc_url && (
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft">
-              <div className="flex items-center justify-between gap-2 border-b border-slate-200 px-4 py-2.5">
-                <span className="flex min-w-0 items-center gap-2 text-sm font-medium text-slate-900">
-                  <FileText className="h-4 w-4 shrink-0 text-slate-500" />
+            <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-soft">
+              <div className="flex items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 px-4 py-2.5">
+                <span className="flex min-w-0 items-center gap-2 text-sm font-medium text-slate-900 dark:text-slate-100">
+                  <FileText className="h-4 w-4 shrink-0 text-slate-500 dark:text-slate-400" />
                   <span className="truncate">
                     {webinar.shared_doc_name ?? 'Shared document'}
                   </span>
@@ -613,7 +613,7 @@ export function Live() {
                   href={webinar.shared_doc_url}
                   target="_blank"
                   rel="noreferrer"
-                  className="shrink-0 text-xs text-brand-700 underline underline-offset-2"
+                  className="shrink-0 text-xs text-brand-700 dark:text-brand-400 underline underline-offset-2"
                 >
                   Open ↗
                 </a>
@@ -640,12 +640,12 @@ export function Live() {
                 />
               )}
             {isSpeaker && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-700">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 dark:bg-green-950/40 px-3 py-1 text-xs font-medium text-green-700 dark:text-green-400">
                 <span className="h-1.5 w-1.5 rounded-full bg-green-600" />
                 You're on air
               </span>
             )}
-            <div className="flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2 py-1 shadow-soft">
+            <div className="flex items-center gap-1 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2 py-1 shadow-soft">
               <Heart className="h-3.5 w-3.5 text-brand-500" />
               {FLOATING_EMOJIS.map((emoji) => (
                 <button
@@ -662,11 +662,11 @@ export function Live() {
           </div>
         </div>
 
-        <aside className="flex h-[600px] flex-col rounded-2xl border border-slate-200 bg-white shadow-soft">
-          <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-            <h2 className="text-sm font-semibold text-slate-900">Chat</h2>
+        <aside className="flex h-[600px] flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-soft">
+          <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-4 py-3">
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Chat</h2>
             {attendee?.muted_by_admin && (
-              <span className="text-[11px] font-medium text-amber-700">
+              <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400">
                 muted by host
               </span>
             )}

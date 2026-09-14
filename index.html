@@ -7,6 +7,27 @@
     <link rel="apple-touch-icon" href="/icon-180.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#e05504" />
+    <!-- ⚠️ THE THEME, BEFORE THE FIRST PIXEL. `createThemeStore` (the SDK)
+         applies the same class when the module bundle is imported, which is
+         early but not this early — without this, somebody who chose dark gets a
+         white page first and the dark one a moment later.
+
+         ⚠️ THE KEY IS DUPLICATED — `src/stores/themeStore.ts` holds the other
+         copy, and renaming one silently resets everybody to light.
+         `scripts/theme.test.mjs` (npm run test:theme) fails if they drift.
+
+         Light is the default (the suite rule), so this only ever ADDS `dark`. -->
+    <script>
+      try {
+        var pref = localStorage.getItem('unisim-webinar-theme')
+        if (pref === 'dark' || (pref === 'system' && matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark')
+          document.documentElement.style.colorScheme = 'dark'
+        }
+      } catch (e) {
+        /* private mode, storage disabled: light, exactly as the store falls back. */
+      }
+    </script>
     <meta name="description" content="Host live webinars with chat, reactions, and on-demand audience speakers. Self-host free, or use UNI SIM's hosted PRO plan." />
     <link rel="canonical" href="https://opensource.unisim.co.uk/webinar/" />
     <meta property="og:type" content="website" />

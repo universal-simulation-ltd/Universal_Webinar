@@ -36,14 +36,14 @@ function StubPage({ icon, title, description, bullets, cta }: StubProps) {
         </Button>
         <Card>
           <CardHeader>
-            <div className="mb-2 grid h-10 w-10 place-items-center rounded-xl bg-brand-50 text-brand-700">
+            <div className="mb-2 grid h-10 w-10 place-items-center rounded-xl bg-brand-50 dark:bg-brand-950/40 text-brand-700 dark:text-brand-400">
               {icon}
             </div>
             <CardTitle>{title}</CardTitle>
             <CardDescription>{description}</CardDescription>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-2 text-sm text-slate-600">
+            <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
               {bullets.map((b) => (
                 <li key={b} className="flex items-start gap-2">
                   <span className="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-brand-500" />
@@ -51,7 +51,7 @@ function StubPage({ icon, title, description, bullets, cta }: StubProps) {
                 </li>
               ))}
             </ul>
-            <p className="mt-6 inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800">
+            <p className="mt-6 inline-flex items-center gap-2 rounded-full bg-amber-50 dark:bg-amber-950/40 px-3 py-1 text-xs font-medium text-amber-800 dark:text-amber-200">
               Coming soon · {cta ?? 'on the roadmap'}
             </p>
           </CardContent>
