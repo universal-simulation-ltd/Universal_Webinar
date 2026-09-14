@@ -10,6 +10,7 @@ import {
   Radio,
   ShieldCheck,
 } from 'lucide-react'
+import { Chip } from '@unisim/sdk'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -322,8 +323,21 @@ export function Register() {
       <div className="mx-auto max-w-md">
         <HostedBy webinar={webinar} />
         <div className="mb-6 text-center">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 dark:bg-brand-950/40 px-3 py-1 text-xs font-medium text-brand-700 dark:text-brand-400">
-            <ShieldCheck className="h-3.5 w-3.5" />
+          {/* Orbit, not Value: before sign-up it's a promise ("Save your
+              seat"), not a status. Once registered the arc takes the status's
+              tone, and the words still say it. */}
+          <Chip
+            icon={<ShieldCheck />}
+            tone={
+              !registered
+                ? undefined
+                : regStatus === 'approved'
+                  ? 'good'
+                  : regStatus === 'declined'
+                    ? 'crit'
+                    : 'warn'
+            }
+          >
             {!registered
               ? 'Save your seat'
               : regStatus === 'approved'
@@ -333,7 +347,7 @@ export function Register() {
                   : regStatus === 'waitlisted'
                     ? 'On the waitlist'
                     : 'Awaiting approval'}
-          </span>
+          </Chip>
         </div>
 
         {registered && regStatus !== 'approved' ? (

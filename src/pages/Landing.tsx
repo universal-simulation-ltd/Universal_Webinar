@@ -6,10 +6,14 @@ import {
   Sparkles,
   Video,
 } from 'lucide-react'
+import { installChipStyles } from '@unisim/sdk'
 import { HostNewForm } from '@/components/HostNewForm'
 import { WebinarPreview } from '@/components/WebinarPreview'
 
 export function Landing() {
+  // The hero's open-source link uses the `u-chip` class directly; the
+  // components inject the CSS themselves, plain markup has to ask.
+  installChipStyles()
   return (
     <>
       <section className="relative overflow-hidden">
@@ -45,16 +49,23 @@ export function Landing() {
               <div className="mt-6">
                 <HostNewForm />
               </div>
-              <a
-                href="https://github.com/universal-simulation-ltd/Universal_Webinar"
-                target="_blank"
-                rel="noreferrer"
-                className="mt-4 inline-flex items-center gap-2 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 shadow-soft transition hover:border-brand-200 dark:hover:border-brand-900 hover:bg-brand-50 dark:hover:bg-brand-900/50 hover:text-brand-700 dark:hover:text-brand-400"
-              >
-                <Github className="h-3.5 w-3.5" />
-                Open source — self-host or PRO hosted by UNI SIM
-                <ArrowRight className="h-3 w-3 opacity-60" />
-              </a>
+              {/* An Orbit chip on a link, so it's the class rather than the
+                  <Chip> span; the wrapper carries the margin, which the chip's
+                  own CSS would otherwise reset. */}
+              <div className="mt-4">
+                <a
+                  href="https://github.com/universal-simulation-ltd/Universal_Webinar"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="u-chip"
+                >
+                  <span className="u-chip__icon" aria-hidden="true">
+                    <Github />
+                  </span>
+                  Open source — self-host or PRO hosted by UNI SIM
+                  <ArrowRight className="h-3 w-3 opacity-60" />
+                </a>
+              </div>
             </div>
           </div>
         </div>

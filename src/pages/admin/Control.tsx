@@ -23,6 +23,7 @@ import {
   VolumeX,
   X,
 } from 'lucide-react'
+import { Chip, ValueChip } from '@unisim/sdk'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -366,9 +367,8 @@ export function AdminControl() {
           </Link>
         </Button>
         {viewerCount > 0 && (
-          <span className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-white dark:bg-slate-900 px-3 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 shadow-soft">
-            <Users className="h-3.5 w-3.5" />
-            {viewerCount} watching now
+          <span className="ml-auto">
+            <ValueChip label={<Users />}>{viewerCount} watching now</ValueChip>
           </span>
         )}
       </div>
@@ -677,8 +677,8 @@ function AttendeeRow({
         <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">
           {attendee.name}
           {attendee.role === 'speaker' && (
-            <span className="ml-1.5 rounded-full bg-green-100 dark:bg-green-950/40 px-1.5 py-0.5 text-[10px] font-medium text-green-700 dark:text-green-400">
-              speaker
+            <span className="ml-1.5">
+              <Chip size="sm">speaker</Chip>
             </span>
           )}
         </p>

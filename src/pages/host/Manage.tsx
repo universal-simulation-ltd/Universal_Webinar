@@ -31,7 +31,7 @@ import {
   UserX,
   X,
 } from 'lucide-react'
-import { useFileDrop } from '@unisim/sdk'
+import { Chip, useFileDrop, ValueChip } from '@unisim/sdk'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -1627,12 +1627,7 @@ export function HostManage() {
                               than in the row of send markers above. */}
                           {(attended || noShow) && (
                             <span
-                              className={cn(
-                                'mt-1 inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium',
-                                attended
-                                  ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400'
-                                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300',
-                              )}
+                              className="mt-1 inline-flex w-fit"
                               title={
                                 attended
                                   ? `Joined ${new Date(attended.first_joined_at).toLocaleString()}${
@@ -1644,32 +1639,25 @@ export function HostManage() {
                               }
                             >
                               {attended ? (
-                                <>
-                                  <UserCheck className="h-3 w-3" />
+                                <ValueChip size="sm" tone="good" label={<UserCheck />}>
                                   Attended
-                                </>
+                                </ValueChip>
                               ) : (
-                                <>
-                                  <UserX className="h-3 w-3" />
+                                <ValueChip size="sm" label={<UserX />}>
                                   Didn't attend
-                                </>
+                                </ValueChip>
                               )}
                             </span>
                           )}
                           {r.status !== 'approved' && (
-                            <span
-                              className={cn(
-                                'mt-1 inline-flex w-fit items-center rounded-full px-2 py-0.5 text-[11px] font-medium',
-                                r.status === 'pending' && 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200',
-                                r.status === 'waitlisted' && 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300',
-                                r.status === 'declined' && 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400',
+                            <span className="mt-1 inline-flex w-fit">
+                              {r.status === 'waitlisted' ? (
+                                <Chip size="sm">Waitlisted</Chip>
+                              ) : (
+                                <ValueChip size="sm" tone={r.status === 'pending' ? 'warn' : 'crit'}>
+                                  {r.status === 'pending' ? 'Awaiting your approval' : 'Declined'}
+                                </ValueChip>
                               )}
-                            >
-                              {r.status === 'pending'
-                                ? 'Awaiting your approval'
-                                : r.status === 'waitlisted'
-                                  ? 'Waitlisted'
-                                  : 'Declined'}
                             </span>
                           )}
                           {webinar.require_approval && (

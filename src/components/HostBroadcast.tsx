@@ -8,6 +8,7 @@ import {
 } from '@livekit/components-react'
 import { ConnectionState, Track } from 'livekit-client'
 import { Camera, CameraOff, Loader2, Mic, MicOff, MonitorUp } from 'lucide-react'
+import { ValueChip } from '@unisim/sdk'
 import { Button } from '@/components/ui/button'
 import { CameraBubble } from '@/components/CameraBubble'
 import { cn } from '@/lib/utils'
@@ -139,9 +140,11 @@ function HostBroadcastInner() {
           </div>
         )}
         {connectionState === ConnectionState.Connected && (
-          <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-red-600/90 px-2.5 py-1 text-xs font-medium text-white">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white dark:bg-slate-900" />
-            On air
+          <span className="absolute left-3 top-3">
+            <ValueChip tone="crit">
+              <span className="mr-1.5 h-1.5 w-1.5 animate-pulse rounded-full bg-red-600" />
+              On air
+            </ValueChip>
           </span>
         )}
       </div>

@@ -1,4 +1,5 @@
 import { Sparkles } from 'lucide-react'
+import { Chip } from '@unisim/sdk'
 import { HostNewForm } from '@/components/HostNewForm'
 
 export function HostNew() {
@@ -6,10 +7,7 @@ export function HostNew() {
     <div className="container py-12 sm:py-16">
       <div className="mx-auto max-w-2xl">
         <div className="mb-6 text-center">
-          <span className="inline-flex items-center gap-2 rounded-full bg-brand-50 dark:bg-brand-950/40 px-3 py-1 text-xs font-medium text-brand-700 dark:text-brand-400">
-            <Sparkles className="h-3.5 w-3.5" />
-            Free · no signup yet · OTP at go-live
-          </span>
+          <Chip icon={<Sparkles />}>Free · no signup yet · OTP at go-live</Chip>
           <h1 className="mt-4 text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 sm:text-4xl">
             Set up your webinar
           </h1>
