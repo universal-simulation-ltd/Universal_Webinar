@@ -26,6 +26,12 @@ assert.ok(
   head.includes(`localStorage.getItem('${key}')`),
   `index.html's pre-paint script must read the same key as the store ('${key}')`,
 )
+// The key is only this app's override (SDK 0.143.0); absent, the global choice
+// applies, and the first frame has to show it too.
+assert.ok(
+  head.includes("localStorage.getItem('universal:color-scheme')"),
+  "index.html's pre-paint script must fall back to the global 'universal:color-scheme'",
+)
 assert.ok(head.includes("classList.add('dark')"), 'the pre-paint script must add the dark class')
 // 'system' has to be honoured before paint too, or somebody on the OS setting
 // gets the light ground first and the dark one once the bundle catches up.

@@ -33,9 +33,12 @@ export function PublicLayout() {
         product="webinar"
         productLogo={<ProductLogo />}
         theme={theme}
-        // Appearance (Light / Dark / Match my device), then the SDK's
-        // Advanced section — see AppMenu.
+        // The SDK's Advanced section — see AppMenu.
         actions={<AppMenu />}
+        // App preferences' Colour scheme row: this app's override of the
+        // Global preference (absent = follow global). Replaces the Appearance
+        // rows AppMenu used to carry.
+        themeStore={useThemeStore}
         // ⚠️ Both of these go through BASE_URL, as every sibling app's do. The
         // app is served under `/webinar/` in production, so a root-absolute
         // `/unisim-icon.png` is a 404 — the suite switcher was a broken image
@@ -64,8 +67,8 @@ export function PublicLayout() {
 
 export function AdminLayout() {
   const { pathname } = useLocation()
-  // No Actions menu here: the choice is made on the public pages and the admin
-  // bar simply follows it.
+  // No Actions menu here, but App preferences still offers the colour scheme
+  // override — the same store as the public bar, so the two always agree.
   const theme = useThemeStore((s) => s.effective)
   const navItems = [
     { to: '/admin', label: 'Dashboard' },
@@ -79,6 +82,7 @@ export function AdminLayout() {
         productLogo={<ProductLogo />}
         newAssessmentHref={null}
         theme={theme}
+        themeStore={useThemeStore}
         // BASE_URL, not `/` — see the note in PublicLayout.
         suiteSwitcherIconSrc={`${import.meta.env.BASE_URL}unisim-icon.png`}
       />

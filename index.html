@@ -13,13 +13,19 @@
          white page first and the dark one a moment later.
 
          ⚠️ THE KEY IS DUPLICATED — `src/stores/themeStore.ts` holds the other
-         copy, and renaming one silently resets everybody to light.
+         copy, and renaming one silently resets everybody to following global.
          `scripts/theme.test.mjs` (npm run test:theme) fails if they drift.
+
+         Since SDK 0.143.0 that key is this app's OVERRIDE (App preferences);
+         absent, the page follows Global preferences' `universal:color-scheme`,
+         so that is read too — otherwise somebody whose only choice is the
+         global one gets a light first frame and then a flip.
 
          Light is the default (the suite rule), so this only ever ADDS `dark`. -->
     <script>
       try {
         var pref = localStorage.getItem('unisim-webinar-theme')
+          || localStorage.getItem('universal:color-scheme') || 'light'
         if (pref === 'dark' || (pref === 'system' && matchMedia('(prefers-color-scheme: dark)').matches)) {
           document.documentElement.classList.add('dark')
           document.documentElement.style.colorScheme = 'dark'
