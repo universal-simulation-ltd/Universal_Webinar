@@ -1,12 +1,26 @@
 import { Link, Outlet, useLocation } from 'react-router-dom'
-import { UniversalAppsNavBar, UniversalNavBar, UpdateNotice } from '@unisim/sdk'
-import { AppMenu } from './AppMenu'
+import { UniversalAppsNavBar, UniversalNavBar, UpdateNotice, type AboutAppConfig } from '@unisim/sdk'
 import { HeaderBrandMark } from './HeaderBrandMark'
 import { Logo } from './Logo'
 import { cn } from '@/lib/utils'
 import { useThemeStore } from '@/stores/themeStore'
+// Generated — `npm run credits` after any dependency change. Never edit it by
+// hand: it is read off the installed tree, so a hand-kept list drifts from the
+// lockfile the first time anyone upgrades anything.
+import credits from '../generated/credits.json'
 
 const REPO_URL = 'https://github.com/universal-simulation-ltd/Universal_Webinar'
+
+// "About this app" — the SDK draws it at the foot of "Tune this app" (SDK
+// 0.161.0+) and opens its own AboutAppDialog. It used to be the only row in an
+// app-drawn Advanced actions menu, which is now gone.
+const ABOUT: AboutAppConfig = {
+  repo: REPO_URL,
+  // Server-backed: the local-first claim is not true here.
+  privacy: false,
+  credits,
+  noticesHref: `${REPO_URL}/blob/main/THIRD-PARTY-NOTICES.md`,
+}
 
 // Icon-only product mark. The SDK's UniversalAppsNavBar renders the product
 // name from its catalogue beside this slot, and the productHomeHref prop wraps
@@ -33,11 +47,9 @@ export function PublicLayout() {
         product="webinar"
         productLogo={<ProductLogo />}
         theme={theme}
-        // The SDK's Advanced section — see AppMenu.
-        actions={<AppMenu />}
+        about={ABOUT}
         // App preferences' Colour scheme row: this app's override of the
-        // Global preference (absent = follow global). Replaces the Appearance
-        // rows AppMenu used to carry.
+        // Global preference (absent = follow global).
         themeStore={useThemeStore}
         // ⚠️ Both of these go through BASE_URL, as every sibling app's do. The
         // app is served under `/webinar/` in production, so a root-absolute
@@ -82,6 +94,7 @@ export function AdminLayout() {
         productLogo={<ProductLogo />}
         newAssessmentHref={null}
         theme={theme}
+        about={ABOUT}
         themeStore={useThemeStore}
         // BASE_URL, not `/` — see the note in PublicLayout.
         suiteSwitcherIconSrc={`${import.meta.env.BASE_URL}unisim-icon.png`}
