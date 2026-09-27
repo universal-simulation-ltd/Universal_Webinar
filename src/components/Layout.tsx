@@ -8,6 +8,7 @@ import { useThemeStore } from '@/stores/themeStore'
 // hand: it is read off the installed tree, so a hand-kept list drifts from the
 // lockfile the first time anyone upgrades anything.
 import credits from '../generated/credits.json'
+import { KNOWLEDGE_BASE } from '../knowledge'
 
 const REPO_URL = 'https://github.com/universal-simulation-ltd/Universal_Webinar'
 
@@ -47,6 +48,9 @@ export function PublicLayout() {
         product="webinar"
         productLogo={<ProductLogo />}
         theme={theme}
+        // Actions ▸ Advanced ▸ Knowledge base (SDK 0.163.0): this app's own
+        // articles, bundled from ./knowledge so they read offline.
+        knowledgeBase={KNOWLEDGE_BASE}
         about={ABOUT}
         // App preferences' Colour scheme row: this app's override of the
         // Global preference (absent = follow global).
