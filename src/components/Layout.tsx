@@ -1,8 +1,7 @@
-import { Link, Outlet, useLocation } from 'react-router-dom'
+import { Outlet } from 'react-router-dom'
 import { UniversalAppsNavBar, UniversalNavBar, UpdateNotice, type AboutAppConfig } from '@unisim/sdk'
 import { HeaderBrandMark } from './HeaderBrandMark'
 import { Logo } from './Logo'
-import { cn } from '@/lib/utils'
 import { useThemeStore } from '@/stores/themeStore'
 // Generated — `npm run credits` after any dependency change. Never edit it by
 // hand: it is read off the installed tree, so a hand-kept list drifts from the
@@ -82,14 +81,12 @@ export function PublicLayout() {
 }
 
 export function AdminLayout() {
-  const { pathname } = useLocation()
+  // No Settings page and no tab strip (James, 2026-09-28: settings live in
+  // "Tune this app" suite-wide). The page held only the admin's email and Sign
+  // out, which the account panel already has, and a "coming soon" card.
   // No Actions menu here, but App preferences still offers the colour scheme
   // override — the same store as the public bar, so the two always agree.
   const theme = useThemeStore((s) => s.effective)
-  const navItems = [
-    { to: '/admin', label: 'Dashboard' },
-    { to: '/admin/settings', label: 'Settings' },
-  ]
 
   return (
     <div className="flex min-h-full flex-col bg-slate-50 dark:bg-slate-950">
@@ -103,31 +100,6 @@ export function AdminLayout() {
         // BASE_URL, not `/` — see the note in PublicLayout.
         suiteSwitcherIconSrc={`${import.meta.env.BASE_URL}unisim-icon.png`}
       />
-      <div className="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-        <div className="container flex h-10 items-center gap-1">
-          <nav className="flex items-center gap-1">
-            {navItems.map((item) => {
-              const active =
-                pathname === item.to ||
-                (item.to !== '/admin' && pathname.startsWith(item.to))
-              return (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  className={cn(
-                    'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-                    active
-                      ? 'bg-brand-50 dark:bg-brand-950/40 text-brand-700 dark:text-brand-400'
-                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100',
-                  )}
-                >
-                  {item.label}
-                </Link>
-              )
-            })}
-          </nav>
-        </div>
-      </div>
       <main className="flex-1">
         <Outlet />
       </main>

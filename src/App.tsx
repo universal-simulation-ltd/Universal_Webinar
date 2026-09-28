@@ -8,7 +8,6 @@ import { Register } from '@/pages/Register'
 import { AdminLogin } from '@/pages/admin/Login'
 import { AdminDashboard } from '@/pages/admin/Dashboard'
 import { AdminControl } from '@/pages/admin/Control'
-import { AdminSettings } from '@/pages/admin/Settings'
 import { HostNew } from '@/pages/host/New'
 import { HostManage } from '@/pages/host/Manage'
 import { HostWrapUp } from '@/pages/host/WrapUp'
@@ -48,7 +47,8 @@ export default function App() {
         <Route element={<AdminLayout />}>
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/w/:slug" element={<AdminControl />} />
-          <Route path="/admin/settings" element={<AdminSettings />} />
+          {/* The Settings page went into "Tune this app" (2026-09-28). */}
+          <Route path="/admin/settings" element={<Navigate to="/admin" replace />} />
         </Route>
       </Route>
 
