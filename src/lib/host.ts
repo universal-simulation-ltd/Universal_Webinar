@@ -1,5 +1,4 @@
 import { supabase } from './supabase'
-import { WEBINAR_COLUMNS } from './db'
 import type {
   WebinarRow,
   WebinarUpdate,
@@ -155,19 +154,4 @@ export async function markWebinarVerified(slug: string): Promise<WebinarRow> {
   })
   if (error) throw error
   return data as WebinarRow
-}
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Listing webinars for a verified host (post-OTP)
-// ──────────────────────────────────────────────────────────────────────────────
-
-export async function listWebinarsForHost(email: string): Promise<WebinarRow[]> {
-  const { data, error } = await supabase
-    .from('webinars')
-    .select(WEBINAR_COLUMNS)
-    .ilike('host_email', email.trim())
-    .order('scheduled_at', { ascending: false, nullsFirst: false })
-    .order('created_at', { ascending: false })
-  if (error) throw error
-  return (data ?? []) as unknown as WebinarRow[]
 }

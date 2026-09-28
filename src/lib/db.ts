@@ -21,11 +21,15 @@ import type {
   WebinarWithManageToken,
 } from './database.types'
 
-// Every column of `webinars` except the host's secret `manage_token`, which
-// migration 0067 revokes from anon + authenticated at the column level. `*` is
-// no longer usable: PostgREST passes it through as a bare SQL `*`, which now
-// fails with "permission denied for column manage_token". Keep this list in
-// step with WebinarRow — a column missing here is simply absent at runtime.
+// Every column of `webinars` a public page may read. Four are revoked from anon
+// + authenticated at the column level and so are NOT here: the host's secret
+// `manage_token` (0067), `entry_pin` (0102), and the host's `host_email` and
+// the `recording_url` (platform 0192) — the host reads all four through the
+// manage-token RPCs, and the recording reaches registrants in the follow-up
+// email, never from this table. `*` is no longer usable: PostgREST passes it
+// through as a bare SQL `*`, which fails with "permission denied for column".
+// Keep this list in step with WebinarRow — a column missing here is simply
+// absent at runtime (see `publicWebinarRow` for the two that are filled in).
 export const WEBINAR_COLUMN_NAMES = [
   'id',
   'slug',
@@ -37,12 +41,10 @@ export const WEBINAR_COLUMN_NAMES = [
   'status',
   'allow_speak_requests',
   'show_guest_count',
-  'recording_url',
   'created_at',
   'updated_at',
   'created_by',
   'host_name',
-  'host_email',
   'company_name',
   'logo_url',
   'host_verified',
@@ -94,6 +96,19 @@ export function webinarRowFromRealtime(
   return picked as Partial<WebinarRow>
 }
 
+/** A row read through WEBINAR_COLUMNS, with the two host-only columns a public
+ *  read cannot see (0192) set to null rather than left undefined — so the
+ *  value matches its type, and nothing downstream mistakes "not readable" for
+ *  a string. Null means "not known here"; the host's own row comes from
+ *  `getWebinarByManageToken` and carries the real values. */
+export function publicWebinarRow(row: unknown): WebinarRow {
+  return {
+    ...(row as Omit<WebinarRow, 'host_email' | 'recording_url'>),
+    host_email: null,
+    recording_url: null,
+  }
+}
+
 export async function listWebinars(): Promise<WebinarRow[]> {
   const { data, error } = await supabase
     .from('webinars')
@@ -101,7 +116,7 @@ export async function listWebinars(): Promise<WebinarRow[]> {
     .order('scheduled_at', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: false })
   if (error) throw error
-  return (data ?? []) as unknown as WebinarRow[]
+  return (data ?? []).map(publicWebinarRow)
 }
 
 export async function getWebinarBySlug(slug: string): Promise<WebinarRow | null> {
@@ -111,7 +126,7 @@ export async function getWebinarBySlug(slug: string): Promise<WebinarRow | null>
     .eq('slug', slug)
     .maybeSingle()
   if (error) throw error
-  return data as WebinarRow | null
+  return data ? publicWebinarRow(data) : null
 }
 
 // The manage token can't be read back out of the table any more, so the client
@@ -131,9 +146,13 @@ export async function createWebinar(
     .single()
   if (error) throw error
   // A brand-new webinar has no PIN — the select can't read `entry_pin` back
-  // (0102 revokes it), and there is nothing to read.
+  // (0102 revokes it), and there is nothing to read. The host's email and the
+  // recording link can't be read back either (0192), but they are exactly
+  // what this insert just wrote (and a new webinar has no recording yet).
   return {
-    ...(data as unknown as WebinarRow),
+    ...publicWebinarRow(data),
+    host_email: insert.host_email ?? null,
+    recording_url: null,
     manage_token: manageToken,
     entry_pin: null,
   }
@@ -150,7 +169,7 @@ export async function updateWebinar(
     .select(WEBINAR_COLUMNS)
     .single()
   if (error) throw error
-  return data as unknown as WebinarRow
+  return publicWebinarRow(data)
 }
 
 // Returns how many rows were actually removed. PostgREST reports an RLS-denied
