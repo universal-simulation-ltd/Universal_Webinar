@@ -29,7 +29,6 @@ The admin can sign in, create webinars, share a pre-registration link, and see r
 | `/admin/login` | Admin sign-in (Supabase Auth) |
 | `/admin` | Admin dashboard — list + create webinars |
 | `/admin/w/:slug` | Admin control room (settings, registrations, live controls) |
-| `/admin/settings` | Admin account |
 
 ## Local development
 
