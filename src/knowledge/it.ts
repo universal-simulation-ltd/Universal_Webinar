@@ -96,7 +96,7 @@ Apri il tuo link di accesso, o il link condiviso dall'organizzatore, e inserisci
     group: 'Come funziona',
     body: `## Preparazione
 
-Puoi compilare i dettagli di un nuovo webinar senza accedere. Per andare in diretta o programmarlo, ti serve un Universal ID gratuito: se non ne hai uno, l'app ti invia via email un codice di sei cifre, e inserendolo crei il tuo account. Ospitare webinar è gratuito con un Universal ID. Gli account gratuiti hanno un limite generoso e, se mai lo raggiungi, chiudere un webinar che hai conservato fa spazio al prossimo.
+Puoi compilare i dettagli di un nuovo webinar senza accedere. Per andare in diretta o programmarlo, ti serve un Universal ID gratuito: se non ne hai uno, l'app ti invia via email un codice di sei cifre, e inserendolo crei il tuo account. Ospitare webinar è gratuito con un Universal ID. Gli account gratuiti hanno un limite generoso e, se mai lo raggiungi, chiudere un webinar che hai conservato fa spazio al prossimo. Un webinar gratuito può avere fino a 25 persone e dura al massimo 90 minuti; negli ultimi dieci minuti chi lo ospita vede quanto tempo resta.
 
 Quando crei un webinar ricevi un **link di gestione**. È la chiave del tuo webinar: chi lo possiede può cambiare le impostazioni, vedere le registrazioni e guidare la sala. Questo browser lo ricorda per te, ma conservane una copia in un posto sicuro per poter gestire il webinar da un altro dispositivo, e non condividerlo.
 

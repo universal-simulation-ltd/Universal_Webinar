@@ -96,7 +96,7 @@ Ouvrez votre lien de participation, ou le lien partagé par l'hôte, et saisisse
     group: 'Fonctionnement',
     body: `## Préparation
 
-Vous pouvez remplir les détails d'un nouveau webinaire sans vous connecter. Pour passer en direct ou le programmer, vous avez besoin d'un Universal ID gratuit : si vous n'en avez pas, l'application vous envoie par e-mail un code à six chiffres, et sa saisie crée votre compte. Organiser des webinaires est gratuit avec un Universal ID. Les comptes gratuits disposent d'une limite généreuse ; si vous l'atteignez un jour, fermer un webinaire que vous avez conservé libère de la place pour le suivant.
+Vous pouvez remplir les détails d'un nouveau webinaire sans vous connecter. Pour passer en direct ou le programmer, vous avez besoin d'un Universal ID gratuit : si vous n'en avez pas, l'application vous envoie par e-mail un code à six chiffres, et sa saisie crée votre compte. Organiser des webinaires est gratuit avec un Universal ID. Les comptes gratuits disposent d'une limite généreuse ; si vous l'atteignez un jour, fermer un webinaire que vous avez conservé libère de la place pour le suivant. Un webinaire gratuit peut accueillir jusqu'à 25 personnes et dure au maximum 90 minutes ; pendant les dix dernières minutes, l'animateur voit le temps restant.
 
 Lorsque vous créez un webinaire, vous obtenez un **lien de gestion**. C'est la clé de votre webinaire : quiconque le possède peut modifier les paramètres, consulter les inscriptions et diriger la salle. Ce navigateur le mémorise pour vous, mais conservez-en une copie en lieu sûr afin de pouvoir gérer le webinaire depuis un autre appareil, et ne le partagez pas.
 

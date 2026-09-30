@@ -96,7 +96,7 @@ Katılım bağlantınızı ya da sunucunun paylaştığı bağlantıyı açın v
     group: 'Nasıl çalışır',
     body: `## Hazırlık
 
-Yeni bir webinarın ayrıntılarını oturum açmadan doldurabilirsiniz. Canlı yayına geçmek veya webinarı planlamak için ücretsiz bir Universal ID gerekir: hesabınız yoksa uygulama size e-postayla altı haneli bir kod gönderir ve bu kodu girdiğinizde hesabınız oluşturulur. Universal ID ile webinar düzenlemek ücretsizdir. Ücretsiz hesapların cömert bir sınırı vardır; bu sınıra ulaşırsanız, sakladığınız bir webinarı kapatmak bir sonraki webinara yer açar.
+Yeni bir webinarın ayrıntılarını oturum açmadan doldurabilirsiniz. Canlı yayına geçmek veya webinarı planlamak için ücretsiz bir Universal ID gerekir: hesabınız yoksa uygulama size e-postayla altı haneli bir kod gönderir ve bu kodu girdiğinizde hesabınız oluşturulur. Universal ID ile webinar düzenlemek ücretsizdir. Ücretsiz hesapların cömert bir sınırı vardır; bu sınıra ulaşırsanız, sakladığınız bir webinarı kapatmak bir sonraki webinara yer açar. Ücretsiz bir webinara en fazla 25 kişi katılabilir ve webinar en fazla 90 dakika sürer; son on dakikada sunucu kalan süreyi görür.
 
 Bir webinar oluşturduğunuzda bir **yönetim bağlantısı** alırsınız. Bu bağlantı webinarınızın anahtarıdır: ona sahip olan herkes ayarları değiştirebilir, kayıtları görebilir ve odayı yönetebilir. Bu tarayıcı bağlantıyı sizin için hatırlar, ancak webinarı başka bir cihazdan yönetebilmek için bir kopyasını güvenli bir yerde saklayın ve kimseyle paylaşmayın.
 

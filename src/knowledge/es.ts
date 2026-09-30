@@ -96,7 +96,7 @@ Abra su enlace de acceso, o el enlace que haya compartido el anfitrión, e intro
     group: 'Cómo funciona',
     body: `## Preparación
 
-Puede rellenar los detalles de un nuevo webinar sin iniciar sesión. Para salir en directo o programarlo, necesita un Universal ID gratuito: si no tiene uno, la aplicación le envía por correo un código de seis dígitos, y al introducirlo se crea su cuenta. Organizar webinars es gratis con un Universal ID. Las cuentas gratuitas tienen un límite generoso y, si alguna vez lo alcanza, cerrar un webinar que haya guardado deja sitio para el siguiente.
+Puede rellenar los detalles de un nuevo webinar sin iniciar sesión. Para salir en directo o programarlo, necesita un Universal ID gratuito: si no tiene uno, la aplicación le envía por correo un código de seis dígitos, y al introducirlo se crea su cuenta. Organizar webinars es gratis con un Universal ID. Las cuentas gratuitas tienen un límite generoso y, si alguna vez lo alcanza, cerrar un webinar que haya guardado deja sitio para el siguiente. Un webinar gratuito admite hasta 25 personas y dura como máximo 90 minutos; en los diez últimos minutos, el anfitrión ve cuánto tiempo queda.
 
 Al crear un webinar obtiene un **enlace de gestión**. Es la llave de su webinar: quien lo tenga puede cambiar la configuración, ver las inscripciones y dirigir la sala. Este navegador lo recuerda por usted, pero guarde una copia en un lugar seguro para poder gestionar el webinar desde otro dispositivo, y no lo comparta.
 

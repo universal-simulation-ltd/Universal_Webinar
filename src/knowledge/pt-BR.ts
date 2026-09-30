@@ -96,7 +96,7 @@ Abra seu link de entrada, ou o link que o anfitrião compartilhou, e informe seu
     group: 'Como funciona',
     body: `## Configuração
 
-Você pode preencher os detalhes de um novo webinar sem entrar na conta. Para entrar ao vivo ou agendá-lo, você precisa de um Universal ID gratuito: se não tiver um, o aplicativo envia por e-mail um código de seis dígitos, e digitá-lo cria sua conta. Hospedar webinars é gratuito com um Universal ID. As contas gratuitas têm um limite generoso e, se você chegar a ele, fechar um webinar que você manteve abre espaço para o próximo.
+Você pode preencher os detalhes de um novo webinar sem entrar na conta. Para entrar ao vivo ou agendá-lo, você precisa de um Universal ID gratuito: se não tiver um, o aplicativo envia por e-mail um código de seis dígitos, e digitá-lo cria sua conta. Hospedar webinars é gratuito com um Universal ID. As contas gratuitas têm um limite generoso e, se você chegar a ele, fechar um webinar que você manteve abre espaço para o próximo. Um webinar gratuito pode ter até 25 pessoas e dura no máximo 90 minutos; nos últimos dez minutos, o anfitrião vê quanto tempo resta.
 
 Ao criar um webinar, você recebe um **link de gerenciamento**. Ele é a chave do seu webinar: quem o tiver pode alterar as configurações, ver as inscrições e conduzir a sala. Este navegador o guarda para você, mas mantenha uma cópia em um lugar seguro para poder gerenciar o webinar em outro dispositivo, e não o compartilhe.
 

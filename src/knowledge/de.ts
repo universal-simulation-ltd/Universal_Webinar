@@ -96,7 +96,7 @@ Diese Regeln werden vom Dienst geprüft, nicht nur von der Seite, die Sie sehen.
     group: 'So funktioniert es',
     body: `## Einrichtung
 
-Sie können die Details eines neuen Webinars ausfüllen, ohne sich anzumelden. Um live zu gehen oder es zu planen, brauchen Sie eine kostenlose Universal ID: Wenn Sie noch keine haben, schickt Ihnen die App einen sechsstelligen Code per E-Mail, und mit dessen Eingabe wird Ihr Konto erstellt. Das Hosten ist mit einer Universal ID kostenlos. Kostenlose Konten haben ein großzügiges Limit, und falls Sie es einmal erreichen, schafft das Schließen eines gespeicherten Webinars Platz für das nächste.
+Sie können die Details eines neuen Webinars ausfüllen, ohne sich anzumelden. Um live zu gehen oder es zu planen, brauchen Sie eine kostenlose Universal ID: Wenn Sie noch keine haben, schickt Ihnen die App einen sechsstelligen Code per E-Mail, und mit dessen Eingabe wird Ihr Konto erstellt. Das Hosten ist mit einer Universal ID kostenlos. Kostenlose Konten haben ein großzügiges Limit, und falls Sie es einmal erreichen, schafft das Schließen eines gespeicherten Webinars Platz für das nächste. Ein kostenloses Webinar kann bis zu 25 Personen haben und dauert höchstens 90 Minuten; in den letzten zehn Minuten sieht der Host, wie viel Zeit noch bleibt.
 
 Wenn Sie ein Webinar erstellen, erhalten Sie einen **Verwaltungslink**. Er ist der Schlüssel zu Ihrem Webinar: Wer ihn hat, kann die Einstellungen ändern, die Anmeldungen sehen und den Raum leiten. Dieser Browser merkt ihn sich für Sie, aber bewahren Sie eine Kopie an einem sicheren Ort auf, damit Sie das Webinar auch von einem anderen Gerät aus verwalten können, und geben Sie ihn nicht weiter.
 

@@ -96,7 +96,7 @@ Open your join link, or the link the host shared, and enter your name and email 
     group: 'How it works',
     body: `## Setting up
 
-You can fill in a new webinar's details without signing in. To go live or schedule it, you need a free Universal ID: if you do not have one, the app emails you a six-digit code, and entering it creates your account. Hosting is free with a Universal ID. Free accounts have a generous limit, and if you ever reach it, closing a webinar you've kept makes room for the next.
+You can fill in a new webinar's details without signing in. To go live or schedule it, you need a free Universal ID: if you do not have one, the app emails you a six-digit code, and entering it creates your account. Hosting is free with a Universal ID. Free accounts have a generous limit, and if you ever reach it, closing a webinar you've kept makes room for the next. A free webinar can have up to 25 people and runs for up to 90 minutes; in the last ten minutes the host sees how long is left.
 
 When you create a webinar you get a **manage link**. It is the key to your webinar: whoever has it can change the settings, see the registrations and run the room. This browser remembers it for you, but keep a copy somewhere safe so you can manage the webinar from another device, and do not share it.
 

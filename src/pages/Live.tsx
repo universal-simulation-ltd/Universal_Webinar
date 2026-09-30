@@ -32,7 +32,7 @@ import {
   webinarRowFromRealtime,
 } from '@/lib/db'
 import { getErrorMessage } from '@/lib/errors'
-import { getLiveKitToken, isLiveKitConfigured } from '@/lib/livekit'
+import { getLiveKitToken, isLiveKitConfigured, LiveKitLimitError } from '@/lib/livekit'
 import {
   broadcastFloatingReaction,
   joinWebinarChannel,
@@ -177,6 +177,9 @@ export function Live() {
   const [lkToken, setLkToken] = useState<string | null>(null)
   const [lkUrl, setLkUrl] = useState<string>('')
   const [lkFetching, setLkFetching] = useState(false)
+  // A free webinar's cap (full / out of time) — said plainly instead of
+  // "Could not connect".
+  const [lkLimit, setLkLimit] = useState<string | null>(null)
 
   const floatingHandleRef = useRef<FloatingReactionsHandle | null>(null)
   const channelRef = useRef<ReturnType<typeof joinWebinarChannel> | null>(null)
@@ -284,8 +287,9 @@ export function Live() {
         setLkToken(token)
         setLkUrl(url)
       })
-      .catch(() => {
-        // Non-fatal; fall back to placeholder.
+      .catch((err) => {
+        // Non-fatal; fall back to placeholder — naming a free webinar's cap.
+        if (err instanceof LiveKitLimitError) setLkLimit(err.message)
       })
       .finally(() => setLkFetching(false))
   }, [webinar, attendee, lkToken])
@@ -574,9 +578,11 @@ export function Live() {
                     <>
                       <AlertCircle className="mx-auto h-8 w-8 text-slate-500 dark:text-slate-400" />
                       <p className="mt-2 text-sm">
-                        {isLiveKitConfigured()
-                          ? 'Could not connect to video stream.'
-                          : 'Live video coming soon.'}
+                        {lkLimit
+                          ? lkLimit
+                          : isLiveKitConfigured()
+                            ? 'Could not connect to video stream.'
+                            : 'Live video coming soon.'}
                       </p>
                     </>
                   ) : (

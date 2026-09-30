@@ -27,8 +27,19 @@
 // for the same lesson learned the hard way.
 //
 // Speaker and viewer tokens are unchanged and still require a real session.
+//
+// ── 2026-09-30: free webinars are capped at 25 people and 90 minutes ────────
+// (universal-platform 0202; the numbers live in free_allowances.) We stay on
+// LiveKit Cloud's free Build plan — 5,000 participant-minutes a month for the
+// whole suite, a hard cap — so a free webinar's tokens are refused once its
+// time is up ('free_time_limit', every role) or once the room already holds
+// max_people ('free_room_full', never the host). Refusing tokens only stops
+// NEW joins: the pg_cron job + webinar-time-limit function end the room itself.
+// If the caps lookup fails we issue the token uncapped rather than break a
+// webinar that is already running.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { listParticipantIdentities } from '../_shared/livekitAdmin.ts'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -116,6 +127,28 @@ Deno.serve(async (req) => {
         ? `host-${webinar.slug}`
         : attendee_id ?? `admin-${user?.id.slice(0, 8) ?? 'unknown'}`
 
+    // ── Free-webinar caps (0202) ────────────────────────────────────────────
+    let freeLimits: { max_people: number | null; max_minutes: number | null; ends_at: string | null } | null = null
+    const { data: caps, error: capsErr } = await adminClient.rpc('webinar_free_caps', { p_webinar_id: webinar.id })
+    if (capsErr) console.error('livekit-token: webinar_free_caps failed', capsErr.message)
+    if (caps?.free) {
+      freeLimits = {
+        max_people: caps.max_people ?? null,
+        max_minutes: caps.max_minutes ?? null,
+        ends_at: caps.ends_at ?? null,
+      }
+      if (freeLimits.ends_at && Date.now() >= Date.parse(freeLimits.ends_at)) {
+        return json({ error: 'free_time_limit', max_minutes: freeLimits.max_minutes }, 403)
+      }
+      if (role !== 'host' && freeLimits.max_people) {
+        const present = await listParticipantIdentities(apiKey, apiSecret, roomName)
+        // Reconnecting replaces your own participant, so you don't count.
+        if (present && present.filter((id) => id !== identity).length >= freeLimits.max_people) {
+          return json({ error: 'free_room_full', max_people: freeLimits.max_people }, 403)
+        }
+      }
+    }
+
     const token = await signLiveKitToken(
       apiKey,
       apiSecret,
@@ -124,7 +157,7 @@ Deno.serve(async (req) => {
       role,
     )
 
-    return json({ token, url: livekitUrl })
+    return json({ token, url: livekitUrl, free_limits: freeLimits })
   } catch (err) {
     console.error('livekit-token error:', err)
     return json({ error: 'Internal error' }, 500)

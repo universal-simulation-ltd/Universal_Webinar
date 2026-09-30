@@ -77,7 +77,7 @@ import {
   registrationsCsvFilename,
 } from '@/lib/csv'
 import { getErrorMessage } from '@/lib/errors'
-import { getLiveKitToken, isLiveKitConfigured } from '@/lib/livekit'
+import { getLiveKitToken, isLiveKitConfigured, LiveKitLimitError, type FreeWebinarLimits } from '@/lib/livekit'
 import { formatWithZone, localTimezone } from '@/lib/time'
 import CustomQuestionsEditor from '@/components/CustomQuestionsEditor'
 import {
@@ -192,6 +192,10 @@ export function HostManage() {
   // Null until the host presses "Go on air" — see HostBroadcast for why this
   // isn't fetched eagerly: connecting is what asks for the camera.
   const [broadcast, setBroadcast] = useState<{ url: string; token: string } | null>(null)
+  // Free webinars (0202): their caps, and a note when one stops the host.
+  const [freeLimits, setFreeLimits] = useState<FreeWebinarLimits | null>(null)
+  const [stageNote, setStageNote] = useState<string | null>(null)
+  const [nowMs, setNowMs] = useState(() => Date.now())
   const [goingOnAir, setGoingOnAir] = useState(false)
 
   const {
@@ -445,21 +449,37 @@ export function HostManage() {
     }
   }
 
+  // Tick while a free webinar is on air, for the last-ten-minutes note.
+  useEffect(() => {
+    if (!freeLimits?.ends_at || !broadcast) return
+    const id = window.setInterval(() => setNowMs(Date.now()), 30_000)
+    return () => window.clearInterval(id)
+  }, [freeLimits?.ends_at, broadcast])
+  const freeMinutesLeft = freeLimits?.ends_at
+    ? Math.max(0, Math.ceil((Date.parse(freeLimits.ends_at) - nowMs) / 60_000))
+    : null
+
   async function goOnAir() {
     if (!webinar || !token) return
     setGoingOnAir(true)
     setError(null)
     try {
       // The manage token is the credential: a host may have no session at all.
-      const { token: lkToken, url } = await getLiveKitToken(
+      const { token: lkToken, url, free_limits } = await getLiveKitToken(
         webinar.id,
         null,
         'host',
         token,
       )
       if (!url) throw new Error('Live video is not configured on the server.')
+      setFreeLimits(free_limits ?? null)
+      setStageNote(null)
       setBroadcast({ url, token: lkToken })
     } catch (err) {
+      if (err instanceof LiveKitLimitError) {
+        setStageNote(err.message)
+        return
+      }
       setError(getErrorMessage(err, 'Could not connect you to the stage.'))
     } finally {
       setGoingOnAir(false)
@@ -945,6 +965,16 @@ export function HostManage() {
                     </p>
                   </div>
                 </div>
+              )}
+              {stageNote && (
+                <p className="mt-3 text-sm text-amber-800 dark:text-amber-300">{stageNote}</p>
+              )}
+              {broadcast && freeMinutesLeft !== null && freeMinutesLeft <= 10 && (
+                <p className="mt-3 text-sm text-amber-800 dark:text-amber-300">
+                  {freeMinutesLeft === 0
+                    ? `This free webinar has reached its ${freeLimits?.max_minutes ?? 90}-minute limit and is ending now.`
+                    : `This free webinar ends in ${freeMinutesLeft} minute${freeMinutesLeft === 1 ? '' : 's'} — free webinars run for up to ${freeLimits?.max_minutes ?? 90} minutes.`}
+                </p>
               )}
               <div className="mt-4 flex flex-wrap items-center gap-2">
                 {isLiveKitConfigured() && !webinar.shared_doc_url && (
