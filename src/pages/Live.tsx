@@ -13,6 +13,7 @@ import { AlertCircle, FileText, Hand, Heart, Loader2, Mic, MicOff, Users } from 
 import { Chip, ValueChip } from '@unisim/sdk'
 import { Button } from '@/components/ui/button'
 import { CameraBubble } from '@/components/CameraBubble'
+import { CAMERA_BUBBLE_GUEST_KEY } from '@/lib/resetPrefs'
 import { ChatPanel } from '@/components/ChatPanel'
 import { SharedDocViewer } from '@/components/SharedDocViewer'
 import {
@@ -121,7 +122,7 @@ function HostStageInner() {
       {hostBubbleTrack && (
         <CameraBubble
           trackRef={hostBubbleTrack}
-          storageKey="unisim-webinar-camera-bubble-guest"
+          storageKey={CAMERA_BUBBLE_GUEST_KEY}
           label="Presenter camera"
         />
       )}

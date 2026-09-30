@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { RESET_PREFS_EVENT } from './resetPrefs'
 
 /**
  * Remembers the order of a column of cards, and which of them are collapsed.
@@ -105,6 +106,13 @@ export function usePanelLayout<T extends string>(storageKey: string, defaults: T
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storageKey])
+
+  // Tune this app ▸ Reset to defaults (lib/resetPrefs.ts) has already cleared
+  // the key; put this page's live layout back to match while it is open.
+  useEffect(() => {
+    window.addEventListener(RESET_PREFS_EVENT, resetLayout)
+    return () => window.removeEventListener(RESET_PREFS_EVENT, resetLayout)
+  }, [resetLayout])
 
   return { order, isCollapsed, toggleCollapsed, reorder, resetLayout }
 }

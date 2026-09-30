@@ -11,6 +11,7 @@ import { Camera, CameraOff, Loader2, Mic, MicOff, MonitorUp } from 'lucide-react
 import { ValueChip } from '@unisim/sdk'
 import { Button } from '@/components/ui/button'
 import { CameraBubble } from '@/components/CameraBubble'
+import { CAMERA_BUBBLE_HOST_KEY } from '@/lib/resetPrefs'
 import { cn } from '@/lib/utils'
 
 /**
@@ -112,7 +113,7 @@ function HostBroadcastInner() {
             {bubble && (
               <CameraBubble
                 trackRef={bubble}
-                storageKey="unisim-webinar-camera-bubble-host"
+                storageKey={CAMERA_BUBBLE_HOST_KEY}
                 label="Your camera"
               />
             )}
