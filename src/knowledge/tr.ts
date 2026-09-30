@@ -96,7 +96,7 @@ Katılım bağlantınızı ya da sunucunun paylaştığı bağlantıyı açın v
     group: 'Nasıl çalışır',
     body: `## Hazırlık
 
-Yeni bir webinarın ayrıntılarını oturum açmadan doldurabilirsiniz. Canlı yayına geçmek veya webinarı planlamak için ücretsiz bir Universal ID gerekir: hesabınız yoksa uygulama size e-postayla altı haneli bir kod gönderir ve bu kodu girdiğinizde hesabınız oluşturulur. Her hesabın bir webinar jetonu vardır; jeton, siz webinarı kapatana kadar o webinarda kalır.
+Yeni bir webinarın ayrıntılarını oturum açmadan doldurabilirsiniz. Canlı yayına geçmek veya webinarı planlamak için ücretsiz bir Universal ID gerekir: hesabınız yoksa uygulama size e-postayla altı haneli bir kod gönderir ve bu kodu girdiğinizde hesabınız oluşturulur. Universal ID ile webinar düzenlemek ücretsizdir. Ücretsiz hesapların cömert bir sınırı vardır; bu sınıra ulaşırsanız, sakladığınız bir webinarı kapatmak bir sonraki webinara yer açar.
 
 Bir webinar oluşturduğunuzda bir **yönetim bağlantısı** alırsınız. Bu bağlantı webinarınızın anahtarıdır: ona sahip olan herkes ayarları değiştirebilir, kayıtları görebilir ve odayı yönetebilir. Bu tarayıcı bağlantıyı sizin için hatırlar, ancak webinarı başka bir cihazdan yönetebilmek için bir kopyasını güvenli bir yerde saklayın ve kimseyle paylaşmayın.
 
@@ -113,7 +113,7 @@ Oturum sona erdiğinde kapanış sayfası geriye kalan işleri bir araya getirir
 
 1. **Kayıt** — Universal Webinar oturumu kendisi kaydetmez. Oturumu başka bir yolla kaydettiyseniz bağlantıyı buraya yapıştırın; bağlantı, kaydolan herkese giden takip e-postasına eklenir.
 2. **Listeniz** — adları, e-posta adreslerini, yanıtları, kimlerin katıldığını ve kaydolmadan katılanları içeren bir elektronik tablo dosyası indirin.
-3. **Saklama veya kapatma** — webinarı ve içindeki herkesi istediğiniz kadar saklamak için **Buluta kaydet** seçeneğini seçin; jetonunuz webinarda kalır. Ya da jetonunuzu bir sonraki webinarınız için geri almak üzere **Kapat ve jetonumu serbest bırak** seçeneğini seçin. Ücretsiz planda kapatılan bir webinar ve kayıtları 30 gün sonra silinir; bu nedenle önce listenizi indirin.`,
+3. **Saklama veya kapatma** — webinarı ve içindeki herkesi istediğiniz kadar saklamak için **Buluta kaydet** seçeneğini seçin. Ya da bir sonraki webinarınıza yer açmak için **Webinarı kapat** seçeneğini seçin. Ücretsiz planda kapatılan bir webinar ve kayıtları 30 gün sonra silinir; bu nedenle önce listenizi indirin.`,
   },
   {
     id: 'privacy-for-attendees',

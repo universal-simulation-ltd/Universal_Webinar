@@ -96,7 +96,7 @@ Abra su enlace de acceso, o el enlace que haya compartido el anfitrión, e intro
     group: 'Cómo funciona',
     body: `## Preparación
 
-Puede rellenar los detalles de un nuevo webinar sin iniciar sesión. Para salir en directo o programarlo, necesita un Universal ID gratuito: si no tiene uno, la aplicación le envía por correo un código de seis dígitos, y al introducirlo se crea su cuenta. Cada cuenta tiene un token de webinar, que un webinar conserva hasta que usted lo cierra.
+Puede rellenar los detalles de un nuevo webinar sin iniciar sesión. Para salir en directo o programarlo, necesita un Universal ID gratuito: si no tiene uno, la aplicación le envía por correo un código de seis dígitos, y al introducirlo se crea su cuenta. Organizar webinars es gratis con un Universal ID. Las cuentas gratuitas tienen un límite generoso y, si alguna vez lo alcanza, cerrar un webinar que haya guardado deja sitio para el siguiente.
 
 Al crear un webinar obtiene un **enlace de gestión**. Es la llave de su webinar: quien lo tenga puede cambiar la configuración, ver las inscripciones y dirigir la sala. Este navegador lo recuerda por usted, pero guarde una copia en un lugar seguro para poder gestionar el webinar desde otro dispositivo, y no lo comparta.
 
@@ -113,7 +113,7 @@ Cuando termina la sesión, la página de cierre reúne lo que queda por hacer.
 
 1. **Grabación** — Universal Webinar no graba la sesión por sí mismo. Si la ha grabado de otra forma, pegue aquí el enlace y se enviará en el correo de seguimiento a todas las personas inscritas.
 2. **Su lista** — descargue un archivo de hoja de cálculo con los nombres, las direcciones de correo, las respuestas, quién asistió y quién se unió sin inscribirse.
-3. **Guardar o cerrar** — elija **Guardar en la nube** para conservar el webinar y a todas las personas que lo integran durante el tiempo que quiera; su token se queda con él. O elija **Cerrar y liberar mi token** para recuperar su token para su próximo webinar. En el plan gratuito, un webinar cerrado y sus inscripciones se eliminan 30 días después, así que descargue antes su lista.`,
+3. **Guardar o cerrar** — elija **Guardar en la nube** para conservar el webinar y a todas las personas que lo integran durante el tiempo que quiera. O elija **Cerrar webinar** para dejar sitio a su próximo webinar. En el plan gratuito, un webinar cerrado y sus inscripciones se eliminan 30 días después, así que descargue antes su lista.`,
   },
   {
     id: 'privacy-for-attendees',

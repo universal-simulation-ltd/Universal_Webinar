@@ -96,7 +96,7 @@ Open your join link, or the link the host shared, and enter your name and email 
     group: 'How it works',
     body: `## Setting up
 
-You can fill in a new webinar's details without signing in. To go live or schedule it, you need a free Universal ID: if you do not have one, the app emails you a six-digit code, and entering it creates your account. Each account has one webinar token, which a webinar holds until you close it.
+You can fill in a new webinar's details without signing in. To go live or schedule it, you need a free Universal ID: if you do not have one, the app emails you a six-digit code, and entering it creates your account. Hosting is free with a Universal ID. Free accounts have a generous limit, and if you ever reach it, closing a webinar you've kept makes room for the next.
 
 When you create a webinar you get a **manage link**. It is the key to your webinar: whoever has it can change the settings, see the registrations and run the room. This browser remembers it for you, but keep a copy somewhere safe so you can manage the webinar from another device, and do not share it.
 
@@ -113,7 +113,7 @@ When the session ends, the wrap-up page brings together what is left to do.
 
 1. **Recording** — Universal Webinar does not record the session itself. If you recorded it another way, paste the link here and it goes out in the follow-up email to everyone who registered.
 2. **Your list** — download a spreadsheet file of names, email addresses, answers, who turned up and anyone who joined without registering.
-3. **Keep or close** — choose **Save to cloud** to keep the webinar and everyone in it for as long as you like; your token stays with it. Or choose **Close & free my token** to get your token back for your next webinar. On the free plan, a closed webinar and its registrations are deleted 30 days later, so download your list first.`,
+3. **Keep or close** — choose **Save to cloud** to keep the webinar and everyone in it for as long as you like. Or choose **Close webinar** to make room for your next one. On the free plan, a closed webinar and its registrations are deleted 30 days later, so download your list first.`,
   },
   {
     id: 'privacy-for-attendees',

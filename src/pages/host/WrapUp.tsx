@@ -318,7 +318,7 @@ export function HostWrapUp() {
               {closed ? (
                 webinar.purge_after ? (
                   <>
-                    Closed, and your token is back. This webinar and its
+                    Closed, which makes room for your next webinar. This webinar and its
                     registrations are deleted on{' '}
                     <strong>
                       {formatWithZone(
@@ -329,12 +329,12 @@ export function HostWrapUp() {
                     . Upgrade before then to keep the history.
                   </>
                 ) : (
-                  <>Closed, and your token is back. Your history is kept.</>
+                  <>Closed, which makes room for your next webinar. Your history is kept.</>
                 )
               ) : (
                 <>
-                  Two ways to go. Keep it and your token stays with it; close it
-                  and the token comes back for your next webinar.
+                  Two ways to go. Keep it and everything stays saved; close it
+                  to make room for your next webinar.
                 </>
               )}
             </CardDescription>
@@ -354,8 +354,8 @@ export function HostWrapUp() {
                     </p>
                     <p className="mt-0.5">
                       This webinar and everyone in it are kept for as long as you
-                      want them. Your token stays held, so you can't start
-                      another webinar until you close this one below.
+                      want them. Close it below whenever you want to make room
+                      for your next webinar.
                     </p>
                   </div>
                 </div>
@@ -379,9 +379,8 @@ export function HostWrapUp() {
 
               {!kept && (
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Keeping it holds onto your webinar token, so you won't be able
-                  to run another until you release it. Nothing is deleted while
-                  it's saved.
+                  Nothing is deleted while it's saved. You can close it later to
+                  make room for your next webinar.
                 </p>
               )}
 
@@ -403,7 +402,7 @@ export function HostWrapUp() {
                     Close “{webinar.title}”?
                   </p>
                   <p className="text-xs text-red-800 dark:text-red-200">
-                    Your token comes back straight away. On the free plan this
+                    This makes room for your next webinar straight away. On the free plan this
                     webinar and everyone in it are deleted 30 days later. This
                     can't be undone.
                   </p>
@@ -440,7 +439,7 @@ export function HostWrapUp() {
                   onClick={() => setConfirmClose(true)}
                 >
                   <Archive className="h-4 w-4" />
-                  {kept ? 'Release my token & close' : 'Close & free my token'}
+                  Close webinar
                 </Button>
               )}
             </CardContent>

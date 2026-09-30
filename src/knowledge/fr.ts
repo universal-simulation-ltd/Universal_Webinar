@@ -96,7 +96,7 @@ Ouvrez votre lien de participation, ou le lien partagé par l'hôte, et saisisse
     group: 'Fonctionnement',
     body: `## Préparation
 
-Vous pouvez remplir les détails d'un nouveau webinaire sans vous connecter. Pour passer en direct ou le programmer, vous avez besoin d'un Universal ID gratuit : si vous n'en avez pas, l'application vous envoie par e-mail un code à six chiffres, et sa saisie crée votre compte. Chaque compte dispose d'un jeton de webinaire, qu'un webinaire conserve jusqu'à ce que vous le fermiez.
+Vous pouvez remplir les détails d'un nouveau webinaire sans vous connecter. Pour passer en direct ou le programmer, vous avez besoin d'un Universal ID gratuit : si vous n'en avez pas, l'application vous envoie par e-mail un code à six chiffres, et sa saisie crée votre compte. Organiser des webinaires est gratuit avec un Universal ID. Les comptes gratuits disposent d'une limite généreuse ; si vous l'atteignez un jour, fermer un webinaire que vous avez conservé libère de la place pour le suivant.
 
 Lorsque vous créez un webinaire, vous obtenez un **lien de gestion**. C'est la clé de votre webinaire : quiconque le possède peut modifier les paramètres, consulter les inscriptions et diriger la salle. Ce navigateur le mémorise pour vous, mais conservez-en une copie en lieu sûr afin de pouvoir gérer le webinaire depuis un autre appareil, et ne le partagez pas.
 
@@ -113,7 +113,7 @@ Lorsque vous créez un webinaire, vous obtenez un **lien de gestion**. C'est la 
 
 1. **Enregistrement** — Universal Webinar n'enregistre pas la session lui-même. Si vous l'avez enregistrée par un autre moyen, collez le lien ici : il sera envoyé dans l'e-mail de suivi à toutes les personnes inscrites.
 2. **Votre liste** — téléchargez un fichier tableur contenant les noms, les adresses e-mail, les réponses, les personnes présentes et celles qui ont rejoint sans s'inscrire.
-3. **Conserver ou fermer** — choisissez **Enregistrer dans le cloud** pour conserver le webinaire et toutes les personnes qui y sont liées aussi longtemps que vous le souhaitez ; votre jeton reste alors attaché. Ou choisissez **Fermer et libérer mon jeton** pour récupérer votre jeton pour votre prochain webinaire. Avec l'offre gratuite, un webinaire fermé et ses inscriptions sont supprimés 30 jours plus tard : téléchargez donc votre liste d'abord.`,
+3. **Conserver ou fermer** — choisissez **Enregistrer dans le cloud** pour conserver le webinaire et toutes les personnes qui y sont liées aussi longtemps que vous le souhaitez. Ou choisissez **Fermer le webinaire** pour libérer de la place pour votre prochain webinaire. Avec l'offre gratuite, un webinaire fermé et ses inscriptions sont supprimés 30 jours plus tard : téléchargez donc votre liste d'abord.`,
   },
   {
     id: 'privacy-for-attendees',

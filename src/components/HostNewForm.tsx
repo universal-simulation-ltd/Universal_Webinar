@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/card'
 import {
   useUniversal,
+  useAppFreeToken,
   useFileDrop,
   useSubscription,
   useUser,
@@ -33,16 +34,23 @@ import { slugifyTitle } from '@/lib/slug'
 import CustomQuestionsEditor from '@/components/CustomQuestionsEditor'
 import { type CustomQuestion, parseQuestions } from '@/lib/customQuestions'
 
+// The host hears about the free limit only once they reach it.
+const LIMIT_COPY =
+  "You've used your free webinar hosting. Close a webinar you've kept to make room, or get more at unisim.co.uk."
+
 // Turn the backend RPC's coded errors into host-friendly copy. Tokens are
-// per-app now (one free Webinar token per org, migration 0045) — token_in_use
-// only ever names this app's own live webinar, never another app.
+// per-app now (a free Webinar token per org, migration 0045) — token_in_use
+// only ever names this app's own live webinar, never another app. The copy
+// never says "token" or states a number: the free limits are about to rise.
 function friendlyTokenError(msg: string): string {
   if (msg.includes('token_in_use:')) {
-    const what = msg.split('token_in_use:')[1]?.trim() || 'a live webinar'
-    return `Your free Webinar token is in use (${what}). Add a token to host another webinar.`
+    const what = msg.split('token_in_use:')[1]?.trim()
+    return what
+      ? `You've used your free webinar hosting (held by ${what}). Close a webinar you've kept to make room, or get more at unisim.co.uk.`
+      : LIMIT_COPY
   }
   if (msg.includes('no_credits')) {
-    return "You've used your free Webinar token. Add a token to host another webinar."
+    return LIMIT_COPY
   }
   return msg
 }
@@ -60,7 +68,7 @@ export function HostNewForm() {
   })
 
   // Universal ID session (separate from the webinar's email-OTP host flow).
-  // Hosting now requires a (free) Universal ID account — that's where the one
+  // Hosting now requires a (free) Universal ID account — that's where the
   // complimentary webinar token lives. A signed-in free-tier account spends its
   // token to host (non-refundable, since live hosting costs us money).
   const { supabase: suiteClient } = useUniversal()
@@ -69,6 +77,11 @@ export function HostNewForm() {
   const { subscription } = useSubscription()
   const freeTier = !!suiteUser && subscription?.tier === 'free'
   const tokenCount = subscription?.credits ?? 0
+  // Read-only: decides whether to show the "used your free webinar hosting"
+  // note before they try. acquire_token_hold (below) is still the real gate.
+  const { status: webinarFreeToken } = useAppFreeToken('webinar')
+  const atFreeLimit =
+    freeTier && !!subscription && webinarFreeToken !== null && webinarFreeToken !== 'available' && tokenCount <= 0
   const needsAccount = !suiteLoading && !suiteUser
   // Signed in with a Universal ID → we already hold their (verified) email and
   // name, so we don't ask for them again. A signed-in ID always has a confirmed
@@ -294,8 +307,9 @@ export function HostNewForm() {
                 </div>
               </div>
               <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
-                We'll send a 6-digit code here when you click <strong>Go
-                live</strong>.
+                Create a Universal ID to host webinars for FREE. We'll send a
+                6-digit code here when you click <strong>Go live</strong>, and
+                entering it creates your account.
               </p>
             </div>
           ) : (
@@ -527,15 +541,18 @@ export function HostNewForm() {
             )}
           </div>
 
-          {freeTier && (
+          {/* No token talk while the host is within the free allowance —
+              only a note once they've reached it, and a quiet count if they
+              have bought tokens. */}
+          {atFreeLimit && (
             <div className="rounded-md border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 px-3 py-2.5 text-sm text-amber-800 dark:text-amber-200">
-              <p className="font-medium">Hosting uses your free Webinar token.</p>
-              <p className="mt-0.5 text-xs text-amber-700 dark:text-amber-400">
-                Every Universal app comes with one free token; conducting a webinar spends this app&apos;s,
-                and it <strong>won't be returned</strong> — live hosting costs us money to run.
-                You have {tokenCount} purchased token{tokenCount === 1 ? '' : 's'}.
-              </p>
+              {LIMIT_COPY}
             </div>
+          )}
+          {freeTier && tokenCount > 0 && (
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              {tokenCount} purchased token{tokenCount === 1 ? '' : 's'}
+            </p>
           )}
 
           {error && (

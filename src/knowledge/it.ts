@@ -96,7 +96,7 @@ Apri il tuo link di accesso, o il link condiviso dall'organizzatore, e inserisci
     group: 'Come funziona',
     body: `## Preparazione
 
-Puoi compilare i dettagli di un nuovo webinar senza accedere. Per andare in diretta o programmarlo, ti serve un Universal ID gratuito: se non ne hai uno, l'app ti invia via email un codice di sei cifre, e inserendolo crei il tuo account. Ogni account ha un token webinar, che un webinar trattiene finché non lo chiudi.
+Puoi compilare i dettagli di un nuovo webinar senza accedere. Per andare in diretta o programmarlo, ti serve un Universal ID gratuito: se non ne hai uno, l'app ti invia via email un codice di sei cifre, e inserendolo crei il tuo account. Ospitare webinar è gratuito con un Universal ID. Gli account gratuiti hanno un limite generoso e, se mai lo raggiungi, chiudere un webinar che hai conservato fa spazio al prossimo.
 
 Quando crei un webinar ricevi un **link di gestione**. È la chiave del tuo webinar: chi lo possiede può cambiare le impostazioni, vedere le registrazioni e guidare la sala. Questo browser lo ricorda per te, ma conservane una copia in un posto sicuro per poter gestire il webinar da un altro dispositivo, e non condividerlo.
 
@@ -113,7 +113,7 @@ Al termine della sessione, la pagina di chiusura riunisce quello che resta da fa
 
 1. **Registrazione video** — Universal Webinar non registra la sessione in autonomia. Se l'hai registrata in un altro modo, incolla qui il link: verrà inviato nell'email successiva all'evento a tutti gli iscritti.
 2. **La tua lista** — scarica un file di foglio di calcolo con nomi, indirizzi email, risposte, chi si è presentato e chi è entrato senza registrarsi.
-3. **Conservare o chiudere** — scegli **Salva nel cloud** per conservare il webinar e tutte le persone che ne fanno parte per tutto il tempo che vuoi; il tuo token resta legato a esso. Oppure scegli **Chiudi e libera il mio token** per riavere il token per il tuo prossimo webinar. Con il piano gratuito, un webinar chiuso e le sue registrazioni vengono eliminati 30 giorni dopo, quindi scarica prima la tua lista.`,
+3. **Conservare o chiudere** — scegli **Salva nel cloud** per conservare il webinar e tutte le persone che ne fanno parte per tutto il tempo che vuoi. Oppure scegli **Chiudi webinar** per fare spazio al tuo prossimo webinar. Con il piano gratuito, un webinar chiuso e le sue registrazioni vengono eliminati 30 giorni dopo, quindi scarica prima la tua lista.`,
   },
   {
     id: 'privacy-for-attendees',

@@ -96,7 +96,7 @@ Abra seu link de entrada, ou o link que o anfitrião compartilhou, e informe seu
     group: 'Como funciona',
     body: `## Configuração
 
-Você pode preencher os detalhes de um novo webinar sem entrar na conta. Para entrar ao vivo ou agendá-lo, você precisa de um Universal ID gratuito: se não tiver um, o aplicativo envia por e-mail um código de seis dígitos, e digitá-lo cria sua conta. Cada conta tem um token de webinar, que fica com um webinar até você fechá-lo.
+Você pode preencher os detalhes de um novo webinar sem entrar na conta. Para entrar ao vivo ou agendá-lo, você precisa de um Universal ID gratuito: se não tiver um, o aplicativo envia por e-mail um código de seis dígitos, e digitá-lo cria sua conta. Hospedar webinars é gratuito com um Universal ID. As contas gratuitas têm um limite generoso e, se você chegar a ele, fechar um webinar que você manteve abre espaço para o próximo.
 
 Ao criar um webinar, você recebe um **link de gerenciamento**. Ele é a chave do seu webinar: quem o tiver pode alterar as configurações, ver as inscrições e conduzir a sala. Este navegador o guarda para você, mas mantenha uma cópia em um lugar seguro para poder gerenciar o webinar em outro dispositivo, e não o compartilhe.
 
@@ -113,7 +113,7 @@ Quando a sessão termina, a página de encerramento reúne o que ainda falta faz
 
 1. **Gravação** — o Universal Webinar não grava a sessão. Se você a gravou de outra forma, cole o link aqui e ele será enviado no e-mail de acompanhamento a todos que se inscreveram.
 2. **Sua lista** — baixe um arquivo de planilha com nomes, endereços de e-mail, respostas, quem compareceu e quem entrou sem se inscrever.
-3. **Manter ou fechar** — escolha **Salvar na nuvem** para manter o webinar e todos os inscritos pelo tempo que quiser; seu token fica com ele. Ou escolha **Fechar e liberar meu token** para recuperar seu token para o próximo webinar. No plano gratuito, um webinar fechado e suas inscrições são excluídos 30 dias depois, então baixe sua lista antes.`,
+3. **Manter ou fechar** — escolha **Salvar na nuvem** para manter o webinar e todos os inscritos pelo tempo que quiser. Ou escolha **Fechar webinar** para abrir espaço para o próximo webinar. No plano gratuito, um webinar fechado e suas inscrições são excluídos 30 dias depois, então baixe sua lista antes.`,
   },
   {
     id: 'privacy-for-attendees',
