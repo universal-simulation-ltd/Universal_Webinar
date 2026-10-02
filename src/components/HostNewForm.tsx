@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ArrowRight,
@@ -25,7 +25,11 @@ import {
   useSubscription,
   useUser,
   useCurrentUserIdentity,
+  useLanguage,
+  useOrg,
 } from '@unisim/sdk'
+import { supabase } from '@/lib/supabase'
+import { noCompanyCopy, SET_UP_COMPANY_URL } from '@/lib/noCompanyCopy'
 import { cn } from '@/lib/utils'
 import { createWebinar, deleteWebinar } from '@/lib/db'
 import { rememberManageToken, uploadLogo, sendHostOtp, verifyHostOtp } from '@/lib/host'
@@ -83,6 +87,31 @@ export function HostNewForm() {
   const atFreeLimit =
     freeTier && !!subscription && webinarFreeToken !== null && webinarFreeToken !== 'available' && tokenCount <= 0
   const needsAccount = !suiteLoading && !suiteUser
+
+  // A Universal ID with no company may host ONE webinar in total (platform
+  // 0221). Only a SUCCESSFUL empty org read counts as "no company" — an error
+  // is "unknown" (SDK rule). claim_no_company_webinar (below) is the real gate;
+  // this read only decides what to say before they try.
+  const { language } = useLanguage()
+  const noCompanyText = noCompanyCopy(language)
+  const { orgs, loading: orgsLoading, error: orgsError } = useOrg()
+  const noCompany = !!suiteUser && !orgsLoading && !orgsError && orgs.length === 0
+  // 'room' = the one webinar is still to come, 'used' = it has been hosted,
+  // null = not known (or not company-less), so nothing is said.
+  const [noCompanyState, setNoCompanyState] = useState<'room' | 'used' | null>(null)
+  const noCompanyUsed = noCompanyState === 'used'
+  useEffect(() => {
+    if (!noCompany) return
+    let cancelled = false
+    void suiteClient.rpc('webinar_no_company_status').then(({ data, error: statusErr }) => {
+      if (cancelled || statusErr) return
+      const s = data as { ok?: boolean; no_company?: boolean; has_room?: boolean } | null
+      if (s?.ok && s.no_company) setNoCompanyState(s.has_room === false ? 'used' : 'room')
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [noCompany, suiteClient])
   // Signed in with a Universal ID → we already hold their (verified) email and
   // name, so we don't ask for them again. A signed-in ID always has a confirmed
   // email (the OTP/verification step is what mints the account), so there's no
@@ -176,8 +205,9 @@ export function HostNewForm() {
       // Free-tier Universal ID host: spend the one free token (non-refundable).
       // On token failure, roll the just-created webinar back so we never leave a
       // webinar the host can't actually run. Token errors block; anything else
-      // (e.g. no org, or a brand-new account whose subscription hasn't loaded) is
-      // non-fatal — the webinar stands, no token taken.
+      // (e.g. a brand-new account whose subscription hasn't loaded) is
+      // non-fatal — the webinar stands, no token taken. An ID with no company
+      // is not free tier (it has no subscription) and is counted in the else.
       if (freeTier) {
         const { error: tokErr } = await suiteClient.rpc('acquire_token_hold', {
           p_app: 'webinar',
@@ -198,6 +228,31 @@ export function HostNewForm() {
           setError(friendlyTokenError(tokErr.message))
           return
         }
+      } else {
+        // Not covered by a free token hold — which includes every Universal ID
+        // with no company. Ask the platform to count it (a no-op for an ID that
+        // has a company). Ask with whichever client holds the ID's session: the
+        // suite one when they arrived signed in, or this app's own when the
+        // verification code above has just created the account.
+        const { data: claim, error: claimErr } = await (needsAccount ? supabase : suiteClient).rpc(
+          'claim_no_company_webinar',
+          { p_slug: created.slug, p_token: created.manage_token },
+        )
+        const result = claim as { ok?: boolean; error?: string; removed?: boolean } | null
+        if (!claimErr && result?.error === 'no_company_webinar_used') {
+          // The platform has already removed the new webinar; this is only for
+          // the case it declined to (it never removes one over 10 minutes old).
+          if (!result.removed) {
+            const removed = await deleteWebinar(created.id).catch(() => 0)
+            if (removed === 0) {
+              console.warn(`Rollback did not remove webinar "${created.slug}".`)
+            }
+          }
+          setNoCompanyState('used')
+          return
+        }
+        // Anything else (e.g. a network blip) is non-fatal, as for the token
+        // hold above: the webinar stands.
       }
 
       rememberManageToken(created.slug, created.manage_token)
@@ -210,6 +265,15 @@ export function HostNewForm() {
       setSubmitting(false)
     }
   }, [logoFile, title, description, scheduledAt, showGuestCount, allowSpeakRequests, sendConfirmation, sendReminders, capacity, sendFollowup, customQuestions, needsAccount, hostName, hostEmail, signedInName, signedInEmail, companyName, freeTier, suiteClient, navigate])
+
+  const setUpCompanyButton = (
+    <a
+      href={SET_UP_COMPANY_URL}
+      className="mt-2 inline-flex rounded-lg bg-orange-700 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-800"
+    >
+      {noCompanyText.button}
+    </a>
+  )
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -549,6 +613,19 @@ export function HostNewForm() {
               {LIMIT_COPY}
             </div>
           )}
+          {noCompanyUsed ? (
+            <div className="rounded-md border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 px-3 py-2.5 text-sm text-amber-800 dark:text-amber-200">
+              <p>{noCompanyText.used}</p>
+              {setUpCompanyButton}
+            </div>
+          ) : (
+            noCompany && noCompanyState === 'room' && (
+              <div className="rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 px-3 py-2.5 text-sm text-slate-700 dark:text-slate-300">
+                <p>{noCompanyText.oneAllowed}</p>
+                {setUpCompanyButton}
+              </div>
+            )
+          )}
           {freeTier && tokenCount > 0 && (
             <p className="text-xs text-slate-500 dark:text-slate-400">
               {tokenCount} purchased token{tokenCount === 1 ? '' : 's'}
@@ -587,7 +664,7 @@ export function HostNewForm() {
               </button>
             </div>
           ) : (
-            <Button type="submit" size="lg" className="w-full" disabled={submitting}>
+            <Button type="submit" size="lg" className="w-full" disabled={submitting || noCompanyUsed}>
               {submitting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
