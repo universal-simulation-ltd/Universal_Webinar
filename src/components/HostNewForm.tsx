@@ -38,9 +38,13 @@ import { slugifyTitle } from '@/lib/slug'
 import CustomQuestionsEditor from '@/components/CustomQuestionsEditor'
 import { type CustomQuestion, parseQuestions } from '@/lib/customQuestions'
 
-// The host hears about the free limit only once they reach it.
+// The host hears about the free limit only once they reach it. Nothing is for
+// sale for the everyday apps (2026-10-03): the at-limit note says how to make
+// room, and one quiet link asks hosts who need more to tell us — that is the
+// signal for when a paid tier is worth building.
 const LIMIT_COPY =
-  "You've used your free webinar hosting. Close a webinar you've kept to make room, or get more at unisim.co.uk."
+  "You've used your free webinar hosting. Close a webinar you've kept to make room."
+const NEED_MORE_URL = 'https://www.unisim.co.uk/support'
 
 // Turn the backend RPC's coded errors into host-friendly copy. Tokens are
 // per-app now (a free Webinar token per org, migration 0045) — token_in_use
@@ -50,7 +54,7 @@ function friendlyTokenError(msg: string): string {
   if (msg.includes('token_in_use:')) {
     const what = msg.split('token_in_use:')[1]?.trim()
     return what
-      ? `You've used your free webinar hosting (held by ${what}). Close a webinar you've kept to make room, or get more at unisim.co.uk.`
+      ? `You've used your free webinar hosting (held by ${what}). Close a webinar you've kept to make room.`
       : LIMIT_COPY
   }
   if (msg.includes('no_credits')) {
@@ -610,7 +614,10 @@ export function HostNewForm() {
               have bought tokens. */}
           {atFreeLimit && (
             <div className="rounded-md border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 px-3 py-2.5 text-sm text-amber-800 dark:text-amber-200">
-              {LIMIT_COPY}
+              <p>{LIMIT_COPY}</p>
+              <a href={NEED_MORE_URL} target="_blank" rel="noreferrer" className="mt-1 inline-block text-xs underline underline-offset-2 hover:text-amber-950 dark:hover:text-amber-50">
+                Need more? Tell us
+              </a>
             </div>
           )}
           {noCompanyUsed ? (
