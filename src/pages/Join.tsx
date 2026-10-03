@@ -23,6 +23,7 @@ import {
   webinarPinMatches,
 } from '@/lib/db'
 import { getErrorMessage } from '@/lib/errors'
+import { readLocal, writeLocal } from '@/lib/localPrefs'
 import type { WebinarRow } from '@/lib/database.types'
 
 const NAME_KEY = 'uw:lastName'
@@ -35,8 +36,8 @@ export function Join() {
 
   const [webinar, setWebinar] = useState<WebinarRow | null>(null)
   const [webinarLoading, setWebinarLoading] = useState(true)
-  const [name, setName] = useState(() => localStorage.getItem(NAME_KEY) ?? '')
-  const [email, setEmail] = useState(() => localStorage.getItem(EMAIL_KEY) ?? '')
+  const [name, setName] = useState(() => readLocal(NAME_KEY) ?? '')
+  const [email, setEmail] = useState(() => readLocal(EMAIL_KEY) ?? '')
   const [pin, setPin] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -147,8 +148,8 @@ export function Join() {
           })
         }
       }
-      localStorage.setItem(NAME_KEY, name.trim())
-      localStorage.setItem(EMAIL_KEY, email.trim().toLowerCase())
+      writeLocal(NAME_KEY, name.trim())
+      writeLocal(EMAIL_KEY, email.trim().toLowerCase())
       navigate(`/w/${webinar.slug}/live`, { replace: true })
     } catch (err) {
       // Phase 6: the attendee trigger rejects anyone the host hasn't approved.

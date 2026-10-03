@@ -43,6 +43,7 @@ import {
 } from '@/lib/db'
 import { getErrorMessage } from '@/lib/errors'
 import { supabase } from '@/lib/supabase'
+import { readLocal, removeLocal, writeLocal } from '@/lib/localPrefs'
 import type { RegistrationStatus, WebinarRow } from '@/lib/database.types'
 
 const NAME_KEY = 'uw:lastName'
@@ -61,8 +62,8 @@ export function Register() {
 
   const [webinar, setWebinar] = useState<WebinarRow | null>(null)
   const [loading, setLoading] = useState(true)
-  const [name, setName] = useState(() => localStorage.getItem(NAME_KEY) ?? '')
-  const [email, setEmail] = useState(() => localStorage.getItem(EMAIL_KEY) ?? '')
+  const [name, setName] = useState(() => readLocal(NAME_KEY) ?? '')
+  const [email, setEmail] = useState(() => readLocal(EMAIL_KEY) ?? '')
   const [answers, setAnswers] = useState<CustomAnswers>({})
   const [answerErrors, setAnswerErrors] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
@@ -230,8 +231,8 @@ export function Register() {
         }
       }
 
-      localStorage.setItem(NAME_KEY, trimmedName)
-      localStorage.setItem(EMAIL_KEY, trimmedEmail)
+      writeLocal(NAME_KEY, trimmedName)
+      writeLocal(EMAIL_KEY, trimmedEmail)
 
       // 4. Email them their confirmation + personal join link. Fired without
       // awaiting so a slow provider never holds up the "you're in" state — the
@@ -466,8 +467,8 @@ export function Register() {
                   setRegStatus('approved')
                   setName('')
                   setEmail('')
-                  localStorage.removeItem(NAME_KEY)
-                  localStorage.removeItem(EMAIL_KEY)
+                  removeLocal(NAME_KEY)
+                  removeLocal(EMAIL_KEY)
                 }}
               >
                 Register someone else
