@@ -29,3 +29,6 @@ export const supabase = createClient(
 )
 
 export const SUPABASE_CONFIGURED = Boolean(supabaseUrl && supabaseAnonKey)
+
+/** The project URL the client above talks to (the same fallback included). */
+export const SUPABASE_URL: string = supabaseUrl || 'http://localhost:54321'

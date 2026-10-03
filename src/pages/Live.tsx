@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button'
 import { CameraBubble } from '@/components/CameraBubble'
 import { ChatPanel } from '@/components/ChatPanel'
 import { SharedDocViewer } from '@/components/SharedDocViewer'
+import { trustedSharedDocUrl } from '@/lib/sharedDoc'
 import {
   FloatingReactions,
   type FloatingReactionsHandle,
@@ -496,6 +497,9 @@ export function Live() {
 
   const isSpeaker = attendee?.role === 'speaker'
   const lkReady = lkToken && lkUrl && isLiveKitConfigured()
+  // Only a document in this project's own bucket reaches the page — see
+  // trustedSharedDocUrl for why the column alone can't be trusted.
+  const sharedDocUrl = trustedSharedDocUrl(webinar.shared_doc_url)
 
   return (
     <div className="container py-6">
@@ -602,7 +606,7 @@ export function Live() {
               talking over the document, and a guest who loses the speaker to
               see a slide has lost the webinar. Scrolling, zooming and paging
               are the browser's own — nothing here follows the host's page. */}
-          {webinar.shared_doc_url && (
+          {sharedDocUrl && (
             <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-soft">
               <div className="flex items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 px-4 py-2.5">
                 <span className="flex min-w-0 items-center gap-2 text-sm font-medium text-slate-900 dark:text-slate-100">
@@ -612,7 +616,7 @@ export function Live() {
                   </span>
                 </span>
                 <a
-                  href={webinar.shared_doc_url}
+                  href={sharedDocUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="shrink-0 text-xs text-brand-700 dark:text-brand-400 underline underline-offset-2"
@@ -621,7 +625,7 @@ export function Live() {
                 </a>
               </div>
               <SharedDocViewer
-                url={webinar.shared_doc_url}
+                url={sharedDocUrl}
                 name={webinar.shared_doc_name ?? 'Shared document'}
                 className="h-[480px]"
               />

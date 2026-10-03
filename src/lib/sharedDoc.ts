@@ -1,5 +1,5 @@
 import { downscaleImage } from '@unisim/sdk'
-import { supabase } from './supabase'
+import { supabase, SUPABASE_URL } from './supabase'
 
 /**
  * The document a host puts on the stage — upload, replace and remove.
@@ -86,6 +86,36 @@ async function readFunctionError(error: unknown): Promise<string | null> {
   } catch {
     return null
   }
+}
+
+/**
+ * The shared document's URL, if — and only if — it points into this project's
+ * public `webinar-docs` bucket. Anything else comes back as null and is not
+ * rendered.
+ *
+ * ⚠️ Security, not tidiness. `shared_doc_url` is free text on the server:
+ * `update_webinar_by_token` stores whatever string the patch carries, and the
+ * `webinars` insert policy doesn't look at it either. Every guest's page puts
+ * it in an `<iframe src>` and an `<a href>`, so a host who saved
+ * `javascript:…//x.pdf` would run script in every guest's tab, on this
+ * origin, beside their session. The upload path only ever produces a bucket
+ * URL (the `webinar-doc` function mints it with `getPublicUrl`), so a genuine
+ * document always passes.
+ */
+export function trustedSharedDocUrl(url: string | null | undefined): string | null {
+  if (!url) return null
+  let parsed: URL
+  let project: URL
+  try {
+    parsed = new URL(url)
+    project = new URL(SUPABASE_URL)
+  } catch {
+    return null
+  }
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return null
+  if (parsed.origin !== project.origin) return null
+  if (!parsed.pathname.startsWith(`/storage/v1/object/public/${BUCKET}/`)) return null
+  return parsed.href
 }
 
 export function isSharedDocType(type: string): boolean {

@@ -1,4 +1,5 @@
 import { FileText } from 'lucide-react'
+import { trustedSharedDocUrl } from '@/lib/sharedDoc'
 
 /**
  * Renders whatever the host put on the stage.
@@ -22,7 +23,29 @@ export function SharedDocViewer({
   name: string
   className?: string
 }) {
-  const isPdf = /\.pdf(\?|$)/i.test(url)
+  // Checked here as well as by the callers: this component is the one that
+  // puts the URL in an <iframe>, so it doesn't trust anyone else to have done it.
+  const safeUrl = trustedSharedDocUrl(url)
+  if (!safeUrl) {
+    return (
+      <div className={`grid place-items-center bg-slate-50 dark:bg-slate-950 px-6 text-center text-sm text-slate-500 dark:text-slate-400 ${className}`}>
+        This document can't be shown here.
+      </div>
+    )
+  }
+  return <TrustedDocViewer url={safeUrl} name={name} className={className} />
+}
+
+function TrustedDocViewer({
+  url,
+  name,
+  className,
+}: {
+  url: string
+  name: string
+  className: string
+}) {
+  const isPdf = /\.pdf(\?|$)/i.test(new URL(url).pathname)
 
   if (!isPdf) {
     return (

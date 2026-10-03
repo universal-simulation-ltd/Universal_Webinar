@@ -49,6 +49,7 @@ import { cn } from '@/lib/utils'
 import {
   removeSharedDoc,
   SHARED_DOC_TYPES,
+  trustedSharedDocUrl,
   uploadSharedDoc,
 } from '@/lib/sharedDoc'
 import { usePanelLayout } from '@/lib/usePanelLayout'
@@ -772,6 +773,10 @@ export function HostManage() {
     )
   }
 
+  // Null for anything outside this project's webinar-docs bucket — see
+  // trustedSharedDocUrl. The stage still offers "Stop sharing" for it.
+  const sharedDocUrl = trustedSharedDocUrl(webinar.shared_doc_url)
+
   // ── Right-column drag + collapse plumbing ──────────────────────────────────
   // HTML5 drag and drop, matching Ergo Assess's panel reordering. Note it is
   // pointer-only: touch devices don't fire these events, and there is no
@@ -932,14 +937,16 @@ export function HostManage() {
                       <FileText className="h-4 w-4 shrink-0 text-slate-500 dark:text-slate-400" />
                       <span className="truncate">{webinar.shared_doc_name}</span>
                     </span>
-                    <a
-                      href={webinar.shared_doc_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="shrink-0 text-xs text-brand-700 dark:text-brand-400 underline underline-offset-2"
-                    >
-                      Open ↗
-                    </a>
+                    {sharedDocUrl && (
+                      <a
+                        href={sharedDocUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="shrink-0 text-xs text-brand-700 dark:text-brand-400 underline underline-offset-2"
+                      >
+                        Open ↗
+                      </a>
+                    )}
                   </div>
                   <SharedDocViewer
                     url={webinar.shared_doc_url}
