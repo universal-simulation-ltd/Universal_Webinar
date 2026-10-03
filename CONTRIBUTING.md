@@ -58,4 +58,4 @@ than being merged on the assumption above.
 ## Security
 
 Please do **not** open a public issue for a security problem. Email
-<inbox@jamesmarkey.co.uk> instead.
+<inbox@unisim.co.uk> instead.
