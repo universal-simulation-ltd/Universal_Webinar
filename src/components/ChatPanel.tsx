@@ -34,15 +34,55 @@ export function ChatPanel({
 }: Props) {
   const [draft, setDraft] = useState('')
   const [sending, setSending] = useState(false)
+  const [sendFailed, setSendFailed] = useState(false)
   const [openPickerFor, setOpenPickerFor] = useState<string | null>(null)
   const listRef = useRef<HTMLDivElement | null>(null)
+  // Whether the reader is at (or near) the newest message. Only then does a
+  // new message pull the list down — someone scrolled up to re-read a question
+  // used to be yanked back to the bottom by every message that arrived.
+  const pinnedToBottom = useRef(true)
+  const sentByMe = useRef(false)
+  const [unseen, setUnseen] = useState(0)
+  const lastCount = useRef(messages.length)
 
-  // Stick to bottom when new messages arrive.
   useEffect(() => {
+    const el = listRef.current
+    const added = messages.length - lastCount.current
+    lastCount.current = messages.length
+    if (!el) return
+    if (pinnedToBottom.current || sentByMe.current) {
+      el.scrollTop = el.scrollHeight
+      sentByMe.current = false
+      setUnseen(0)
+    } else if (added > 0) {
+      setUnseen((n) => n + added)
+    }
+  }, [messages.length])
+
+  function handleScroll() {
+    const el = listRef.current
+    if (!el) return
+    pinnedToBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 48
+    if (pinnedToBottom.current) setUnseen(0)
+  }
+
+  function jumpToLatest() {
     const el = listRef.current
     if (!el) return
     el.scrollTop = el.scrollHeight
-  }, [messages.length])
+    pinnedToBottom.current = true
+    setUnseen(0)
+  }
+
+  // Escape closes an open reaction picker.
+  useEffect(() => {
+    if (!openPickerFor) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpenPickerFor(null)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [openPickerFor])
 
   const reactionsByMessage = useMemo(() => {
     const map = new Map<string, ReactionRow[]>()
@@ -60,18 +100,28 @@ export function ChatPanel({
     const trimmed = draft.trim()
     if (!trimmed) return
     setSending(true)
+    setSendFailed(false)
     try {
+      sentByMe.current = true
       await onSend(trimmed)
       setDraft('')
+    } catch {
+      // Keep the draft so nothing typed is lost, and say so — a failed send
+      // used to leave the message sitting in the box with no word at all.
+      sentByMe.current = false
+      setSendFailed(true)
     } finally {
       setSending(false)
     }
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="relative flex h-full flex-col">
       <div
         ref={listRef}
+        onScroll={handleScroll}
+        role="log"
+        aria-label="Chat messages"
         className="flex-1 space-y-2 overflow-y-auto px-3 py-3 text-sm"
       >
         {loading && messages.length === 0 ? (
@@ -101,13 +151,38 @@ export function ChatPanel({
           ))
         )}
       </div>
+      {unseen > 0 && (
+        <div
+          className={cn(
+            'pointer-events-none absolute inset-x-0 flex justify-center',
+            !readOnly && onSend ? (sendFailed ? 'bottom-20' : 'bottom-16') : 'bottom-3',
+          )}
+        >
+          <button
+            type="button"
+            onClick={jumpToLatest}
+            className="pointer-events-auto rounded-full bg-brand-600 px-3 py-1 text-xs font-medium text-white shadow-md hover:bg-brand-700"
+          >
+            {unseen === 1 ? '1 new message' : `${unseen} new messages`} ↓
+          </button>
+        </div>
+      )}
       {!readOnly && onSend && (
         <form className="border-t border-slate-200 dark:border-slate-800 p-2.5" onSubmit={handleSend}>
+          {sendFailed && (
+            <p role="alert" className="mb-2 text-xs text-red-700 dark:text-red-400">
+              That message didn't send. Check your connection and try again.
+            </p>
+          )}
           <div className="flex gap-2">
             <Input
               value={draft}
-              onChange={(e) => setDraft(e.target.value)}
+              onChange={(e) => {
+                setDraft(e.target.value)
+                if (sendFailed) setSendFailed(false)
+              }}
               placeholder="Say something kind…"
+              aria-label="Chat message"
               maxLength={1000}
               disabled={sending}
             />
@@ -116,6 +191,7 @@ export function ChatPanel({
               disabled={sending || draft.trim().length === 0}
               size="icon"
               title="Send"
+              aria-label="Send"
             >
               {sending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -215,12 +291,17 @@ function ChatBubble({
         >
           {message.content}
         </div>
-        <div className="relative flex items-center opacity-0 transition group-hover:opacity-100">
+        {/* Hover-revealed on a mouse; always shown on touch screens (which
+            have no hover, so the buttons were invisible there) and whenever
+            keyboard focus is inside the message. */}
+        <div className="relative flex items-center opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100">
           <button
             type="button"
             onClick={onTogglePicker}
             className="rounded-full p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-300"
             title="React"
+            aria-label="React to this message"
+            aria-expanded={pickerOpen}
           >
             <Smile className="h-3.5 w-3.5" />
           </button>
@@ -230,6 +311,7 @@ function ChatBubble({
               onClick={() => onDeleteMessage(message.id)}
               className="rounded-full p-1 text-slate-400 hover:bg-red-50 dark:hover:bg-red-900/50 hover:text-red-600 dark:hover:text-red-400"
               title="Delete (admin)"
+              aria-label="Delete this message"
             >
               <Trash2 className="h-3.5 w-3.5" />
             </button>
@@ -269,6 +351,8 @@ function ChatBubble({
               key={emoji}
               type="button"
               onClick={() => handlePickEmoji(emoji)}
+              aria-pressed={isMine}
+              aria-label={`${emoji} ${count}${isMine ? ', including yours' : ''}`}
               className={cn(
                 'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 transition',
                 isMine
