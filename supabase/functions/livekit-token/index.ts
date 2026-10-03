@@ -11,7 +11,7 @@
 // ── 2026-07-30: hosts can finally get a host token ──────────────────────────
 // This function was written before the multi-host pivot and still said:
 //
-//     if (role === 'host' && callerEmail !== 'accounts@unisim.co.uk') → 403
+//     if (role === 'host' && caller is not the platform admin) → 403
 //
 // i.e. on a product where anyone can create a webinar, the only person who
 // could ever broadcast was the platform admin. That is why "Your stage" has
@@ -97,7 +97,10 @@ Deno.serve(async (req) => {
     const { data: { user } } = await adminClient.auth.getUser(
       authHeader.replace('Bearer ', ''),
     )
-    const isAdmin = user?.email?.toLowerCase() === 'accounts@unisim.co.uk'
+    // The platform admin account, by id (its email moved from accounts@ to
+    // james@unisim.co.uk on 2026-10-03).
+    const isAdmin = user?.id === 'aa2bd37d-4246-41d1-9965-f64d30fa6b3a' ||
+      ['james@unisim.co.uk', 'accounts@unisim.co.uk'].includes(user?.email?.toLowerCase() ?? '')
 
     if (role === 'host') {
       if (!isOwner && !isAdmin) {
