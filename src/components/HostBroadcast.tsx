@@ -11,6 +11,9 @@ import { Camera, CameraOff, Loader2, Mic, MicOff, MonitorUp } from 'lucide-react
 import { ValueChip } from '@unisim/sdk'
 import { Button } from '@/components/ui/button'
 import { CameraBubble } from '@/components/CameraBubble'
+import { RecordControl } from '@/components/RecordControl'
+import { RecordingChip } from '@/components/RecordingBadge'
+import { useRoomRecording } from '@/lib/recordingSignal'
 import { cn } from '@/lib/utils'
 
 /**
@@ -26,10 +29,17 @@ export function HostBroadcast({
   serverUrl,
   token,
   onLeave,
+  slug,
+  title,
+  manageToken,
 }: {
   serverUrl: string
   token: string
   onLeave: () => void
+  /** For "Record this webinar": the file name, and the cloud option's credential. */
+  slug: string
+  title: string
+  manageToken: string | null
 }) {
   return (
     <LiveKitRoom
@@ -44,13 +54,22 @@ export function HostBroadcast({
       onDisconnected={onLeave}
       style={{ height: '100%', width: '100%', background: 'transparent' }}
     >
-      <HostBroadcastInner />
+      <HostBroadcastInner slug={slug} title={title} manageToken={manageToken} />
     </LiveKitRoom>
   )
 }
 
-function HostBroadcastInner() {
+function HostBroadcastInner({
+  slug,
+  title,
+  manageToken,
+}: {
+  slug: string
+  title: string
+  manageToken: string | null
+}) {
   const connectionState = useConnectionState()
+  const recording = useRoomRecording()
   const { localParticipant, isCameraEnabled, isMicrophoneEnabled, isScreenShareEnabled } =
     useLocalParticipant()
   const [busy, setBusy] = useState<string | null>(null)
@@ -102,7 +121,7 @@ function HostBroadcastInner() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="relative flex-1 overflow-hidden rounded-xl bg-slate-900">
+      <div className="relative aspect-video overflow-hidden rounded-xl bg-slate-900">
         {main ? (
           <>
             <VideoTrack
@@ -140,11 +159,12 @@ function HostBroadcastInner() {
           </div>
         )}
         {connectionState === ConnectionState.Connected && (
-          <span className="absolute left-3 top-3">
+          <span className="absolute left-3 top-3 flex gap-2">
             <ValueChip tone="crit">
               <span className="mr-1.5 h-1.5 w-1.5 animate-pulse rounded-full bg-red-600" />
               On air
             </ValueChip>
+            {recording && <RecordingChip />}
           </span>
         )}
       </div>
@@ -218,6 +238,8 @@ function HostBroadcastInner() {
       {deviceError && (
         <p className="mt-2 text-xs text-red-600 dark:text-red-400">{deviceError}</p>
       )}
+
+      <RecordControl slug={slug} title={title} manageToken={manageToken} />
     </div>
   )
 }

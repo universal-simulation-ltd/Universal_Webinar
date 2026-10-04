@@ -187,6 +187,11 @@ async function signLiveKitToken(
   const canPublish = role === 'host' || role === 'speaker'
   const canPublishData = true
   const canSubscribe = true
+  // The host's "Recording" flag is an attribute on the host's own participant
+  // (src/lib/recordingSignal.ts), which every guest reads to show the
+  // Recording badge. Only the host may set its own attributes: the guests'
+  // identities are attendee ids, so nobody else can pose as `host-<slug>`.
+  const canUpdateOwnMetadata = role === 'host'
 
   const payload = {
     iss: apiKey,
@@ -200,6 +205,7 @@ async function signLiveKitToken(
       canPublish,
       canPublishData,
       canSubscribe,
+      canUpdateOwnMetadata,
     },
   }
 

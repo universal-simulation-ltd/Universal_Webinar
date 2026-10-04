@@ -54,6 +54,7 @@ function lazyPage<T extends Record<string, unknown>>(
 const Live = lazyPage(() => import('@/pages/Live'), (m) => m.Live)
 const HostManage = lazyPage(() => import('@/pages/host/Manage'), (m) => m.HostManage)
 const HostWrapUp = lazyPage(() => import('@/pages/host/WrapUp'), (m) => m.HostWrapUp)
+const Replay = lazyPage(() => import('@/pages/Replay'), (m) => m.Replay)
 const AdminDashboard = lazyPage(() => import('@/pages/admin/Dashboard'), (m) => m.AdminDashboard)
 const AdminControl = lazyPage(() => import('@/pages/admin/Control'), (m) => m.AdminControl)
 
@@ -79,6 +80,8 @@ export default function App() {
         <Route path="/w/:slug" element={<Join />} />
         <Route path="/w/:slug/register" element={<Register />} />
         <Route path="/w/:slug/live" element={<Page><Live /></Page>} />
+        {/* The replay link the follow-up email carries (lib/replay.ts). */}
+        <Route path="/replay/:id" element={<Page><Replay /></Page>} />
         <Route path="/host/new" element={<HostNew />} />
         <Route path="/host/w/:slug" element={<Page><HostManage /></Page>} />
         {/* Where "End webinar" lands: the post-session decisions, away from

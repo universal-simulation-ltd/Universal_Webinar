@@ -43,6 +43,8 @@ import {
 } from '@/components/ui/card'
 import { OtpVerifyDialog } from '@/components/OtpVerifyDialog'
 import { HostBroadcast } from '@/components/HostBroadcast'
+import { useFinishedRecording } from '@/lib/recordingStore'
+import { useRecordingCopy } from '@/lib/recordingCopy'
 import { PanelCard } from '@/components/PanelCard'
 import { SharedDocViewer } from '@/components/SharedDocViewer'
 import { cn } from '@/lib/utils'
@@ -193,6 +195,10 @@ export function HostManage() {
   // Null until the host presses "Go on air" — see HostBroadcast for why this
   // isn't fetched eagerly: connecting is what asks for the camera.
   const [broadcast, setBroadcast] = useState<{ url: string; token: string } | null>(null)
+  // A recording finished by leaving the stage was saved as the stage closed;
+  // the stage can't say so any more, so this page does.
+  const finishedRecording = useFinishedRecording(slug)
+  const recordingCopy = useRecordingCopy()
   // Free webinars (0202): their caps, and a note when one stops the host.
   const [freeLimits, setFreeLimits] = useState<FreeWebinarLimits | null>(null)
   const [stageNote, setStageNote] = useState<string | null>(null)
@@ -954,11 +960,14 @@ export function HostManage() {
                   />
                 </div>
               ) : broadcast ? (
-                <div className="aspect-video">
+                <div>
                   <HostBroadcast
                     serverUrl={broadcast.url}
                     token={broadcast.token}
                     onLeave={() => setBroadcast(null)}
+                    slug={webinar.slug}
+                    title={webinar.title}
+                    manageToken={token}
                   />
                 </div>
               ) : (
@@ -975,6 +984,11 @@ export function HostManage() {
               )}
               {stageNote && (
                 <p className="mt-3 text-sm text-amber-800 dark:text-amber-300">{stageNote}</p>
+              )}
+              {!broadcast && finishedRecording?.endedByLeaving && (
+                <p className="mt-3 text-sm text-emerald-700 dark:text-emerald-400" role="status">
+                  {recordingCopy.savedAfterLeaving}
+                </p>
               )}
               {broadcast && freeMinutesLeft !== null && freeMinutesLeft <= 10 && (
                 <p className="mt-3 text-sm text-amber-800 dark:text-amber-300">

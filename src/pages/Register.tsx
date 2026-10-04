@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { Chip } from '@unisim/sdk'
 import { Button } from '@/components/ui/button'
+import { RecordingNotice } from '@/components/RecordingNotice'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -639,6 +640,7 @@ export function Register() {
                 ? ''
                 : "You don't need to do anything else — we'll be in touch."}
         </p>
+        <RecordingNotice />
       </div>
     </div>
   )

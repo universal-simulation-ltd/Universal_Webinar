@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Loader2, Lock, ShieldCheck } from 'lucide-react'
 import { Chip } from '@unisim/sdk'
 import { Button } from '@/components/ui/button'
+import { RecordingNotice } from '@/components/RecordingNotice'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -336,6 +337,7 @@ export function Join() {
           By joining, you agree to be visible to the host and may be invited to
           speak.
         </p>
+        <RecordingNotice />
       </div>
     </div>
   )

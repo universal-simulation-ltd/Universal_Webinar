@@ -13,6 +13,8 @@ import { AlertCircle, FileText, Hand, Heart, Loader2, Mic, MicOff, Users } from 
 import { Chip, ValueChip } from '@unisim/sdk'
 import { Button } from '@/components/ui/button'
 import { CameraBubble } from '@/components/CameraBubble'
+import { RecordingChip, RecordingWatcher } from '@/components/RecordingBadge'
+import { useRecordingCopy } from '@/lib/recordingCopy'
 import { ChatPanel } from '@/components/ChatPanel'
 import { SharedDocViewer } from '@/components/SharedDocViewer'
 import { trustedSharedDocUrl } from '@/lib/sharedDoc'
@@ -52,7 +54,15 @@ const FLOATING_EMOJIS = ['❤️', '👏', '🎉', '🔥'] as const
 // ── Video stage ────────────────────────────────────────────────────────────────
 // Renders the host's published tracks (video + audio) from a LiveKit room.
 // Falls back to a placeholder when the host hasn't published yet.
-function HostStage({ serverUrl, token }: { serverUrl: string; token: string }) {
+function HostStage({
+  serverUrl,
+  token,
+  onRecordingChange,
+}: {
+  serverUrl: string
+  token: string
+  onRecordingChange: (recording: boolean) => void
+}) {
   return (
     <LiveKitRoom
       serverUrl={serverUrl}
@@ -62,6 +72,7 @@ function HostStage({ serverUrl, token }: { serverUrl: string; token: string }) {
       video={false}
       style={{ height: '100%', width: '100%', background: 'transparent' }}
     >
+      <RecordingWatcher onChange={onRecordingChange} />
       <HostStageInner />
     </LiveKitRoom>
   )
@@ -134,9 +145,11 @@ function HostStageInner() {
 function SpeakerConferenceStage({
   serverUrl,
   token,
+  onRecordingChange,
 }: {
   serverUrl: string
   token: string
+  onRecordingChange: (recording: boolean) => void
 }) {
   return (
     <LiveKitRoom
@@ -147,6 +160,7 @@ function SpeakerConferenceStage({
       video
       style={{ height: '100%', width: '100%', background: 'transparent' }}
     >
+      <RecordingWatcher onChange={onRecordingChange} />
       <VideoConference />
     </LiveKitRoom>
   )
@@ -158,6 +172,10 @@ export function Live() {
   const navigate = useNavigate()
 
   const [webinar, setWebinar] = useState<WebinarRow | null>(null)
+  // Set by the LiveKit room (RecordingWatcher): the host is recording, in their
+  // browser or in the cloud.
+  const [recording, setRecording] = useState(false)
+  const recordingCopy = useRecordingCopy()
   const [attendee, setAttendee] = useState<AttendeeRow | null>(null)
   const [messages, setMessages] = useState<MessageRow[]>([])
   const [reactions, setReactions] = useState<ReactionRow[]>([])
@@ -527,6 +545,7 @@ export function Live() {
           {webinar.show_guest_count && viewerCount > 0 && (
             <ValueChip label={<Users />}>{viewerCount} watching</ValueChip>
           )}
+          {recording && <RecordingChip />}
           {webinar.status === 'live' ? (
             <ValueChip tone="crit">
               <span className="mr-1.5 h-1.5 w-1.5 animate-pulse rounded-full bg-red-600" />
@@ -537,6 +556,17 @@ export function Live() {
           )}
         </div>
       </div>
+
+      {/* Consent: say it in words as well as with the badge, once, at the top. */}
+      {recording && (
+        <div
+          role="status"
+          className="mb-4 flex items-center gap-2 rounded-lg border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 px-4 py-2.5 text-sm text-red-900 dark:text-red-200"
+        >
+          <span aria-hidden className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-red-600" />
+          {recordingCopy.inRoomNotice}
+        </div>
+      )}
 
       {attendee?.muted_by_admin && (
         <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 px-4 py-2.5 text-sm text-amber-900 dark:text-amber-200">
@@ -570,9 +600,9 @@ export function Live() {
         <div className="space-y-4">
           <div className="relative aspect-video overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-900 shadow-soft">
             {isSpeaker && lkReady ? (
-              <SpeakerConferenceStage serverUrl={lkUrl} token={lkToken!} />
+              <SpeakerConferenceStage serverUrl={lkUrl} token={lkToken!} onRecordingChange={setRecording} />
             ) : lkReady ? (
-              <HostStage serverUrl={lkUrl} token={lkToken!} />
+              <HostStage serverUrl={lkUrl} token={lkToken!} onRecordingChange={setRecording} />
             ) : (
               <div className="absolute inset-0 grid place-items-center text-center text-slate-300">
                 <div>

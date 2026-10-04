@@ -68,7 +68,7 @@ This is built in phases. Each phase ends with a verification checkpoint before t
 - **Phase 4** — LiveKit video (admin broadcasts)
 - **Phase 5** — Speaker requests + admin moderation
 - **Phase 6** — PIN lock + screen-share polish
-- **Phase 7** — Recording (LiveKit Egress)
+- **Phase 7** — Recording ✅ free in-browser recording + uploaded replays; cloud recording (LiveKit Egress) built, switched off — see [`docs/README.md`](docs/README.md#recording)
 - **Phase 8** — PWA polish, mobile QA, custom domain
 
 ## Project structure

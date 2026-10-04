@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { ReplayPanel } from '@/components/ReplayPanel'
 import {
   Card,
   CardContent,
@@ -252,8 +253,12 @@ export function HostWrapUp() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {token && (
+              <ReplayPanel webinar={webinar} token={token} onChange={setWebinar} />
+            )}
             <div className="flex items-center gap-2">
               <Input
+                key={webinar.recording_url ?? ''}
                 type="url"
                 placeholder="https://…"
                 defaultValue={webinar.recording_url ?? ''}
