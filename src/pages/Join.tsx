@@ -239,11 +239,22 @@ export function Join() {
             <CardTitle>{webinar.title}</CardTitle>
             <CardDescription>
               {webinar.require_approval
-                ? 'This room is approved by the host. Register first and they’ll let you in.'
+                ? 'The host approves everyone who joins this room. Ask for a place first and they’ll let you in.'
                 : !webinar.open_join
                   ? 'Walk-up joining is closed for this session. Registered guests can still join with the link from their confirmation email.'
-                  : 'Tell us who you are so the host can welcome you in.'}
+                  : 'Tell us who you are so the host can welcome you in. No account or app needed — you watch in your browser.'}
             </CardDescription>
+            {/* This room only lets in people the host has approved, and
+                approval starts on the sign-up page — which nothing here
+                linked to, so "Join now" was the only (failing) way on. */}
+            {webinar.require_approval && (
+              <Link
+                to={`/w/${webinar.slug}/register`}
+                className="pt-1 text-sm font-medium text-brand-700 dark:text-brand-400 hover:underline"
+              >
+                Ask for a place →
+              </Link>
+            )}
           </CardHeader>
           <CardContent>
             {!configured && (

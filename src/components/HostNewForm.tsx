@@ -325,8 +325,11 @@ export function HostNewForm() {
     <Card>
       <CardHeader>
         <CardTitle>About the session</CardTitle>
+        {/* The date lives in Optional details, folded away — so a host
+            planning ahead has to be told that "Go live" isn't the only way. */}
         <CardDescription>
-          What's it called and when does it run?
+          Give it a name and go live now — or set a date under Optional details
+          to schedule it for later.
         </CardDescription>
       </CardHeader>
       <CardContent>

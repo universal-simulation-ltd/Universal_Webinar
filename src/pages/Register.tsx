@@ -494,6 +494,13 @@ export function Register() {
                     Happening right now — register to join in.
                   </p>
                 )}
+                {/* Said before they fill the form in, not after: the button
+                    asks rather than books, and an email follows. */}
+                {webinar.require_approval && (
+                  <p className="text-slate-500 dark:text-slate-400">
+                    The host approves each place — we'll email you once they have.
+                  </p>
+                )}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -539,7 +546,9 @@ export function Register() {
                   <p className="text-xs text-slate-500 dark:text-slate-400">
                     {webinar.send_confirmation
                       ? 'We email your join link here, and share it only with the host.'
-                      : 'We share this only with the host.'}
+                      : 'We share this only with the host.'}{' '}
+                    {/* A guest sent a link wonders whether this is a sign-up. */}
+                    No account or app needed — you watch in your browser.
                   </p>
                 </div>
 
@@ -609,6 +618,8 @@ export function Register() {
                       <Loader2 className="h-4 w-4 animate-spin" />
                       Saving…
                     </>
+                  ) : webinar.require_approval ? (
+                    'Ask for a place'
                   ) : webinar.status === 'live' ? (
                     'Join now'
                   ) : (
