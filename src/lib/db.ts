@@ -57,8 +57,11 @@ export const WEBINAR_COLUMN_NAMES = [
   'open_join',
   'archived_at',
   'purge_after',
-  'shared_doc_url',
-  'shared_doc_name',
+  // `shared_doc_url` / `shared_doc_name` are NOT here (platform 0253): in a
+  // PIN room the document is only for people past the PIN, so the live page
+  // reads it through getSharedDoc() and the host through the manage-token RPC.
+  // The columns are still public on the server until a follow-up migration
+  // revokes them — which this release makes safe.
   'kept_at',
   // `pin_required` yes, `entry_pin` NEVER — the latter is revoked from anon and
   // authenticated (0102), so naming it here would fail the whole select the way
@@ -96,17 +99,42 @@ export function webinarRowFromRealtime(
   return picked as Partial<WebinarRow>
 }
 
-/** A row read through WEBINAR_COLUMNS, with the two host-only columns a public
- *  read cannot see (0192) set to null rather than left undefined — so the
- *  value matches its type, and nothing downstream mistakes "not readable" for
- *  a string. Null means "not known here"; the host's own row comes from
- *  `getWebinarByManageToken` and carries the real values. */
+/** A row read through WEBINAR_COLUMNS, with the columns a public read does not
+ *  carry — host-only (0192) or PIN-gated (0253) — set to null rather than left
+ *  undefined, so the value matches its type and nothing downstream mistakes
+ *  "not readable" for a string. Null means "not known here"; the host's own
+ *  row comes from `getWebinarByManageToken` and carries the real values, and
+ *  the live page reads the document through `getSharedDoc`. */
 export function publicWebinarRow(row: unknown): WebinarRow {
   return {
-    ...(row as Omit<WebinarRow, 'host_email' | 'recording_url'>),
+    ...(row as Omit<WebinarRow, 'host_email' | 'recording_url' | 'shared_doc_url' | 'shared_doc_name'>),
     host_email: null,
     recording_url: null,
+    shared_doc_url: null,
+    shared_doc_name: null,
   }
+}
+
+export interface SharedDoc {
+  url: string | null
+  name: string | null
+}
+
+/**
+ * The room's shared document, through the PIN-gated RPC (platform 0253): in a
+ * PIN room only a caller who got in with the PIN (or the signed-in host) is
+ * answered. Null when there is none or the caller may not see it; a failed
+ * call is also null — the document is an extra, not a reason to break the room.
+ */
+export async function getSharedDoc(webinarId: string): Promise<SharedDoc | null> {
+  const { data, error } = await supabase.rpc('webinar_shared_doc', { p_webinar_id: webinarId })
+  if (error) {
+    console.warn('[webinar] shared document unavailable:', error.message)
+    return null
+  }
+  const res = data as { ok?: boolean; url?: string | null; name?: string | null } | null
+  if (!res?.ok || !res.url) return null
+  return { url: res.url, name: res.name ?? null }
 }
 
 export async function listWebinars(): Promise<WebinarRow[]> {

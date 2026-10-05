@@ -23,8 +23,10 @@ import {
   type FloatingReactionsHandle,
 } from '@/components/FloatingReactions'
 import {
+  type SharedDoc,
   addReaction,
   getMyAttendee,
+  getSharedDoc,
   getWebinarBySlug,
   listMessages,
   listReactionsForWebinar,
@@ -177,6 +179,7 @@ export function Live() {
   const [recording, setRecording] = useState(false)
   const recordingCopy = useRecordingCopy()
   const [attendee, setAttendee] = useState<AttendeeRow | null>(null)
+  const [sharedDoc, setSharedDoc] = useState<SharedDoc | null>(null)
   const [messages, setMessages] = useState<MessageRow[]>([])
   const [reactions, setReactions] = useState<ReactionRow[]>([])
   const [viewerCount, setViewerCount] = useState(0)
@@ -293,6 +296,25 @@ export function Live() {
     document.addEventListener('visibilitychange', onVisibility)
     return () => document.removeEventListener('visibilitychange', onVisibility)
   }, [roomLoaded, refreshWebinar])
+
+  // ── The shared document (platform 0253) ──────────────────────────────────
+  // Read through the PIN-gated RPC rather than from the row: in a PIN room the
+  // document is only for people who got in with the PIN. Re-read whenever the
+  // row changes (updated_at moves on every host edit, and it arrives over
+  // realtime) and once we have an attendee row, which is what the RPC checks.
+  const docWebinarId = webinar?.id ?? null
+  const webinarUpdatedAt = webinar?.updated_at ?? null
+  const attendeeRowId = attendee?.id ?? null
+  useEffect(() => {
+    if (!docWebinarId) return
+    let cancelled = false
+    void getSharedDoc(docWebinarId).then((doc) => {
+      if (!cancelled) setSharedDoc(doc)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [docWebinarId, webinarUpdatedAt, attendeeRowId])
 
   // ── Fetch LiveKit token when webinar goes live ───────────────────────────
   useEffect(() => {
@@ -517,7 +539,8 @@ export function Live() {
   const lkReady = lkToken && lkUrl && isLiveKitConfigured()
   // Only a document in this project's own bucket reaches the page — see
   // trustedSharedDocUrl for why the column alone can't be trusted.
-  const sharedDocUrl = trustedSharedDocUrl(webinar.shared_doc_url)
+  const sharedDocUrl = trustedSharedDocUrl(sharedDoc?.url ?? null)
+  const sharedDocName = sharedDoc?.name ?? 'Shared document'
 
   return (
     <div className="container py-6">
@@ -642,7 +665,7 @@ export function Live() {
                 <span className="flex min-w-0 items-center gap-2 text-sm font-medium text-slate-900 dark:text-slate-100">
                   <FileText className="h-4 w-4 shrink-0 text-slate-500 dark:text-slate-400" />
                   <span className="truncate">
-                    {webinar.shared_doc_name ?? 'Shared document'}
+                    {sharedDocName}
                   </span>
                 </span>
                 <a
@@ -656,7 +679,7 @@ export function Live() {
               </div>
               <SharedDocViewer
                 url={sharedDocUrl}
-                name={webinar.shared_doc_name ?? 'Shared document'}
+                name={sharedDocName}
                 className="h-[480px]"
               />
             </div>
