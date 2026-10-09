@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { VideoTrack } from '@livekit/components-react'
 import type { TrackReference } from '@livekit/components-react'
+import { RESET_PREFS_EVENT } from '@/lib/resetPrefs'
 
 /**
  * The presenter's face, on top of what they're sharing, draggable out of the way.
@@ -67,6 +68,14 @@ export function CameraBubble({
       // A remembered position is not worth an exception in private mode.
     }
   }, [pos, storageKey])
+
+  // Tune this app ▸ Reset to defaults (lib/resetPrefs.ts): back to the corner
+  // it starts in, live if a stream is on screen.
+  useEffect(() => {
+    const onReset = () => setPos(DEFAULT_POSITION)
+    window.addEventListener(RESET_PREFS_EVENT, onReset)
+    return () => window.removeEventListener(RESET_PREFS_EVENT, onReset)
+  }, [])
 
   /** Clamp so the whole bubble stays on the stage, not just its origin. */
   const clamp = useCallback((x: number, y: number): Position => {

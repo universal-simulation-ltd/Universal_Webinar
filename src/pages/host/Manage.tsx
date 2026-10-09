@@ -55,6 +55,7 @@ import {
   uploadSharedDoc,
 } from '@/lib/sharedDoc'
 import { usePanelLayout } from '@/lib/usePanelLayout'
+import { HOST_PANELS_KEY } from '@/lib/resetPrefs'
 import {
   approveSpeakRequestByToken,
   denySpeakRequestByToken,
@@ -126,7 +127,7 @@ const PANEL_DEFAULTS: PanelId[] = [
   'registrations',
 ]
 
-const PANEL_STORAGE_KEY = 'unisim-webinar-host-panels'
+const PANEL_STORAGE_KEY = HOST_PANELS_KEY
 
 /** How often the speaker queue re-reads itself while a session is live. */
 const SPEAK_QUEUE_POLL_MS = 10_000

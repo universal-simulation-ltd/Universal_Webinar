@@ -14,6 +14,7 @@ import { CameraBubble } from '@/components/CameraBubble'
 import { RecordControl } from '@/components/RecordControl'
 import { RecordingChip } from '@/components/RecordingBadge'
 import { useRoomRecording } from '@/lib/recordingSignal'
+import { CAMERA_BUBBLE_HOST_KEY } from '@/lib/resetPrefs'
 import { cn } from '@/lib/utils'
 
 /**
@@ -131,7 +132,7 @@ function HostBroadcastInner({
             {bubble && (
               <CameraBubble
                 trackRef={bubble}
-                storageKey="unisim-webinar-camera-bubble-host"
+                storageKey={CAMERA_BUBBLE_HOST_KEY}
                 label="Your camera"
               />
             )}

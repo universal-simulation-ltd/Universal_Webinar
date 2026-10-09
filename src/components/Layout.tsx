@@ -8,6 +8,7 @@ import { useThemeStore } from '@/stores/themeStore'
 // lockfile the first time anyone upgrades anything.
 import credits from '../generated/credits.json'
 import { KNOWLEDGE_BASE } from '../knowledge'
+import { resetWebinarPrefs } from '@/lib/resetPrefs'
 
 const REPO_URL = 'https://github.com/universal-simulation-ltd/Universal_Webinar'
 
@@ -51,6 +52,9 @@ export function PublicLayout() {
         // articles, bundled from ./knowledge so they read offline.
         knowledgeBase={KNOWLEDGE_BASE}
         about={ABOUT}
+        // Tune this app ▸ Reset to defaults: the host panel layout and the
+        // camera bubble positions (lib/resetPrefs.ts). Never your name/email.
+        onResetDefaults={resetWebinarPrefs}
         // App preferences' Colour scheme row: this app's override of the
         // Global preference (absent = follow global).
         themeStore={useThemeStore}
@@ -96,6 +100,7 @@ export function AdminLayout() {
         newAssessmentHref={null}
         theme={theme}
         about={ABOUT}
+        onResetDefaults={resetWebinarPrefs}
         themeStore={useThemeStore}
         // BASE_URL, not `/` — see the note in PublicLayout.
         suiteSwitcherIconSrc={`${import.meta.env.BASE_URL}unisim-icon.png`}

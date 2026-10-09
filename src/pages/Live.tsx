@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button'
 import { CameraBubble } from '@/components/CameraBubble'
 import { RecordingChip, RecordingWatcher } from '@/components/RecordingBadge'
 import { useRecordingCopy } from '@/lib/recordingCopy'
+import { CAMERA_BUBBLE_GUEST_KEY } from '@/lib/resetPrefs'
 import { ChatPanel } from '@/components/ChatPanel'
 import { SharedDocViewer } from '@/components/SharedDocViewer'
 import { trustedSharedDocUrl } from '@/lib/sharedDoc'
@@ -135,7 +136,7 @@ function HostStageInner() {
       {hostBubbleTrack && (
         <CameraBubble
           trackRef={hostBubbleTrack}
-          storageKey="unisim-webinar-camera-bubble-guest"
+          storageKey={CAMERA_BUBBLE_GUEST_KEY}
           label="Presenter camera"
         />
       )}
