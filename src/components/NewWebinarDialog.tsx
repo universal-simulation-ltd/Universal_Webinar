@@ -125,7 +125,7 @@ export function NewWebinarDialog({ open, onOpenChange, onCreated }: Props) {
 
             <fieldset className="rounded-lg border border-slate-200 dark:border-slate-800 p-3">
               <legend className="px-1 text-xs font-medium text-slate-500 dark:text-slate-400">
-                Default settings (you can change later)
+                Room defaults (you can tune them later)
               </legend>
               <label className="flex items-start gap-3 py-1.5">
                 <input
