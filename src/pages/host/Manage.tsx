@@ -1252,7 +1252,7 @@ export function HostManage() {
               key="room"
               {...panelProps('room')}
               icon={<Settings2 className="h-4 w-4 text-slate-500 dark:text-slate-400" />}
-              title="Tune the room"
+              title="Fine-tune the room"
             >
               <div className="space-y-1">
               <ToggleRow
@@ -1416,7 +1416,7 @@ export function HostManage() {
           ))}
 
           {/* The three emails that go out on the host's behalf, lifted out of
-              Tune the room (was Room settings). They are the one group here with a consequence
+              Fine-tune the room (was Room settings). They are the one group here with a consequence
               outside the room — mail landing in a stranger's inbox — and they
               were buried between "show attendee count" and a Phase 6 stub. */}
           {register('communication', (

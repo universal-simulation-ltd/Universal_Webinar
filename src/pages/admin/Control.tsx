@@ -516,12 +516,12 @@ export function AdminControl() {
         </div>
 
         <aside className="space-y-4">
-          {/* Tune the room (was Room settings) */}
+          {/* Fine-tune the room (was Room settings) */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Settings2 className="h-4 w-4 text-slate-500 dark:text-slate-400" />
-                Tune the room
+                Fine-tune the room
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-1">
