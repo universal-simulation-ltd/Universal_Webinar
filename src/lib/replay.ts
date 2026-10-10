@@ -216,7 +216,10 @@ export async function uploadReplay(client: Supabase, input: UploadReplayInput): 
     return { ok: true, replayId: `u-${job.uploadId}`, creditsRemaining: credits }
   } catch (err) {
     const code = err instanceof MultipartError ? err.code : 'failed'
-    if (!FINAL_PART_ERRORS.has(code)) return { ok: false, error: 'failed', detail: code, resume: job }
+    // Never got as far as an upload id (the function or Worker refused to
+    // start one): nothing to resume, so refund now rather than hold the charge.
+    const resumable = !!job.parts.urls && !FINAL_PART_ERRORS.has(code)
+    if (resumable) return { ok: false, error: 'failed', detail: code, resume: job }
     await cancelReplayUpload(client, job)
     if (code === 'cancelled') return { ok: false, error: 'cancelled' }
     if (code === 'too_large') return { ok: false, error: 'too_big' }
