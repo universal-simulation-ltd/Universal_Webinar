@@ -63,7 +63,7 @@ function friendlyTokenError(msg: string): string {
   return msg
 }
 
-// create_webinar's other refusals (platform 0262).
+// create_webinar's other refusals (platform 0263).
 function createErrorCopy(code: string): string {
   switch (code) {
     case 'not_authenticated':
@@ -205,7 +205,7 @@ export function HostNewForm() {
       const effHostName = needsAccount ? hostName : signedInName
       const effHostEmail = needsAccount ? hostEmail : signedInEmail
       const slug = slugifyTitle(title)
-      // One call does it all (platform 0262): the server creates the webinar
+      // One call does it all (platform 0263): the server creates the webinar
       // and, in the same transaction, takes the free token hold or counts the
       // company-less ID's one webinar — or refuses and creates nothing. Ask
       // with whichever client holds the ID's session: the suite one when they

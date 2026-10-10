@@ -1,6 +1,6 @@
 // Run: npm run test:unit
 //
-// What create_webinar (universal-platform 0262) returns, mapped to the row the
+// What create_webinar (universal-platform 0263) returns, mapped to the row the
 // app works with — and every refusal turned into a CreateWebinarError the form
 // can branch on.
 

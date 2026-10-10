@@ -1,6 +1,6 @@
 import type { WebinarRow, WebinarWithManageToken } from './database.types'
 
-// What the platform's create_webinar() RPC (universal-platform 0262) hands
+// What the platform's create_webinar() RPC (universal-platform 0263) hands
 // back, turned into the row the app works with. No runtime imports, so
 // `createWebinarResult.test.mjs` runs it under Node's type stripping.
 
@@ -45,7 +45,7 @@ export function webinarFromCreateResult(res: CreateWebinarRpcResult | null): Web
   }
 }
 
-/** PostgREST's "no such function" — a self-hosted database without 0262. */
+/** PostgREST's "no such function" — a self-hosted database without 0263. */
 export function isMissingFunction(err: { code?: string; message?: string } | null | undefined): boolean {
   return !!err && (err.code === 'PGRST202' || /could not find the function/i.test(err.message ?? ''))
 }

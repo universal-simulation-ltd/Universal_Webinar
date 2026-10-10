@@ -77,7 +77,7 @@ host's Record-in-the-cloud button only appears once the server says it is on.
 ## Creating a webinar
 
 Webinars are created only through the platform's `create_webinar()` RPC
-(universal-platform 0262), never by inserting into `webinars`: the server mints
+(universal-platform 0263), never by inserting into `webinars`: the server mints
 the manage token, sets the host to the caller's own verified address, and in
 the same transaction takes the free token hold or counts the company-less
 Universal ID's one webinar (0221) — or refuses and creates nothing. A

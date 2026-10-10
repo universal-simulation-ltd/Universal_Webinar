@@ -167,7 +167,7 @@ export { CreateWebinarError } from './createWebinarResult'
 type RpcClient = Pick<typeof supabase, 'rpc' | 'from'>
 
 /**
- * Create a webinar through the platform's create_webinar() RPC (0262), the
+ * Create a webinar through the platform's create_webinar() RPC (0263), the
  * only way in on the hosted service: it mints the manage token, sets the host
  * to the caller's own verified address, and applies the hosting limits — the
  * free tier's token hold, or the one-webinar rule for an ID with no company —
