@@ -969,6 +969,8 @@ export function HostManage() {
                     slug={webinar.slug}
                     title={webinar.title}
                     manageToken={token}
+                    webinarId={webinar.id}
+                    onReplay={(next) => setWebinar(next)}
                   />
                 </div>
               ) : (

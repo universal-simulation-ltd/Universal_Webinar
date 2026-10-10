@@ -81,7 +81,7 @@ const EN: RecordingCopy = {
   uploading: 'Uploading…',
   uploadFile: 'Upload a recording file…',
   uploadHint:
-    'The replay link goes into the follow-up email automatically. Replays are kept in your Universal Recorder and use your company’s online file storage, up to 50 MB a file.',
+    'The replay link goes into the follow-up email automatically. Replays are kept in your Universal Recorder and use your company’s online file storage, up to 2 GB a file.',
   tooBig:
     'This recording is {size}, and replays can be up to {max}. Share it another way, for example on YouTube, and paste the link below.',
   wrongType: 'Choose an MP4 or WebM video.',
@@ -130,7 +130,7 @@ const COPY: Record<string, RecordingCopy> = {
     uploading: 'Envoi…',
     uploadFile: 'Envoyer un fichier d’enregistrement…',
     uploadHint:
-      'Le lien du replay est ajouté automatiquement à l’e-mail de suivi. Les replays sont conservés dans votre Universal Recorder et utilisent le stockage en ligne de votre entreprise, jusqu’à 50 Mo par fichier.',
+      'Le lien du replay est ajouté automatiquement à l’e-mail de suivi. Les replays sont conservés dans votre Universal Recorder et utilisent le stockage en ligne de votre entreprise, jusqu’à 2 Go par fichier.',
     tooBig:
       'Cet enregistrement fait {size}, et un replay peut faire jusqu’à {max}. Partagez-le autrement, par exemple sur YouTube, et collez le lien ci-dessous.',
     wrongType: 'Choisissez une vidéo MP4 ou WebM.',
@@ -175,7 +175,7 @@ const COPY: Record<string, RecordingCopy> = {
     uploading: 'Subiendo…',
     uploadFile: 'Subir un archivo de grabación…',
     uploadHint:
-      'El enlace a la repetición se añade automáticamente al correo de seguimiento. Las repeticiones se guardan en tu Universal Recorder y usan el almacenamiento en línea de tu empresa, hasta 50 MB por archivo.',
+      'El enlace a la repetición se añade automáticamente al correo de seguimiento. Las repeticiones se guardan en tu Universal Recorder y usan el almacenamiento en línea de tu empresa, hasta 2 GB por archivo.',
     tooBig:
       'Esta grabación ocupa {size} y una repetición puede ocupar hasta {max}. Compártela de otra forma, por ejemplo en YouTube, y pega el enlace abajo.',
     wrongType: 'Elige un vídeo MP4 o WebM.',
@@ -220,7 +220,7 @@ const COPY: Record<string, RecordingCopy> = {
     uploading: 'Caricamento…',
     uploadFile: 'Carica un file di registrazione…',
     uploadHint:
-      'Il link alla replica viene aggiunto automaticamente all’email di follow-up. Le repliche restano nel tuo Universal Recorder e usano lo spazio online della tua azienda, fino a 50 MB per file.',
+      'Il link alla replica viene aggiunto automaticamente all’email di follow-up. Le repliche restano nel tuo Universal Recorder e usano lo spazio online della tua azienda, fino a 2 GB per file.',
     tooBig:
       'Questa registrazione pesa {size} e una replica può arrivare a {max}. Condividila in un altro modo, ad esempio su YouTube, e incolla il link qui sotto.',
     wrongType: 'Scegli un video MP4 o WebM.',
@@ -265,7 +265,7 @@ const COPY: Record<string, RecordingCopy> = {
     uploading: 'Wird hochgeladen…',
     uploadFile: 'Aufnahmedatei hochladen…',
     uploadHint:
-      'Der Link zur Aufzeichnung kommt automatisch in die Follow-up-E-Mail. Aufzeichnungen liegen in deinem Universal Recorder und nutzen den Online-Speicher deines Unternehmens, bis zu 50 MB pro Datei.',
+      'Der Link zur Aufzeichnung kommt automatisch in die Follow-up-E-Mail. Aufzeichnungen liegen in deinem Universal Recorder und nutzen den Online-Speicher deines Unternehmens, bis zu 2 GB pro Datei.',
     tooBig:
       'Diese Aufzeichnung ist {size} groß, erlaubt sind bis zu {max}. Teile sie auf anderem Weg, zum Beispiel über YouTube, und füge den Link unten ein.',
     wrongType: 'Wähle ein MP4- oder WebM-Video.',
@@ -310,7 +310,7 @@ const COPY: Record<string, RecordingCopy> = {
     uploading: 'Enviando…',
     uploadFile: 'Enviar um arquivo de gravação…',
     uploadHint:
-      'O link da reprise vai automaticamente no e-mail de acompanhamento. As reprises ficam no seu Universal Recorder e usam o armazenamento on-line da sua empresa, até 50 MB por arquivo.',
+      'O link da reprise vai automaticamente no e-mail de acompanhamento. As reprises ficam no seu Universal Recorder e usam o armazenamento on-line da sua empresa, até 2 GB por arquivo.',
     tooBig:
       'Esta gravação tem {size}, e uma reprise pode ter até {max}. Compartilhe de outro jeito, por exemplo no YouTube, e cole o link abaixo.',
     wrongType: 'Escolha um vídeo MP4 ou WebM.',
@@ -355,7 +355,7 @@ const COPY: Record<string, RecordingCopy> = {
     uploading: 'A carregar…',
     uploadFile: 'Carregar um ficheiro de gravação…',
     uploadHint:
-      'A ligação para a repetição segue automaticamente no e-mail de acompanhamento. As repetições ficam no seu Universal Recorder e usam o armazenamento online da sua empresa, até 50 MB por ficheiro.',
+      'A ligação para a repetição segue automaticamente no e-mail de acompanhamento. As repetições ficam no seu Universal Recorder e usam o armazenamento online da sua empresa, até 2 GB por ficheiro.',
     tooBig:
       'Esta gravação tem {size}, e uma repetição pode ter até {max}. Partilhe-a de outra forma, por exemplo no YouTube, e cole a ligação abaixo.',
     wrongType: 'Escolha um vídeo MP4 ou WebM.',
@@ -400,7 +400,7 @@ const COPY: Record<string, RecordingCopy> = {
     uploading: 'Yükleniyor…',
     uploadFile: 'Bir kayıt dosyası yükle…',
     uploadHint:
-      'Tekrar izleme bağlantısı takip e-postasına otomatik olarak eklenir. Tekrar izlemeler Universal Recorder’ınızda saklanır ve şirketinizin çevrimiçi dosya alanını kullanır; dosya başına en fazla 50 MB.',
+      'Tekrar izleme bağlantısı takip e-postasına otomatik olarak eklenir. Tekrar izlemeler Universal Recorder’ınızda saklanır ve şirketinizin çevrimiçi dosya alanını kullanır; dosya başına en fazla 2 GB.',
     tooBig:
       'Bu kayıt {size}; tekrar izlemeler en fazla {max} olabilir. Başka bir yolla, örneğin YouTube’da paylaşın ve bağlantıyı aşağıya yapıştırın.',
     wrongType: 'Bir MP4 veya WebM videosu seçin.',
@@ -449,5 +449,6 @@ export function formatDuration(ms: number): string {
 
 export function formatMegabytes(bytes: number): string {
   const mb = bytes / (1024 * 1024)
+  if (mb >= 1024) return `${(mb / 1024).toFixed(1).replace(/\.0$/, '')} GB`
   return `${mb < 10 ? mb.toFixed(1) : Math.round(mb)} MB`
 }

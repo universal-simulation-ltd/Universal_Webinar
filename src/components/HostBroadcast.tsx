@@ -12,6 +12,7 @@ import { ValueChip } from '@unisim/sdk'
 import { Button } from '@/components/ui/button'
 import { CameraBubble } from '@/components/CameraBubble'
 import { RecordControl } from '@/components/RecordControl'
+import type { WebinarRow } from '@/lib/database.types'
 import { RecordingChip } from '@/components/RecordingBadge'
 import { useRoomRecording } from '@/lib/recordingSignal'
 import { CAMERA_BUBBLE_HOST_KEY } from '@/lib/resetPrefs'
@@ -33,6 +34,8 @@ export function HostBroadcast({
   slug,
   title,
   manageToken,
+  webinarId,
+  onReplay,
 }: {
   serverUrl: string
   token: string
@@ -41,6 +44,9 @@ export function HostBroadcast({
   slug: string
   title: string
   manageToken: string | null
+  /** For "Upload as replay" straight after Stop. */
+  webinarId?: string
+  onReplay?: (next: WebinarRow) => void
 }) {
   return (
     <LiveKitRoom
@@ -55,7 +61,7 @@ export function HostBroadcast({
       onDisconnected={onLeave}
       style={{ height: '100%', width: '100%', background: 'transparent' }}
     >
-      <HostBroadcastInner slug={slug} title={title} manageToken={manageToken} />
+      <HostBroadcastInner slug={slug} title={title} manageToken={manageToken} webinarId={webinarId} onReplay={onReplay} />
     </LiveKitRoom>
   )
 }
@@ -64,10 +70,14 @@ function HostBroadcastInner({
   slug,
   title,
   manageToken,
+  webinarId,
+  onReplay,
 }: {
   slug: string
   title: string
   manageToken: string | null
+  webinarId?: string
+  onReplay?: (next: WebinarRow) => void
 }) {
   const connectionState = useConnectionState()
   const recording = useRoomRecording()
@@ -240,7 +250,7 @@ function HostBroadcastInner({
         <p className="mt-2 text-xs text-red-600 dark:text-red-400">{deviceError}</p>
       )}
 
-      <RecordControl slug={slug} title={title} manageToken={manageToken} />
+      <RecordControl slug={slug} title={title} manageToken={manageToken} webinarId={webinarId} onReplay={onReplay} />
     </div>
   )
 }

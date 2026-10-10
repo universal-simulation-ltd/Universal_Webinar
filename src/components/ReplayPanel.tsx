@@ -1,40 +1,22 @@
 import { useEffect, useRef, useState } from 'react'
 import { CheckCircle2, ExternalLink, FileVideo, Loader2, Trash2, Upload } from 'lucide-react'
-import { useOrg, useUniversal } from '@unisim/sdk'
+import { useUniversal } from '@unisim/sdk'
 import { Button } from '@/components/ui/button'
 import { updateWebinarByToken } from '@/lib/host'
 import { useFinishedRecording } from '@/lib/recordingStore'
-import { fill, formatDuration, formatMegabytes, useRecordingCopy, type RecordingCopy } from '@/lib/recordingCopy'
+import { fill, formatDuration, formatMegabytes, useRecordingCopy } from '@/lib/recordingCopy'
 import {
   MAX_REPLAY_BYTES,
   REPLAY_TYPES,
   deleteUploadedReplay,
   removeCloudReplay,
   replayIdFromUrl,
-  replayUrl,
   syncCloudRecording,
   uploadIdFromReplayId,
-  uploadReplay,
-  type UploadReplayResult,
 } from '@/lib/replay'
+import { useReplayUpload } from '@/lib/useReplayUpload'
+import { ReplayUploadStatus } from '@/components/ReplayUploadStatus'
 import type { WebinarRow } from '@/lib/database.types'
-
-function uploadError(copy: RecordingCopy, res: Extract<UploadReplayResult, { ok: false }>, size: number): string {
-  switch (res.error) {
-    case 'too_big':
-      return fill(copy.tooBig, { size: formatMegabytes(size), max: formatMegabytes(MAX_REPLAY_BYTES) })
-    case 'wrong_type':
-      return copy.wrongType
-    case 'not_authenticated':
-      return copy.signIn
-    case 'no_org':
-      return copy.noOrg
-    case 'no_credits':
-      return copy.noCredits
-    default:
-      return copy.uploadFailed
-  }
-}
 
 /**
  * The replay half of the wrap-up's Recording card: upload the recording the
@@ -51,17 +33,14 @@ export function ReplayPanel({
   onChange: (next: WebinarRow) => void
 }) {
   const copy = useRecordingCopy()
-  const { supabase: client, session, activeOrgId } = useUniversal()
-  // useOrg is what adopts a company as the active one when none is chosen yet.
-  const { org } = useOrg()
-  const orgId = org?.id ?? activeOrgId ?? null
-  const signedIn = !!session && !session.user.is_anonymous
+  const { supabase: client } = useUniversal()
   const finished = useFinishedRecording(webinar.slug)
   const replayId = replayIdFromUrl(webinar.recording_url)
-  const [busy, setBusy] = useState<'upload' | 'remove' | null>(null)
-  const [message, setMessage] = useState<string | null>(null)
+  const [removing, setRemoving] = useState(false)
   const [cloudPending, setCloudPending] = useState(false)
   const fileInput = useRef<HTMLInputElement>(null)
+  const up = useReplayUpload({ webinarId: webinar.id, slug: webinar.slug, token, onUploaded: onChange })
+  const busy = up.busy || removing
 
   // A cloud recording (when that is switched on) finishes processing a little
   // after the room ends; ask for it, and keep asking for a few minutes. The
@@ -96,52 +75,25 @@ export function ReplayPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasLink, webinar.slug, token])
 
-  async function upload(file: Blob, fileName: string) {
-    setMessage(null)
-    if (!signedIn) {
-      setMessage(copy.signIn)
-      return
-    }
-    setBusy('upload')
-    try {
-      const res = await uploadReplay(client, { orgId, webinarId: webinar.id, file, fileName })
-      if (!res.ok) {
-        setMessage(uploadError(copy, res, file.size))
-        return
-      }
-      try {
-        onChange(await updateWebinarByToken(webinar.slug, token, { recording_url: replayUrl(res.replayId) }))
-      } catch {
-        // The link didn't save, so nobody would ever see this upload: undo it
-        // (and its charge) rather than leave it in their storage.
-        const uploadId = uploadIdFromReplayId(res.replayId)
-        if (uploadId) await deleteUploadedReplay(client, uploadId).catch(() => false)
-        setMessage(copy.uploadFailed)
-      }
-    } finally {
-      setBusy(null)
-    }
-  }
-
   async function remove() {
     if (!replayId) return
-    setMessage(null)
-    setBusy('remove')
+    up.setMessage(null)
+    setRemoving(true)
     try {
       const uploadId = uploadIdFromReplayId(replayId)
       if (uploadId) {
         // Frees the storage (and refunds it) when this is the device that
         // saved it; otherwise the file stays in their Universal Recorder.
-        if (signedIn) await deleteUploadedReplay(client, uploadId).catch(() => false)
+        if (up.signedIn) await deleteUploadedReplay(client, uploadId).catch(() => false)
         onChange(await updateWebinarByToken(webinar.slug, token, { recording_url: null }))
       } else {
         await removeCloudReplay(webinar.slug, token)
         onChange({ ...webinar, recording_url: null })
       }
     } catch {
-      setMessage(copy.uploadFailed)
+      up.setMessage(copy.uploadFailed)
     } finally {
-      setBusy(null)
+      setRemoving(false)
     }
   }
 
@@ -159,12 +111,12 @@ export function ReplayPanel({
               {copy.watch}
             </a>
           </Button>
-          <Button size="sm" variant="ghost" disabled={busy !== null} onClick={() => void remove()}>
-            {busy === 'remove' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-            {busy === 'remove' ? copy.removing : copy.remove}
+          <Button size="sm" variant="ghost" disabled={busy} onClick={() => void remove()}>
+            {removing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+            {removing ? copy.removing : copy.remove}
           </Button>
         </div>
-        {message && <p className="text-xs text-red-700 dark:text-red-400" role="alert">{message}</p>}
+        {up.message && <p className="text-xs text-red-700 dark:text-red-400" role="alert">{up.message}</p>}
       </div>
     )
   }
@@ -188,45 +140,51 @@ export function ReplayPanel({
               {fill(copy.tooBig, { size: formatMegabytes(finished.bytes), max: formatMegabytes(MAX_REPLAY_BYTES) })}
             </p>
           ) : (
-            <Button
-              size="sm"
-              className="mt-2"
-              disabled={busy !== null}
-              onClick={() => void upload(finished.file, finished.fileName)}
-            >
-              {busy === 'upload' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-              {busy === 'upload' ? copy.uploading : copy.uploadReplay}
-            </Button>
+            !up.paused && (
+              <Button
+                size="sm"
+                className="mt-2"
+                disabled={busy}
+                onClick={() => void up.start(finished.file, finished.fileName)}
+              >
+                {up.busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                {up.busy ? copy.uploading : copy.uploadReplay}
+              </Button>
+            )
           )}
         </div>
       )}
 
-      <div>
-        <input
-          ref={fileInput}
-          type="file"
-          accept={REPLAY_TYPES.join(',')}
-          className="hidden"
-          data-testid="replay-file"
-          onChange={(e) => {
-            const f = e.target.files?.[0]
-            e.target.value = ''
-            if (f) void upload(f, f.name)
-          }}
-        />
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={busy !== null}
-          onClick={() => fileInput.current?.click()}
-        >
-          {busy === 'upload' && !finished ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-          {copy.uploadFile}
-        </Button>
-      </div>
+      <ReplayUploadStatus upload={up} />
+
+      {!up.paused && (
+        <div>
+          <input
+            ref={fileInput}
+            type="file"
+            accept={REPLAY_TYPES.join(',')}
+            className="hidden"
+            data-testid="replay-file"
+            onChange={(e) => {
+              const f = e.target.files?.[0]
+              e.target.value = ''
+              if (f) void up.start(f, f.name)
+            }}
+          />
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={busy}
+            onClick={() => fileInput.current?.click()}
+          >
+            <Upload className="h-4 w-4" />
+            {copy.uploadFile}
+          </Button>
+        </div>
+      )}
       <p className="text-xs text-slate-500 dark:text-slate-400">{copy.uploadHint}</p>
       {cloudPending && <p className="text-xs text-slate-600 dark:text-slate-300" role="status">{copy.cloudProcessing}</p>}
-      {message && <p className="text-xs text-red-700 dark:text-red-400" role="alert">{message}</p>}
+      {up.message && !up.paused && <p className="text-xs text-red-700 dark:text-red-400" role="alert">{up.message}</p>}
     </div>
   )
 }

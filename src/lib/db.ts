@@ -1,4 +1,9 @@
 import { supabase } from './supabase'
+import {
+  isMissingFunction,
+  webinarFromCreateResult,
+  type CreateWebinarRpcResult,
+} from './createWebinarResult'
 import { localTimezone } from './time'
 import type { CustomAnswers } from './customQuestions'
 import type {
@@ -157,28 +162,44 @@ export async function getWebinarBySlug(slug: string): Promise<WebinarRow | null>
   return data ? publicWebinarRow(data) : null
 }
 
-// The manage token can't be read back out of the table any more, so the client
-// mints it here and hands it to the INSERT rather than letting the column
-// default fire. crypto.randomUUID() is CSPRNG-backed and gives the same 122
-// bits as gen_random_uuid(); choosing your own token can only ever weaken a
-// webinar you are creating yourself, and the update RPC strips the column from
-// its patch, so it stays unforgeable for anyone else's row.
+export { CreateWebinarError } from './createWebinarResult'
+
+type RpcClient = Pick<typeof supabase, 'rpc' | 'from'>
+
+/**
+ * Create a webinar through the platform's create_webinar() RPC (0262), the
+ * only way in on the hosted service: it mints the manage token, sets the host
+ * to the caller's own verified address, and applies the hosting limits — the
+ * free tier's token hold, or the one-webinar rule for an ID with no company —
+ * in the same transaction. A refusal throws CreateWebinarError.
+ *
+ * `client` must hold the host's Universal ID session (the suite client when
+ * they arrived signed in, this app's own right after the verification code).
+ *
+ * A self-hosted copy whose database predates the RPC still inserts directly,
+ * as every release before this one did.
+ */
 export async function createWebinar(
   insert: WebinarInsert,
+  client: RpcClient = supabase,
 ): Promise<WebinarWithManageToken> {
-  const manageToken = insert.manage_token ?? crypto.randomUUID()
-  const { data, error } = await supabase
+  const { manage_token: _ignored, created_by: _server, status: _status, ...fields } = insert
+  void _ignored
+  void _server
+  void _status
+  const { data, error } = await client.rpc('create_webinar', { p_webinar: fields })
+  if (!error) return webinarFromCreateResult(data as CreateWebinarRpcResult | null)
+  if (!isMissingFunction(error)) throw error
+
+  const manageToken = crypto.randomUUID()
+  const { data: row, error: insertErr } = await client
     .from('webinars')
     .insert({ ...insert, manage_token: manageToken })
     .select(WEBINAR_COLUMNS)
     .single()
-  if (error) throw error
-  // A brand-new webinar has no PIN — the select can't read `entry_pin` back
-  // (0102 revokes it), and there is nothing to read. The host's email and the
-  // recording link can't be read back either (0192), but they are exactly
-  // what this insert just wrote (and a new webinar has no recording yet).
+  if (insertErr) throw insertErr
   return {
-    ...publicWebinarRow(data),
+    ...publicWebinarRow(row),
     host_email: insert.host_email ?? null,
     recording_url: null,
     manage_token: manageToken,

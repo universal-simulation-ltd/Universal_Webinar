@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useConnectionState, useRoomContext, useSpeakingParticipants, useTracks } from '@livekit/components-react'
 import { ConnectionState, Track, type Participant } from 'livekit-client'
-import { Circle, Cloud, Loader2, Square } from 'lucide-react'
+import { Circle, Cloud, Download, Loader2, Square, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   SessionRecorder,
@@ -21,6 +21,10 @@ import {
 import { RECORDING_ATTRIBUTE } from '@/lib/recordingSignal'
 import { withWebmDuration } from '@/lib/webmDuration'
 import { fill, formatDuration, formatMegabytes, useRecordingCopy } from '@/lib/recordingCopy'
+import { MAX_REPLAY_BYTES } from '@/lib/replay'
+import { useReplayUpload } from '@/lib/useReplayUpload'
+import { ReplayUploadStatus } from '@/components/ReplayUploadStatus'
+import type { WebinarRow } from '@/lib/database.types'
 import {
   cloudStatus,
   startCloudRecording,
@@ -30,10 +34,26 @@ import {
 
 type Phase = 'idle' | 'starting' | 'recording' | 'stopping'
 
+/** English-only (Webinar's hosting pages are English; 2026-10-10). */
+const STOP_EN = {
+  /** {size} */
+  ready: 'Recording stopped ({size}). Download it, or upload it as the replay.',
+  download: 'Download',
+  discardConfirm: 'Your last recording hasn’t been downloaded or uploaded. Start a new one anyway?',
+}
+
 interface Active {
   rec: SessionRecorder
   device: DeviceFile | null
   fileName: string
+}
+
+/** The take the host just stopped, offered for Download / Upload as replay. */
+interface Take {
+  file: Blob
+  fileName: string
+  /** Already on disk (streamed there, or downloaded): no Download needed. */
+  saved: boolean
 }
 
 /** The name drawn on the recording; LiveKit names are unset for the host. */
@@ -51,6 +71,24 @@ function displayName(p: Participant): string | null {
  * stage, End webinar, a dropped connection — it is finished and saved, never
  * thrown away.
  *
+ * When the host presses Stop, the take is offered right here: Download (unless
+ * it was already streamed to a file they picked) and Upload as replay, which
+ * stores it and writes the /replay link into the follow-up email — the same
+ * upload the wrap-up page offers.
+ *
+ * ── Why a canvas mix, not tab capture (getDisplayMedia) ─────────────────────
+ * Re-checked 2026-10-10 when James asked for "the host's tab, or the LiveKit
+ * tracks mixed into a canvas — whichever works in Chrome, Edge AND Safari".
+ * Tab capture fails that bar: `preferCurrentTab` / self-browser-surface are
+ * Chromium-only, Safari can only offer a whole screen or window (no tab, no tab
+ * audio), and on every browser the host must pick from a sharing prompt each
+ * time, may pick the wrong thing, and records whatever else is on screen —
+ * chat, notes, notifications. Tab audio would also miss the host's own mic
+ * (a tab never plays itself back). The canvas + Web Audio mix needs no prompt,
+ * records exactly the stage guests see with every mic in the room, keeps going
+ * when the host switches to their slides (worker clock), and runs on all three
+ * browsers (canvas.captureStream + MediaRecorder; MP4 on Safari).
+ *
  * Cloud recording shows only when the server says it is switched on; it is off
  * until the server's flag is switched on (the platform's webinar-recording function).
  */
@@ -58,10 +96,15 @@ export function RecordControl({
   slug,
   title,
   manageToken,
+  webinarId,
+  onReplay,
 }: {
   slug: string
   title: string
   manageToken: string | null
+  /** For Upload as replay; without it (or a manage token) only Download shows. */
+  webinarId?: string
+  onReplay?: (next: WebinarRow) => void
 }) {
   const copy = useRecordingCopy()
   const room = useRoomContext()
@@ -71,6 +114,18 @@ export function RecordControl({
   const [note, setNote] = useState<string | null>(null)
   const [, setTick] = useState(0)
   const active = useRef<Active | null>(null)
+  const [take, setTake] = useState<Take | null>(null)
+  const [uploaded, setUploaded] = useState(false)
+  const upload = useReplayUpload({
+    webinarId: webinarId ?? '',
+    slug,
+    token: manageToken,
+    onUploaded: (next) => {
+      setUploaded(true)
+      onReplay?.(next)
+    },
+  })
+  const canUpload = !!webinarId && !!manageToken && !!onReplay
   const copyRef = useRef(copy)
   copyRef.current = copy
 
@@ -156,7 +211,9 @@ export function RecordControl({
           }
         } else {
           file = await withWebmDuration(res.blob ?? new Blob([], { type: res.mimeType }), res.durationMs)
-          downloadBlob(file, a.fileName)
+          // The stage is closing under it: nothing will be left on screen to
+          // offer a Download from, so save it now (never discard a take).
+          if (endedByLeaving) downloadBlob(file, a.fileName)
         }
         putFinishedRecording({
           slug,
@@ -167,7 +224,11 @@ export function RecordControl({
           durationMs: res.durationMs,
           endedByLeaving,
         })
-        setNote(endedByLeaving ? text.savedAfterLeaving : fill(text.saved, { size: formatMegabytes(file.size || res.bytes) }))
+        setUploaded(false)
+        setTake({ file, fileName: a.fileName, saved: !!a.device || endedByLeaving })
+        if (endedByLeaving) setNote(text.savedAfterLeaving)
+        else if (a.device) setNote(fill(text.saved, { size: formatMegabytes(file.size || res.bytes) }))
+        else setNote(fill(STOP_EN.ready, { size: formatMegabytes(file.size || res.bytes) }))
       } catch (err) {
         console.error('Recording could not be saved', err)
         setError(text.saveFailed)
@@ -180,6 +241,19 @@ export function RecordControl({
 
   // The stage is closing (left, ended, disconnected): finish and save.
   useEffect(() => () => void finish(true), [finish])
+
+  // A take that exists only in this tab (not downloaded, not uploaded) is worth
+  // a "Leave site?" prompt too.
+  const unsavedTake = !!take && !take.saved && !uploaded
+  useEffect(() => {
+    if (!unsavedTake) return
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => window.removeEventListener('beforeunload', onBeforeUnload)
+  }, [unsavedTake])
 
   // A recording in progress is worth a "Leave site?" prompt.
   useEffect(() => {
@@ -199,6 +273,9 @@ export function RecordControl({
   async function start() {
     setError(null)
     setNote(null)
+    if (unsavedTake && !window.confirm(STOP_EN.discardConfirm)) return
+    setTake(null)
+    upload.setMessage(null)
     if (!supportsSessionRecording()) {
       setError(copy.unsupported)
       return
@@ -334,6 +411,44 @@ export function RecordControl({
         <p className="text-xs text-slate-500 dark:text-slate-400">{copy.cloudPaidOnly}</p>
       )}
       {note && <p className="text-xs text-emerald-700 dark:text-emerald-400" role="status">{note}</p>}
+      {take && phase === 'idle' && (
+        <div className="space-y-2" data-testid="record-take">
+          <div className="flex flex-wrap gap-2">
+            {!take.saved && (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  downloadBlob(take.file, take.fileName)
+                  setTake({ ...take, saved: true })
+                }}
+              >
+                <Download className="h-4 w-4" />
+                {STOP_EN.download}
+              </Button>
+            )}
+            {canUpload && !uploaded && !upload.paused && take.file.size <= MAX_REPLAY_BYTES && (
+              <Button
+                type="button"
+                size="sm"
+                disabled={upload.busy}
+                onClick={() => void upload.start(take.file, take.fileName)}
+              >
+                {upload.busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                {upload.busy ? copy.uploading : copy.uploadReplay}
+              </Button>
+            )}
+          </div>
+          <ReplayUploadStatus upload={upload} />
+          {uploaded && (
+            <p className="text-xs text-emerald-700 dark:text-emerald-400" role="status">{copy.replayReady}</p>
+          )}
+          {upload.message && !upload.paused && (
+            <p className="text-xs text-red-600 dark:text-red-400" role="alert">{upload.message}</p>
+          )}
+        </div>
+      )}
       {error && <p className="text-xs text-red-600 dark:text-red-400" role="alert">{error}</p>}
     </div>
   )

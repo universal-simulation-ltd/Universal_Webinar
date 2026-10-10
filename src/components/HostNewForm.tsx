@@ -31,7 +31,7 @@ import {
 import { supabase } from '@/lib/supabase'
 import { noCompanyCopy, SET_UP_COMPANY_URL } from '@/lib/noCompanyCopy'
 import { cn } from '@/lib/utils'
-import { createWebinar, deleteWebinar } from '@/lib/db'
+import { CreateWebinarError, createWebinar } from '@/lib/db'
 import { rememberManageToken, uploadLogo, sendHostOtp, verifyHostOtp } from '@/lib/host'
 import { getErrorMessage } from '@/lib/errors'
 import { slugifyTitle } from '@/lib/slug'
@@ -61,6 +61,23 @@ function friendlyTokenError(msg: string): string {
     return LIMIT_COPY
   }
   return msg
+}
+
+// create_webinar's other refusals (platform 0262).
+function createErrorCopy(code: string): string {
+  switch (code) {
+    case 'not_authenticated':
+      return 'Your sign-in has expired. Sign in again, then press Go live.'
+    case 'multi_org_ambiguous':
+    case 'not_a_member':
+      return 'Choose which company is hosting from the company menu, then try again.'
+    case 'slug_taken':
+      return 'That link was just taken. Press Go live again for a fresh one.'
+    case 'bad_title':
+      return 'Give the webinar a title (up to 200 characters).'
+    default:
+      return 'The webinar could not be created. Please try again.'
+  }
 }
 
 export function HostNewForm() {
@@ -188,75 +205,48 @@ export function HostNewForm() {
       const effHostName = needsAccount ? hostName : signedInName
       const effHostEmail = needsAccount ? hostEmail : signedInEmail
       const slug = slugifyTitle(title)
-      const created = await createWebinar({
-        slug,
-        title: title.trim(),
-        description: description.trim(),
-        scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : null,
-        show_guest_count: showGuestCount,
-        allow_speak_requests: allowSpeakRequests,
-        send_confirmation: sendConfirmation,
-        send_reminders: sendReminders,
-        capacity: capacity.trim() === '' ? null : Number(capacity),
-        send_followup: sendFollowup,
-        host_name: effHostName.trim() || null,
-        host_email: effHostEmail.trim().toLowerCase() || null,
-        company_name: companyName.trim() || null,
-        logo_url: logoUrl,
-        custom_questions: parseQuestions(customQuestions),
-      })
-
-      // Free-tier Universal ID host: spend the one free token (non-refundable).
-      // On token failure, roll the just-created webinar back so we never leave a
-      // webinar the host can't actually run. Token errors block; anything else
-      // (e.g. a brand-new account whose subscription hasn't loaded) is
-      // non-fatal — the webinar stands, no token taken. An ID with no company
-      // is not free tier (it has no subscription) and is counted in the else.
-      if (freeTier) {
-        const { error: tokErr } = await suiteClient.rpc('acquire_token_hold', {
-          p_app: 'webinar',
-          p_resource_id: created.slug,
-          p_label: `Webinar: ${title.trim() || created.slug}`,
-          p_refundable: false,
-        })
-        if (tokErr && (tokErr.message.includes('token_in_use:') || tokErr.message.includes('no_credits'))) {
-          const removed = await deleteWebinar(created.id)
-          if (removed === 0) {
-            // Deliberately not thrown: the host needs to see the token error,
-            // not a rollback error. But a rollback that removed nothing has
-            // left an unrunnable webinar behind, and that must not be silent.
-            console.warn(
-              `Rollback did not remove webinar "${created.slug}" — it was created but no token was taken.`,
-            )
-          }
-          setError(friendlyTokenError(tokErr.message))
-          return
-        }
-      } else {
-        // Not covered by a free token hold — which includes every Universal ID
-        // with no company. Ask the platform to count it (a no-op for an ID that
-        // has a company). Ask with whichever client holds the ID's session: the
-        // suite one when they arrived signed in, or this app's own when the
-        // verification code above has just created the account.
-        const { data: claim, error: claimErr } = await (needsAccount ? supabase : suiteClient).rpc(
-          'claim_no_company_webinar',
-          { p_slug: created.slug, p_token: created.manage_token },
+      // One call does it all (platform 0262): the server creates the webinar
+      // and, in the same transaction, takes the free token hold or counts the
+      // company-less ID's one webinar — or refuses and creates nothing. Ask
+      // with whichever client holds the ID's session: the suite one when they
+      // arrived signed in, or this app's own when the verification code above
+      // has just created the account.
+      let created
+      try {
+        created = await createWebinar(
+          {
+            slug,
+            title: title.trim(),
+            description: description.trim(),
+            scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : null,
+            show_guest_count: showGuestCount,
+            allow_speak_requests: allowSpeakRequests,
+            send_confirmation: sendConfirmation,
+            send_reminders: sendReminders,
+            capacity: capacity.trim() === '' ? null : Number(capacity),
+            send_followup: sendFollowup,
+            host_name: effHostName.trim() || null,
+            host_email: effHostEmail.trim().toLowerCase() || null,
+            company_name: companyName.trim() || null,
+            logo_url: logoUrl,
+            custom_questions: parseQuestions(customQuestions),
+          },
+          needsAccount ? supabase : suiteClient,
         )
-        const result = claim as { ok?: boolean; error?: string; removed?: boolean } | null
-        if (!claimErr && result?.error === 'no_company_webinar_used') {
-          // The platform has already removed the new webinar; this is only for
-          // the case it declined to (it never removes one over 10 minutes old).
-          if (!result.removed) {
-            const removed = await deleteWebinar(created.id).catch(() => 0)
-            if (removed === 0) {
-              console.warn(`Rollback did not remove webinar "${created.slug}".`)
-            }
+      } catch (err) {
+        if (err instanceof CreateWebinarError) {
+          if (err.code === 'no_company_webinar_used') {
+            setNoCompanyState('used')
+            return
           }
-          setNoCompanyState('used')
+          if (err.code.startsWith('token_in_use:') || err.code === 'no_credits') {
+            setError(friendlyTokenError(err.code))
+            return
+          }
+          setError(createErrorCopy(err.code))
           return
         }
-        // Anything else (e.g. a network blip) is non-fatal, as for the token
-        // hold above: the webinar stands.
+        throw err
       }
 
       rememberManageToken(created.slug, created.manage_token)
@@ -268,7 +258,7 @@ export function HostNewForm() {
     } finally {
       setSubmitting(false)
     }
-  }, [logoFile, title, description, scheduledAt, showGuestCount, allowSpeakRequests, sendConfirmation, sendReminders, capacity, sendFollowup, customQuestions, needsAccount, hostName, hostEmail, signedInName, signedInEmail, companyName, freeTier, suiteClient, navigate])
+  }, [logoFile, title, description, scheduledAt, showGuestCount, allowSpeakRequests, sendConfirmation, sendReminders, capacity, sendFollowup, customQuestions, needsAccount, hostName, hostEmail, signedInName, signedInEmail, companyName, suiteClient, navigate])
 
   const setUpCompanyButton = (
     <a
