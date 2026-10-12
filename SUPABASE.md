@@ -312,8 +312,8 @@ Open two browser windows — one for admin, one for a test guest.
 **Video not appearing for guests**
 > The host hasn't published their camera yet (LiveKit only sends a stream once the host has turned on camera in the `VideoConference` UI). Also confirm the guest's browser allows autoplay — some block audio until the user interacts with the page.
 
-**"Only the admin may request a host token" error**
-> The admin user's email doesn't match `accounts@unisim.co.uk` in the Supabase auth table. The Edge Function pins the host role to that email. Check the user's email in Supabase → Authentication → Users.
+**"Only this webinar’s host may broadcast" error**
+> A host token needs the webinar's manage token (the host's link) or a signed-in platform admin. Platform admins are the user ids in the `platform_admins` table, which the Edge Function reads with the service role. Check the host opened their own manage link, or that the admin's user id is in that table.
 
 **Speaker request fails with RLS error**
 > Migration 0004 hasn't been run. Re-run Step 5.
