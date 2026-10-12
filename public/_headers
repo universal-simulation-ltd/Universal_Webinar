@@ -1,5 +1,41 @@
 # Force HTTPS: instruct browsers to only ever connect over TLS (mirrors the
 # marketing site). The HTTP→HTTPS redirect itself is the Cloudflare zone
 # "Always Use HTTPS" setting.
+#
+# Content-Security-Policy (2026-10-12) — ENFORCED. What the app really reaches
+# for, and nothing else:
+#   • script-src: its own bundle; the one inline script in index.html (the
+#     pre-paint theme), allowed by its hash — change that script and the hash
+#     must change with it (`npm run test:theme` checks); Google's sign-in
+#     script (the SDK loads accounts.google.com/gsi/client on demand).
+#     No 'unsafe-inline' and no 'unsafe-eval'.
+#   • style-src 'unsafe-inline': React style attributes, everywhere.
+#   • font-src 'self': Inter is served from this site (src/assets/fonts), not
+#     Google Fonts.
+#   • connect-src: Supabase (database, auth, edge functions, realtime chat),
+#     LiveKit Cloud (the live room's signalling, wss:// and https://), the R2
+#     hosted-files Worker (replay uploads), the suite changelog, Google
+#     sign-in. A self-hosted copy on its own LiveKit server must add its host.
+#   • media-src: the live room's tracks and the host's own recording are
+#     blob:/MediaStream; a replay streams from a signed R2 (Worker) or
+#     Supabase Storage link.
+#   • frame-src: a shared PDF opens in the browser's viewer from a signed
+#     Supabase Storage link; Google sign-in.
+#   • worker-src 'self' blob:: the service worker, and the recorder's frame
+#     clock (a blob: worker).
+#   • img-src https:: avatars, organisation logos and shared images.
+#   • No Cloudflare Web Analytics. Cloudflare's zone-level automatic setup
+#     injects its beacon (static.cloudflareinsights.com) into the live HTML;
+#     this policy refuses it. Turn the injection off for this host in
+#     Cloudflare (Web Analytics site rules).
+# The dev server serves the same policy Report-Only (vite.config.ts, cspDev()).
+#
+# Hardening. Nothing in the suite frames this app, so refusing to be framed
+# elsewhere costs nothing and closes off click-jacking. No Permissions-Policy:
+# hosts and speakers need the camera, the microphone and screen sharing.
 /*
   Strict-Transport-Security: max-age=31536000; includeSubDomains
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: SAMEORIGIN
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-SjvpW8lD5xHzh0KjLmUgxZNtCz0o/233ZU30Vhv2wqk=' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' data: blob: https://rygfxgalojojppxmhddo.supabase.co wss://rygfxgalojojppxmhddo.supabase.co https://*.livekit.cloud wss://*.livekit.cloud https://unisim-hosted-files.inbox-12f.workers.dev https://changelog.unisim.co.uk https://accounts.google.com/gsi/; media-src 'self' blob: data: https://rygfxgalojojppxmhddo.supabase.co https://unisim-hosted-files.inbox-12f.workers.dev; worker-src 'self' blob:; frame-src 'self' blob: https://rygfxgalojojppxmhddo.supabase.co https://accounts.google.com/gsi/; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'

@@ -11,6 +11,7 @@
 //
 // Run: npm run test:theme
 import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 
 const read = (rel) => readFileSync(new URL(`../${rel}`, import.meta.url), 'utf8')
@@ -38,5 +39,14 @@ assert.ok(head.includes("classList.add('dark')"), 'the pre-paint script must add
 assert.ok(head.includes('prefers-color-scheme: dark'), "the pre-paint script must honour 'system'")
 // Light is the default (the suite rule), so the script only ever ADDS.
 assert.ok(!head.includes("classList.remove('dark')"), 'the pre-paint script must never remove the dark class')
+
+// The Content-Security-Policy (public/_headers) allows inline script by hash
+// only, so editing the pre-paint script without updating its hash there would
+// leave it blocked on the live site: a light first frame for dark users.
+const policy = read('public/_headers')
+for (const [, body] of head.matchAll(/<script>([\s\S]*?)<\/script>/g)) {
+  const hash = `'sha256-${createHash('sha256').update(body).digest('base64')}'`
+  assert.ok(policy.includes(hash), `public/_headers must allow the pre-paint script by its hash ${hash}`)
+}
 
 console.log(`theme: ok — store and pre-paint script agree on '${key}'`)
