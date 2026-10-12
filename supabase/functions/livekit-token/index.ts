@@ -97,10 +97,20 @@ Deno.serve(async (req) => {
     const { data: { user } } = await adminClient.auth.getUser(
       authHeader.replace('Bearer ', ''),
     )
-    // The platform admin account, by id (its email moved from accounts@ to
-    // james@unisim.co.uk on 2026-10-03).
-    const isAdmin = user?.id === 'aa2bd37d-4246-41d1-9965-f64d30fa6b3a' ||
-      ['james@unisim.co.uk', 'accounts@unisim.co.uk'].includes(user?.email?.toLowerCase() ?? '')
+    // A platform admin: the account is in platform_admins (by user id). The
+    // table is the one list the database itself uses for is_platform_admin(),
+    // so adding or removing an admin needs no change here. Read with the
+    // service role, which the table's RLS (no policies) leaves as the only way.
+    let isAdmin = false
+    if (user?.id) {
+      const { data: adminRow, error: adminErr } = await adminClient
+        .from('platform_admins')
+        .select('user_id')
+        .eq('user_id', user.id)
+        .maybeSingle()
+      if (adminErr) console.error('livekit-token: platform_admins lookup failed', adminErr.message)
+      isAdmin = !!adminRow
+    }
 
     if (role === 'host') {
       if (!isOwner && !isAdmin) {
