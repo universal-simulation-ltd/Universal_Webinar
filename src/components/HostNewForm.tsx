@@ -27,6 +27,7 @@ import {
   useCurrentUserIdentity,
   useLanguage,
   useOrg,
+  withReturnUrl,
 } from '@unisim/sdk'
 import { supabase } from '@/lib/supabase'
 import { noCompanyCopy, SET_UP_COMPANY_URL } from '@/lib/noCompanyCopy'
@@ -262,7 +263,7 @@ export function HostNewForm() {
 
   const setUpCompanyButton = (
     <a
-      href={SET_UP_COMPANY_URL}
+      href={withReturnUrl(SET_UP_COMPANY_URL)}
       className="mt-2 inline-flex rounded-lg bg-orange-700 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-800"
     >
       {noCompanyText.button}
