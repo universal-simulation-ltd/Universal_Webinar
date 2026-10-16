@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
+import { useRevealOnOpen } from '@unisim/sdk'
 import {
   AlertTriangle,
   Archive,
@@ -76,6 +77,8 @@ export function HostWrapUp() {
   const [saving, setSaving] = useState<string | null>(null)
   const [exported, setExported] = useState(false)
   const [confirmClose, setConfirmClose] = useState(false)
+  // The confirm box takes the Close button's place, so it scrolls itself on screen.
+  const confirmCloseRef = useRevealOnOpen()
 
   useEffect(() => {
     let active = true
@@ -402,7 +405,7 @@ export function HostWrapUp() {
               )}
 
               {confirmClose ? (
-                <div className="space-y-2 rounded-lg border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 p-3">
+                <div ref={confirmCloseRef} className="space-y-2 rounded-lg border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 p-3">
                   <p className="text-sm font-medium text-red-900 dark:text-red-200">
                     Close “{webinar.title}”?
                   </p>

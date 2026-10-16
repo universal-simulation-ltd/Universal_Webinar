@@ -27,6 +27,7 @@ import {
   useCurrentUserIdentity,
   useLanguage,
   useOrg,
+  useRevealOnOpen,
   withReturnUrl,
 } from '@unisim/sdk'
 import { supabase } from '@/lib/supabase'
@@ -162,6 +163,8 @@ export function HostNewForm() {
   // When not signed in, clicking Go live sends a verification code (which creates
   // the account); the host types it here, then the webinar is created.
   const [otpStep, setOtpStep] = useState(false)
+  // The code box takes the Go live button's place, so it scrolls itself on screen.
+  const otpRef = useRevealOnOpen()
   const [otpCode, setOtpCode] = useState('')
   const [verifying, setVerifying] = useState(false)
 
@@ -640,7 +643,7 @@ export function HostNewForm() {
           )}
 
           {otpStep ? (
-            <div className="space-y-2 rounded-lg border border-brand-200 dark:border-brand-900 bg-brand-50 dark:bg-brand-950/40 p-4">
+            <div ref={otpRef} className="space-y-2 rounded-lg border border-brand-200 dark:border-brand-900 bg-brand-50 dark:bg-brand-950/40 p-4">
               <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Check your email</p>
               <p className="text-xs text-slate-600 dark:text-slate-300">
                 We sent a 6-digit code to <strong>{hostEmail.trim().toLowerCase()}</strong>. Enter it to create your
