@@ -132,6 +132,10 @@ const PANEL_STORAGE_KEY = HOST_PANELS_KEY
 /** How often the speaker queue re-reads itself while a session is live. */
 const SPEAK_QUEUE_POLL_MS = 10_000
 
+// A name ending in s takes the apostrophe alone: "James' request", not
+// "James's request" (James, 2026-11-03, suite-wide).
+const whose = (n: string) => (/s$/i.test(n.trim()) ? `${n}'` : `${n}'s`)
+
 /** Six digits, from the CSPRNG. Long enough to say out loud, short enough to
  *  type on a phone; the length limitation is discussed in migration 0102. */
 function randomPin(): string {
@@ -1170,8 +1174,8 @@ export function HostManage() {
                             type="button"
                             disabled={speakBusy === r.request_id}
                             onClick={() => void cancelSpeakRequest(r)}
-                            title={`Turn down ${r.name}'s request — they can ask again`}
-                            aria-label={`Turn down ${r.name}'s request`}
+                            title={`Turn down ${whose(r.name)} request — they can ask again`}
+                            aria-label={`Turn down ${whose(r.name)} request`}
                             className="rounded-md p-1.5 text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-300 disabled:opacity-50"
                           >
                             <X className="h-4 w-4" />
