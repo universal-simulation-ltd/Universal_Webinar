@@ -49,8 +49,7 @@ export function AdminDashboard() {
             Schedule a new room, or jump back into one that's live.
           </p>
         </div>
-        <Button onClick={() => setDialogOpen(true)}>
-          <Plus className="h-4 w-4" />
+        <Button onClick={() => setDialogOpen(true)} icon={<Plus />}>
           New webinar
         </Button>
       </div>
@@ -132,7 +131,7 @@ function WebinarCard({ webinar }: { webinar: WebinarRow }) {
             )}
             {copied ? 'Copied!' : 'Share'}
           </Button>
-          <Button asChild size="sm">
+          <Button asChild size="sm" variant="outline">
             <Link to={`/admin/w/${webinar.slug}`}>
               {webinar.status === 'live' ? 'Control room' : 'Manage'}
             </Link>
@@ -153,8 +152,7 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
           Create your first room to share with your audience.
         </p>
-        <Button className="mt-6" onClick={onCreate}>
-          <Plus className="h-4 w-4" />
+        <Button className="mt-6" variant="outline" onClick={onCreate} icon={<Plus />}>
           New webinar
         </Button>
       </div>

@@ -111,7 +111,7 @@ export function OtpVerifyDialog({
             <DialogFooter>
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 onClick={() => onOpenChange(false)}
                 disabled={sending}
               >
@@ -172,7 +172,7 @@ export function OtpVerifyDialog({
             <DialogFooter>
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 onClick={() => onOpenChange(false)}
                 disabled={verifying}
               >

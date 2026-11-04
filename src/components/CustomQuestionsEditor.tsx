@@ -142,8 +142,8 @@ export default function CustomQuestionsEditor({ value, onChange, disabled }: Pro
       )}
 
       {value.length < MAX_QUESTIONS && (
-        <Button type="button" variant="outline" size="sm" onClick={add} disabled={disabled}>
-          <Plus className="mr-1.5 h-4 w-4" /> Add a question
+        <Button type="button" variant="outline" size="sm" onClick={add} disabled={disabled} icon={<Plus />}>
+          Add a question
         </Button>
       )}
     </div>

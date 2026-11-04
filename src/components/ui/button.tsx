@@ -1,9 +1,14 @@
 import * as React from 'react'
 import { Slot } from '@radix-ui/react-slot'
 import { cva, type VariantProps } from 'class-variance-authority'
+import { buttonClass } from '@unisim/sdk'
 import { cn } from '@/lib/utils'
 
-const buttonVariants = cva(
+// The shadcn button's own look. Kept for the two kinds of button the suite's
+// key buttons don't cover: icon-only buttons (`size="icon"`) and text links
+// (`variant="link"`), plus `classic` call controls (camera / mic / screen),
+// which are their own controls rather than key buttons.
+const classicVariants = cva(
   'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium ring-offset-white dark:ring-offset-slate-900 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
@@ -32,21 +37,63 @@ const buttonVariants = cva(
   },
 )
 
+type Variant = NonNullable<VariantProps<typeof classicVariants>['variant']>
+type Size = NonNullable<VariantProps<typeof classicVariants>['size']>
+
+// Every other button is the suite's key button (SDK 0.216, BRANDING.md →
+// Buttons, 2026-11-04); main.tsx installs its CSS. `default` is the primary,
+// once per view; outline and secondary are the secondary rank, ghost is quiet,
+// destructive is danger. `lg` is the normal size — the suite has two.
+const RANK = {
+  default: 'primary',
+  secondary: undefined,
+  outline: undefined,
+  ghost: 'quiet',
+  destructive: 'danger',
+} as const
+
+function buttonVariants({
+  variant,
+  size,
+  classic,
+  className,
+}: {
+  variant?: Variant | null
+  size?: Size | null
+  classic?: boolean
+  className?: string
+}): string {
+  const v = variant ?? 'default'
+  if (classic || v === 'link' || size === 'icon') return classicVariants({ variant: v, size, className })
+  return cn(buttonClass(RANK[v], size === 'sm' ? 'sm' : undefined), className)
+}
+
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
+    VariantProps<typeof classicVariants> {
   asChild?: boolean
+  /** An icon for the key at the leading edge (primary, secondary, danger). */
+  icon?: React.ReactNode
+  /** Keep the old shadcn look — for call controls, which aren't key buttons. */
+  classic?: boolean
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, icon, classic, children, ...props }, ref) => {
     const Comp = asChild ? Slot : 'button'
     return (
-      <Comp
-        className={cn(buttonVariants({ variant, size, className }))}
-        ref={ref}
-        {...props}
-      />
+      <Comp className={buttonVariants({ variant, size, classic, className })} ref={ref} {...props}>
+        {icon && !asChild ? (
+          <>
+            <span className="u-btn__key" aria-hidden>
+              {icon}
+            </span>
+            {children}
+          </>
+        ) : (
+          children
+        )}
+      </Comp>
     )
   },
 )

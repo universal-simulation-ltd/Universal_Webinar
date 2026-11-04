@@ -460,7 +460,7 @@ export function Register() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full text-slate-500 dark:text-slate-400"
+                className="w-full"
                 onClick={async () => {
                   await supabase.auth.signOut()
                   setRegistered(false)

@@ -37,14 +37,14 @@ export function AddToCalendarButton({ webinar, joinUrl, className }: Props) {
       <Button
         type="button"
         variant="outline"
-        className="w-full"
+        className="w-full justify-start"
         onClick={() => setOpen((v) => !v)}
+        icon={<CalendarPlus />}
       >
-        <CalendarPlus className="h-4 w-4" />
         Add to calendar
         <ChevronDown
           className={cn(
-            'h-3.5 w-3.5 transition-transform',
+            'ml-auto h-3.5 w-3.5 transition-transform',
             open && 'rotate-180',
           )}
         />

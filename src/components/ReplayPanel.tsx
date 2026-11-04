@@ -143,6 +143,7 @@ export function ReplayPanel({
             !up.paused && (
               <Button
                 size="sm"
+                variant="outline"
                 className="mt-2"
                 disabled={busy}
                 onClick={() => void up.start(finished.file, finished.fileName)}
@@ -176,8 +177,8 @@ export function ReplayPanel({
             variant="outline"
             disabled={busy}
             onClick={() => fileInput.current?.click()}
+            icon={<Upload />}
           >
-            <Upload className="h-4 w-4" />
             {copy.uploadFile}
           </Button>
         </div>

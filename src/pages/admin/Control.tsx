@@ -471,6 +471,7 @@ export function AdminControl() {
                         <div className="flex gap-2">
                           <Button
                             size="sm"
+                            variant="outline"
                             onClick={() => handleApproveSpeaker(req.id)}
                           >
                             Approve

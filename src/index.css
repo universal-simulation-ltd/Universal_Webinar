@@ -1,4 +1,14 @@
-@tailwind base;
+/* Tailwind 3's preflight (and this file's own `@layer base`, which lands with
+   it) goes in a real cascade layer, the lowest one. Tailwind 3 emits its base
+   unlayered, and unlayered CSS beats every layer, so `button { padding: 0;
+   background-color: transparent }` would strip the suite's key buttons and
+   tray tabs (SDK 0.216), whose look sits in `components.unisim-button` /
+   `components.unisim-tabs` so that utilities can still win (BRANDING.md →
+   Buttons). Tailwind 4 apps get this order for free; this is the Tailwind 3
+   equivalent. Utilities and components stay unlayered, so they still win. */
+@layer tw-preflight {
+  @tailwind base;
+}
 @tailwind components;
 @tailwind utilities;
 

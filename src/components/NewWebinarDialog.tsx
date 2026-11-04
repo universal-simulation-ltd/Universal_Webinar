@@ -171,7 +171,7 @@ export function NewWebinarDialog({ open, onOpenChange, onCreated }: Props) {
           <DialogFooter>
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
               onClick={() => onOpenChange(false)}
               disabled={submitting}
             >

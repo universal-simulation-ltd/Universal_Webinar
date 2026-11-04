@@ -38,7 +38,7 @@ export function ReplayUploadStatus({ upload }: { upload: ReturnType<typeof useRe
       <div className="space-y-2 rounded-lg border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 p-3" data-testid="replay-upload-paused">
         {message && <p className="text-xs text-amber-900 dark:text-amber-200" role="alert">{message}</p>}
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" onClick={upload.resume}>
+          <Button size="sm" variant="outline" onClick={upload.resume}>
             <RotateCw className="h-4 w-4" />
             {UPLOAD_EN.resume}
           </Button>

@@ -183,6 +183,7 @@ function HostBroadcastInner({
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <Button
           type="button"
+          classic
           variant={isCameraEnabled ? 'default' : 'outline'}
           size="sm"
           disabled={busy !== null || connecting}
@@ -200,6 +201,7 @@ function HostBroadcastInner({
 
         <Button
           type="button"
+          classic
           variant={isMicrophoneEnabled ? 'default' : 'outline'}
           size="sm"
           disabled={busy !== null || connecting}
@@ -217,6 +219,7 @@ function HostBroadcastInner({
 
         <Button
           type="button"
+          classic
           variant={isScreenShareEnabled ? 'default' : 'outline'}
           size="sm"
           disabled={busy !== null || connecting}

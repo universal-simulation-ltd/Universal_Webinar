@@ -1,7 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
-import { UniversalProvider } from '@unisim/sdk'
+import { UniversalProvider, installButtonStyles } from '@unisim/sdk'
 import App from './App'
 import { UsageTracker } from '@unisim/sdk'
 import { AuthProvider } from './lib/auth'
@@ -22,6 +22,11 @@ const universalConfig = {
   product: 'webinar' as const,
   cookieDomain: import.meta.env.PROD ? '.unisim.co.uk' : undefined,
 }
+
+// The suite's key buttons (SDK 0.216, BRANDING.md → Buttons): ui/button.tsx
+// maps the shadcn variants onto them. index.css layers Tailwind 3's preflight
+// so it can't strip them. Webinar has no tab trays.
+installButtonStyles()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

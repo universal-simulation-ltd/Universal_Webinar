@@ -1158,7 +1158,7 @@ export function HostManage() {
                               anonymous icon next to "turn down" and "stop". */}
                           <Button
                             size="sm"
-                            className="h-7 px-2 text-xs"
+                            variant="outline"
                             disabled={speakBusy === r.request_id}
                             onClick={() => void approveSpeaker(r)}
                             title={`Put ${r.name} on air — they can turn their camera and mic on`}
@@ -1224,7 +1224,7 @@ export function HostManage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-7 shrink-0 px-2 text-xs"
+                            className="shrink-0"
                             disabled={speakBusy === s.id}
                             onClick={() => void revokeSpeaker(s)}
                             title={`Take ${s.name} off air — they stay in the room and can ask again`}
@@ -1550,6 +1550,7 @@ export function HostManage() {
                 <div className="flex items-center gap-2">
                   <Button
                     size="sm"
+                    variant="outline"
                     disabled={saving === 'custom_questions'}
                     onClick={() =>
                       patch({ custom_questions: parseQuestions(questionsDraft) }, 'custom_questions')
@@ -1724,7 +1725,6 @@ export function HostManage() {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  className="h-7 px-2 text-xs"
                                   disabled={statusSaving === r.id}
                                   onClick={() => void changeStatus(r, 'approved')}
                                 >
@@ -1740,7 +1740,6 @@ export function HostManage() {
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  className="h-7 px-2 text-xs text-slate-500 dark:text-slate-400"
                                   disabled={statusSaving === r.id}
                                   onClick={() => void changeStatus(r, 'waitlisted')}
                                 >
@@ -1750,8 +1749,7 @@ export function HostManage() {
                               {r.status !== 'declined' && (
                                 <Button
                                   size="sm"
-                                  variant="ghost"
-                                  className="h-7 px-2 text-xs text-red-600 dark:text-red-400"
+                                  variant="destructive"
                                   disabled={statusSaving === r.id}
                                   onClick={() => void changeStatus(r, 'declined')}
                                 >
@@ -1817,10 +1815,10 @@ export function HostManage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="mt-3 w-full"
+                  className="mt-3 w-full justify-start"
                   onClick={exportRegistrationsCsv}
+                  icon={<Download />}
                 >
-                  <Download className="h-4 w-4" />
                   Export CSV
                 </Button>
               )}

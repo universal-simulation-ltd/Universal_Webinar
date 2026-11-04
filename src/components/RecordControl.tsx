@@ -432,6 +432,7 @@ export function RecordControl({
               <Button
                 type="button"
                 size="sm"
+                variant="outline"
                 disabled={upload.busy}
                 onClick={() => void upload.start(take.file, take.fileName)}
               >

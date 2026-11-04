@@ -503,10 +503,10 @@ export function HostNewForm() {
                         <Button
                           type="button"
                           variant="outline"
-                          className="w-full"
+                          className="w-full justify-start"
                           onClick={logoPicker.open}
+                          icon={<ImagePlus />}
                         >
-                          <ImagePlus className="h-4 w-4" />
                           Upload logo
                         </Button>
                       )}
@@ -659,7 +659,7 @@ export function HostNewForm() {
                   aria-label="6-digit verification code"
                   onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void handleVerify() } }}
                 />
-                <Button type="button" onClick={() => void handleVerify()} disabled={verifying || otpCode.trim().length < 6}>
+                <Button type="button" variant="outline" onClick={() => void handleVerify()} disabled={verifying || otpCode.trim().length < 6}>
                   {verifying ? <><Loader2 className="h-4 w-4 animate-spin" /> Verifying…</> : <>Verify &amp; {isScheduled ? 'schedule' : 'go live'}</>}
                 </Button>
               </div>
