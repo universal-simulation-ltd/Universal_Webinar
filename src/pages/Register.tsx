@@ -10,7 +10,7 @@ import {
   Radio,
   ShieldCheck,
 } from 'lucide-react'
-import { Chip } from '@unisim/sdk'
+import { Chip, GrowingTextarea } from '@unisim/sdk'
 import { Button } from '@/components/ui/button'
 import { RecordingNotice } from '@/components/RecordingNotice'
 import { Input } from '@/components/ui/input'
@@ -566,7 +566,7 @@ export function Register() {
                         {q.required && <span className="ml-0.5 text-red-500">*</span>}
                       </Label>
                       {q.type === 'textarea' ? (
-                        <textarea
+                        <GrowingTextarea
                           id={`q-${q.id}`}
                           value={val}
                           onChange={(e) => setVal(e.target.value)}
