@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useEffect, useState } from 'react'
 import { Plus, Trash2, GripVertical } from 'lucide-react'
 import { GrowingTextarea } from '@unisim/sdk'
 import {
@@ -120,18 +121,11 @@ export default function CustomQuestionsEditor({ value, onChange, disabled }: Pro
                   {q.type === 'select' && (
                     <div className="space-y-1">
                       <Label className="text-xs text-slate-500 dark:text-slate-400">Options (one per line)</Label>
-                      <GrowingTextarea
-                        aria-label={`Question ${i + 1} options`}
-                        value={(q.options ?? []).join('\n')}
+                      <OptionsBox
+                        label={`Question ${i + 1} options`}
+                        options={q.options ?? []}
                         disabled={disabled}
-                        onChange={(e) =>
-                          update(q.id, {
-                            options: e.target.value.split('\n').map((o) => o.trim()).filter(Boolean),
-                          })
-                        }
-                        rows={3}
-                        placeholder={'Option one\nOption two'}
-                        className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 disabled:opacity-50"
+                        onChange={(options) => update(q.id, { options })}
                       />
                     </div>
                   )}
@@ -148,5 +142,46 @@ export default function CustomQuestionsEditor({ value, onChange, disabled }: Pro
         </Button>
       )}
     </div>
+  )
+}
+
+/** The options a dropdown offers, from one per line: trimmed, blanks dropped. */
+function parseOptions(text: string): string[] {
+  return text.split('\n').map((o) => o.trim()).filter(Boolean)
+}
+
+/**
+ * The dropdown's options, one per line. It keeps the text exactly as typed
+ * and saves the cleaned list: cleaning the box itself on every keystroke
+ * swallowed Enter (the new empty line was dropped) and a space typed at the
+ * end of a word (trimmed), so a second option, or a two-word one, could not
+ * be typed at all (found 2026-11-09).
+ */
+function OptionsBox({ label, options, disabled, onChange }: {
+  label: string
+  options: string[]
+  disabled?: boolean
+  onChange: (options: string[]) => void
+}) {
+  const [text, setText] = useState(() => options.join('\n'))
+  // Options changed from outside (another question removed, a reload): show
+  // them, unless they are just what the text already says.
+  const joined = options.join('\n')
+  useEffect(() => {
+    setText((t) => (parseOptions(t).join('\n') === joined ? t : joined))
+  }, [joined])
+  return (
+    <GrowingTextarea
+      aria-label={label}
+      value={text}
+      disabled={disabled}
+      onChange={(e) => {
+        setText(e.target.value)
+        onChange(parseOptions(e.target.value))
+      }}
+      rows={3}
+      placeholder={'Option one\nOption two'}
+      className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 disabled:opacity-50"
+    />
   )
 }
