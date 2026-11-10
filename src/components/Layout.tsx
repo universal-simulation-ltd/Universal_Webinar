@@ -45,6 +45,9 @@ export function PublicLayout() {
           with the page content (and the changelog cluster with its right edge)
           at every breakpoint. */}
       <UniversalAppsNavBar
+        // Signed in, the bar says whose it is: "Bradley’s Webinars" ("James’ Webinars",
+        // "My Webinars" with no name), and Tune this app gets the account area (James, 2026-11-10 rollout).
+        personalTitle={(name) => (name ? `${/s$/i.test(name.trim()) ? `${name}’` : `${name}’s`} Webinars` : 'My Webinars')}
         product="webinar"
         productLogo={<ProductLogo />}
         theme={theme}
