@@ -208,7 +208,10 @@ export function HostWrapUp() {
       <div className="space-y-4">
         {/* How it went ------------------------------------------------------ */}
         {stats && (
-          <Card>
+          // The session's figures: a record carrying values, so the suite's
+          // Key box (BRANDING.md → Boxes, C), its tab naming what they count.
+          <Card className="u-box u-box--key rounded-[10px] p-0">
+            <span className="u-box__key">Attendance</span>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <TrendingUp className="h-4 w-4 text-slate-500 dark:text-slate-400" />

@@ -357,7 +357,12 @@ export function Register() {
           // "Enter the room" button and no calendar invite: nothing is confirmed
           // until they're approved, and offering either would imply a seat they
           // don't have.
-          <Card>
+          //
+          // The registration is a record, so the suite's Key box (BRANDING.md
+          // → Boxes, C): the tab names it and stays neutral; the amber stays
+          // on the title, which says the status in words.
+          <Card className="u-box u-box--key rounded-[10px] p-0">
+            <span className="u-box__key">Registration</span>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
                 <ShieldCheck className="h-5 w-5" />
@@ -397,7 +402,9 @@ export function Register() {
             </CardHeader>
           </Card>
         ) : registered ? (
-          <Card>
+          // The confirmed registration: a Key box, as above.
+          <Card className="u-box u-box--key rounded-[10px] p-0">
+            <span className="u-box__key">Registration</span>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
                 <CheckCircle2 className="h-5 w-5" />

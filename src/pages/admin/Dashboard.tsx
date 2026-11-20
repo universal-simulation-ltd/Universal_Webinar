@@ -97,8 +97,11 @@ function WebinarCard({ webinar }: { webinar: WebinarRow }) {
     setTimeout(() => setCopied(false), 1500)
   }
 
+  // Each webinar is a card that opens its room (Manage / Control room): the
+  // suite's Orbit corner (BRANDING.md → Boxes, A). The card keeps its own
+  // header and content padding, so the box's padding is zeroed.
   return (
-    <Card>
+    <Card className="u-box u-box--orbit rounded-[18px] p-0">
       <CardHeader>
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -144,7 +147,9 @@ function WebinarCard({ webinar }: { webinar: WebinarRow }) {
 
 function EmptyState({ onCreate }: { onCreate: () => void }) {
   return (
-    <div className="grid place-items-center rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 py-16 text-center">
+    // Nothing here yet: the suite's Viewfinder box with nothing in frame
+    // (BRANDING.md → Boxes, D), all four corners muted and no dashed outline.
+    <div className="u-box u-box--frame u-box--empty grid place-items-center py-16 text-center">
       <div>
         <p className="text-base font-medium text-slate-900 dark:text-slate-100">
           No webinars yet.

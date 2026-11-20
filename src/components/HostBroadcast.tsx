@@ -132,7 +132,12 @@ function HostBroadcastInner({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="relative aspect-video overflow-hidden rounded-xl bg-slate-900">
+      {/* What the camera or screen is capturing: the suite's Viewfinder
+          (BRANDING.md → Boxes, D), its brackets round the picture. The leading
+          corner lights once something is in frame; until then all four are
+          muted. */}
+      <div className={`u-box u-box--frame bg-transparent p-1.5${main ? '' : ' u-box--empty'}`}>
+      <div className="relative aspect-video overflow-hidden rounded-md bg-slate-900">
         {main ? (
           <>
             <VideoTrack
@@ -178,6 +183,7 @@ function HostBroadcastInner({
             {recording && <RecordingChip />}
           </span>
         )}
+      </div>
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">

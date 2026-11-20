@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { AlertCircle, Loader2, PlayCircle } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/card'
 import { isReplayId, playReplay, type PlayableReplay } from '@/lib/replay'
 import { fill, useRecordingCopy } from '@/lib/recordingCopy'
 
@@ -62,12 +61,12 @@ export function Replay() {
             className="aspect-video w-full rounded-2xl bg-black shadow-soft"
           />
         ) : missing ? (
-          <Card>
-            <CardContent className="flex items-start gap-2 p-6 text-sm text-slate-700 dark:text-slate-300">
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-slate-500 dark:text-slate-400" />
-              {copy.replayMissing}
-            </CardContent>
-          </Card>
+          // No replay to show: an empty state, so the suite's Viewfinder box
+          // with nothing in frame (BRANDING.md → Boxes, D), corners muted.
+          <div className="u-box u-box--frame u-box--empty flex items-start gap-2 p-6 text-left text-sm text-slate-700 dark:text-slate-300">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-slate-500 dark:text-slate-400" />
+            {copy.replayMissing}
+          </div>
         ) : (
           <div className="flex items-center gap-2 py-16 text-sm text-slate-500 dark:text-slate-400" role="status">
             <Loader2 className="h-5 w-5 animate-spin" />

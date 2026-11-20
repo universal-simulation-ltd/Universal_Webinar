@@ -388,7 +388,11 @@ export function AdminControl() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="aspect-video overflow-hidden rounded-xl bg-slate-900">
+              {/* The camera stage: the suite's Viewfinder (BRANDING.md →
+                  Boxes, D), its leading corner lit once the camera is live
+                  and all four corners muted before that. */}
+              <div className={`u-box u-box--frame bg-transparent p-1.5${lkReady ? '' : ' u-box--empty'}`}>
+              <div className="aspect-video overflow-hidden rounded-md bg-slate-900">
                 {lkReady ? (
                   <LiveKitRoom
                     serverUrl={lkUrl}
@@ -418,6 +422,7 @@ export function AdminControl() {
                     </div>
                   </div>
                 )}
+              </div>
               </div>
               {!lkReady && (
                 <div className="mt-4 flex flex-wrap gap-2">

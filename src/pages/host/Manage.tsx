@@ -978,7 +978,12 @@ export function HostManage() {
                   />
                 </div>
               ) : (
-                <div className="aspect-video rounded-xl bg-slate-900 grid place-items-center text-slate-300 text-sm">
+                // The camera stage with nothing on it yet: the suite's
+                // Viewfinder (BRANDING.md → Boxes, D), all four corners muted
+                // round the dark picture until there is something in frame
+                // (HostBroadcast lights the leading corner then).
+                <div className="u-box u-box--frame u-box--empty bg-transparent p-1.5">
+                <div className="aspect-video rounded-md bg-slate-900 grid place-items-center text-slate-300 text-sm">
                   <div className="text-center">
                     <Camera className="mx-auto h-10 w-10 text-slate-500 dark:text-slate-400" />
                     <p className="mt-2">
@@ -987,6 +992,7 @@ export function HostManage() {
                         : 'Live video isn’t switched on for this deployment.'}
                     </p>
                   </div>
+                </div>
                 </div>
               )}
               {stageNote && (

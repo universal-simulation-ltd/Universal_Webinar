@@ -1,7 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
-import { UniversalProvider, installButtonStyles } from '@unisim/sdk'
+import { UniversalProvider, installBoxStyles, installButtonStyles } from '@unisim/sdk'
 import App from './App'
 import { UsageTracker } from '@unisim/sdk'
 import { AuthProvider } from './lib/auth'
@@ -27,6 +27,9 @@ const universalConfig = {
 // maps the shadcn variants onto them. index.css layers Tailwind 3's preflight
 // so it can't strip them. Webinar has no tab trays.
 installButtonStyles()
+// The suite's box marks (BRANDING.md → Boxes), used as class strings
+// (u-box u-box--orbit / --key / --frame): the sheet goes in once.
+installBoxStyles()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
