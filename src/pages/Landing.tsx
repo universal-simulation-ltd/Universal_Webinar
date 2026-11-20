@@ -1,15 +1,13 @@
-import {
-  ArrowRight,
-  Github,
-  MessageCircle,
-  Mic,
-  Sparkles,
-  Video,
-} from 'lucide-react'
+import { ArrowRight, Github } from 'lucide-react'
 import { installChipStyles } from '@unisim/sdk'
 import { HostNewForm } from '@/components/HostNewForm'
 import { WebinarPreview } from '@/components/WebinarPreview'
 
+// No feature cards under the hero (removed 2026-11-20). Three of the four
+// restated the hero's own sentence (live, reactions, guests on stage) beside a
+// preview that already plays it out, and the fourth listed the room options
+// the form's Optional details hold, including a PIN lock that is still
+// "Coming soon". The page is the pitch, the preview and the form.
 export function Landing() {
   // The hero's open-source link uses the `u-chip` class directly; the
   // components inject the CSS themselves, plain markup has to ask.
@@ -70,53 +68,7 @@ export function Landing() {
           </div>
         </div>
       </section>
-
-      <section className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-        <div className="container py-16">
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            <Feature
-              icon={<Video className="h-5 w-5" />}
-              title="Live, low-latency"
-              body="Stream your camera and screen in HD. Guests watch on web or phone with one tap."
-            />
-            <Feature
-              icon={<MessageCircle className="h-5 w-5" />}
-              title="Chat & reactions"
-              body="Threaded chat with emoji reactions on every message and floating hearts on the video."
-            />
-            <Feature
-              icon={<Mic className="h-5 w-5" />}
-              title="Audience speakers"
-              body="Approve any guest to share their camera and microphone for live Q&A — on your terms."
-            />
-            <Feature
-              icon={<Sparkles className="h-5 w-5" />}
-              title="Yours, branded"
-              body="PIN-lock the room, hide attendee counts, theme it to match — you're in full control."
-            />
-          </div>
-        </div>
-      </section>
     </>
   )
 }
 
-function Feature({
-  icon,
-  title,
-  body,
-}: {
-  icon: React.ReactNode
-  title: string
-  body: string
-}) {
-  return (
-    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 p-6 transition hover:bg-white dark:hover:bg-slate-800 hover:shadow-soft">
-      <div className="grid h-10 w-10 place-items-center rounded-xl bg-brand-50 dark:bg-brand-950/40 text-brand-700 dark:text-brand-400">
-        {icon}
-      </div>
-      <h3 className="mt-4 text-base font-semibold text-slate-900 dark:text-slate-100">{title}</h3>
-      <p className="mt-1.5 text-sm text-slate-600 dark:text-slate-300">{body}</p>
-    </div>
-  )
-}

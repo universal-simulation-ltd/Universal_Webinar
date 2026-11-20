@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { Loader2, Lock, ShieldCheck } from 'lucide-react'
+import { Calendar, CalendarCheck, CalendarClock, Clock, Loader2, Lock, Radio } from 'lucide-react'
 import { Chip } from '@unisim/sdk'
 import { Button } from '@/components/ui/button'
 import { RecordingNotice } from '@/components/RecordingNotice'
@@ -25,7 +25,17 @@ import {
 } from '@/lib/db'
 import { getErrorMessage } from '@/lib/errors'
 import { readLocal, writeLocal } from '@/lib/localPrefs'
+import { useJoinCopy } from '@/lib/joinCopy'
+import { formatJoinWhen, joinState, type JoinState } from '@/lib/joinStatus'
 import type { WebinarRow } from '@/lib/database.types'
+
+const STATE_ICON: Record<JoinState, React.ReactNode> = {
+  live: <Radio />,
+  soon: <Clock />,
+  upcoming: <CalendarClock />,
+  waiting: <Clock />,
+  ended: <CalendarCheck />,
+}
 
 const NAME_KEY = 'uw:lastName'
 const EMAIL_KEY = 'uw:lastEmail'
@@ -42,6 +52,14 @@ export function Join() {
   const [pin, setPin] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const { copy, locale } = useJoinCopy()
+  // The clock the "Starting soon" line reads: a scheduled room turns from
+  // Upcoming to Starting soon while the page sits open.
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 30_000)
+    return () => window.clearInterval(id)
+  }, [])
 
   // Migration 0102. `pin_required` is the public mirror of "a PIN is set" —
   // the PIN itself is not readable by anyone but the host, so this page can
@@ -226,19 +244,44 @@ export function Join() {
     )
   }
 
+  const state = joinState(webinar, now)
+  const ended = state === 'ended'
+  // The time it was set for; a room that went live with no date set shows
+  // when it started instead.
+  const whenIso = webinar.scheduled_at ?? webinar.started_at
+  const when = whenIso ? formatJoinWhen(whenIso, locale, now) : null
+
   return (
     <div className="container py-12 sm:py-16">
       <div className="mx-auto max-w-md">
         <HostedBy webinar={webinar} />
-        <div className="mb-6 text-center">
-          <Chip icon={<ShieldCheck />}>Hosted on Universal Webinar</Chip>
+        {/* Is it on? The arc takes the tone (green live, amber about to
+            start); the words say it either way. The date sits in the card. */}
+        <div className="mb-6 text-center" data-testid="join-state">
+          <Chip
+            icon={STATE_ICON[state]}
+            tone={state === 'live' ? 'good' : state === 'soon' ? 'warn' : undefined}
+          >
+            {copy.state[state]}
+          </Chip>
         </div>
 
         <Card>
           <CardHeader>
             <CardTitle>{webinar.title}</CardTitle>
+            {when && (
+              <p
+                className="flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-300"
+                data-testid="join-when"
+              >
+                <Calendar className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" />
+                <time dateTime={whenIso ?? undefined}>{when}</time>
+              </p>
+            )}
             <CardDescription>
-              {webinar.require_approval
+              {ended
+                ? copy.endedBody
+                : webinar.require_approval
                 ? 'The host approves everyone who joins this room. Ask for a place first and they’ll let you in.'
                 : !webinar.open_join
                   ? 'Walk-up joining is closed for this session. Registered guests can still join with the link from their confirmation email.'
@@ -247,7 +290,7 @@ export function Join() {
             {/* This room only lets in people the host has approved, and
                 approval starts on the sign-up page — which nothing here
                 linked to, so "Join now" was the only (failing) way on. */}
-            {webinar.require_approval && (
+            {webinar.require_approval && !ended && (
               <Link
                 to={`/w/${webinar.slug}/register`}
                 className="pt-1 text-sm font-medium text-brand-700 dark:text-brand-400 hover:underline"
@@ -256,99 +299,107 @@ export function Join() {
               </Link>
             )}
           </CardHeader>
-          <CardContent>
-            {!configured && (
-              <div className="mb-4 rounded-lg border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 p-3 text-sm text-amber-900 dark:text-amber-200">
-                Supabase isn't connected yet. The host needs to finish setup.
-              </div>
-            )}
-            <form className="space-y-4" onSubmit={handleSubmit}>
-              <div className="space-y-1.5">
-                <Label htmlFor="name">Your name</Label>
-                <Input
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Jane Cooper"
-                  autoComplete="name"
-                  required
-                  maxLength={80}
-                  disabled={submitting || !configured}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="jane@example.com"
-                  autoComplete="email"
-                  required
-                  maxLength={200}
-                  disabled={submitting || !configured}
-                />
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  We share this only with the host.
-                </p>
-              </div>
-
-              {requiresPin && (
+          {/* An ended room has nothing to join: the card says so, and the
+              form and its small print go. */}
+          {!ended && (
+            <CardContent>
+              {!configured && (
+                <div className="mb-4 rounded-lg border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 p-3 text-sm text-amber-900 dark:text-amber-200">
+                  Supabase isn't connected yet. The host needs to finish setup.
+                </div>
+              )}
+              <form className="space-y-4" onSubmit={handleSubmit}>
                 <div className="space-y-1.5">
-                  <Label htmlFor="pin" className="flex items-center gap-1.5">
-                    <Lock className="h-3.5 w-3.5" /> Webinar PIN
-                  </Label>
+                  <Label htmlFor="name">Your name</Label>
                   <Input
-                    id="pin"
-                    value={pin}
-                    onChange={(e) => setPin(e.target.value)}
-                    placeholder="••••••"
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
+                    id="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Jane Cooper"
+                    autoComplete="name"
                     required
-                    minLength={4}
-                    maxLength={16}
+                    maxLength={80}
+                    disabled={submitting || !configured}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="jane@example.com"
+                    autoComplete="email"
+                    required
+                    maxLength={200}
                     disabled={submitting || !configured}
                   />
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    The host will have shared this with you separately.
+                    We share this only with the host.
                   </p>
                 </div>
-              )}
 
-              {error && (
-                <p className="rounded-md bg-red-50 dark:bg-red-950/40 px-3 py-2 text-sm text-red-700 dark:text-red-400">
-                  {error}
-                </p>
-              )}
-
-              <Button
-                type="submit"
-                size="lg"
-                className="w-full"
-                disabled={submitting || !configured || !webinar.open_join}
-              >
-                {submitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Joining…
-                  </>
-                ) : !webinar.open_join ? (
-                  'Walk-up joining is closed'
-                ) : (
-                  'Join now'
+                {requiresPin && (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="pin" className="flex items-center gap-1.5">
+                      <Lock className="h-3.5 w-3.5" /> Webinar PIN
+                    </Label>
+                    <Input
+                      id="pin"
+                      value={pin}
+                      onChange={(e) => setPin(e.target.value)}
+                      placeholder="••••••"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      required
+                      minLength={4}
+                      maxLength={16}
+                      disabled={submitting || !configured}
+                    />
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      The host will have shared this with you separately.
+                    </p>
+                  </div>
                 )}
-              </Button>
-            </form>
-          </CardContent>
+
+                {error && (
+                  <p className="rounded-md bg-red-50 dark:bg-red-950/40 px-3 py-2 text-sm text-red-700 dark:text-red-400">
+                    {error}
+                  </p>
+                )}
+
+                <Button
+                  type="submit"
+                  size="lg"
+                  className="w-full"
+                  disabled={submitting || !configured || !webinar.open_join}
+                >
+                  {submitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Joining…
+                    </>
+                  ) : !webinar.open_join ? (
+                    'Walk-up joining is closed'
+                  ) : (
+                    'Join now'
+                  )}
+                </Button>
+              </form>
+            </CardContent>
+          )}
         </Card>
 
-        <p className="mt-4 text-center text-xs text-slate-500 dark:text-slate-400">
-          By joining, you agree to be visible to the host and may be invited to
-          speak.
-        </p>
-        <RecordingNotice />
+        {!ended && (
+          <>
+            <p className="mt-4 text-center text-xs text-slate-500 dark:text-slate-400">
+              By joining, you agree to be visible to the host and may be invited to
+              speak.
+            </p>
+            <RecordingNotice />
+          </>
+        )}
       </div>
     </div>
   )
