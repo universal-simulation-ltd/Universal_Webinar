@@ -16,7 +16,7 @@ export function Landing() {
     <>
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 -z-10">
-          <div className="absolute -top-32 left-1/2 h-[420px] w-[820px] -translate-x-1/2 rounded-full bg-brand-200/50 blur-3xl" />
+          <div className="absolute -top-32 left-1/2 h-[420px] w-[820px] -translate-x-1/2 rounded-full bg-brand-200/50 blur-3xl dark:bg-brand-900/25" />
           <div className="absolute -top-10 left-[10%] h-72 w-72 rounded-full bg-brand-100/70 dark:bg-brand-950/70 blur-3xl" />
           <div className="absolute top-20 right-[8%] h-64 w-64 rounded-full bg-amber-100/70 dark:bg-amber-950/70 blur-3xl" />
         </div>
