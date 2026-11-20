@@ -95,8 +95,13 @@ export function AdminLayout() {
   // override — the same store as the public bar, so the two always agree.
   const theme = useThemeStore((s) => s.effective)
 
+  // Since SDK 0.222.0 UniversalNavBar sits fixed at the foot of a phone screen
+  // (below 768px) and pads <body> by --u-bar-bottom. index.css gives html, body
+  // and #root `height: 100%`, so long content overflows <body> and that padding
+  // lands at the bottom of the screen, not under the last line. Pad this root
+  // instead, as the SDK README says (0px on wider screens).
   return (
-    <div className="flex min-h-full flex-col bg-slate-50 dark:bg-slate-950">
+    <div className="flex min-h-full flex-col bg-slate-50 pb-[var(--u-bar-bottom,0px)] dark:bg-slate-950">
       <UniversalNavBar
         product="webinar"
         productLogo={<ProductLogo />}
